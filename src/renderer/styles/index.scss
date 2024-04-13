@@ -1,0 +1,47 @@
+@use "./mixins.scss";
+@use "./transition.scss";
+
+:root {
+  --ui-color-border-grey: #c9c9c9;
+
+  --ui-color-border-blue: #4a9eff;
+  --ui-color-bg-blue: #dbecff;
+
+  --ui-color-border-cyan: #0affee;
+  --ui-color-bg-cyan: #c7fffc;
+
+  --ui-color-border-red: #ff5732;
+  --ui-color-bg-red: #ffab99;
+
+  --ui-color-border-yellow: #ffe900;
+  --ui-color-bg-yellow: #fff4c7;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  line-height: 1.2;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+a {
+  cursor: pointer;
+  vertical-align: middle;
+
+  &:hover {
+    // 增强对比度 不改变颜色
+    filter: brightness(1.2);
+  }
+}
+
+span {
+  vertical-align: middle;
+}
+
+// 文本坚排
+.text-vertical {
+  writing-mode: vertical-lr;
+}

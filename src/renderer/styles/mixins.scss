@@ -1,0 +1,86 @@
+@mixin flex($direction: row, $alignItems: normal, $justifyContent: normal) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justifyContent;
+  align-items: $alignItems;
+}
+
+@mixin ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin clamp($rows: 1, $lineHeight: 1.2) {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: $lineHeight;
+  -webkit-line-clamp: $rows;
+  -webkit-box-orient: vertical;
+}
+
+@mixin scrollbar($size: 6px) {
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: $size;
+    height: $size;
+    background: rgba(165, 165, 165, 0.1);
+    &-thumb {
+      border-radius: 5px;
+      background-color: #dcdee5;
+    }
+  }
+}
+
+@mixin angleSize($width: 1px, $lengh: 15%) {
+  background-size:
+    // 对角线大小
+    $width $lengh,
+    $lengh $width;
+}
+
+@mixin angleColor($color: --ui-color-border-grey) {
+  background-repeat: no-repeat;
+  background-image:
+    // 四个背景
+    linear-gradient(var($color), var($color)), linear-gradient(var($color), var($color)),
+    linear-gradient(var($color), var($color)), linear-gradient(var($color), var($color)),
+    linear-gradient(var($color), var($color)), linear-gradient(var($color), var($color)),
+    linear-gradient(var($color), var($color)), linear-gradient(var($color), var($color)) !important;
+}
+
+@mixin anglePosition($type: "left") {
+  @if $type== "left" {
+    background-position:
+      // 左上-右下
+      left top,
+      left top,
+      right bottom,
+      right bottom !important;
+  } @else if $type== "right" {
+    background-position:
+      // 右上-左下
+      right top,
+      right top,
+      left bottom,
+      left bottom !important;
+  } @else if $type== "center" {
+    // 中间
+    background-position:
+      left center,
+      top center,
+      right center,
+      bottom center !important;
+  } @else {
+    // 四个角
+    background-position:
+      left top,
+      left top,
+      right top,
+      right top,
+      left bottom,
+      left bottom,
+      right bottom,
+      right bottom !important;
+  }
+}

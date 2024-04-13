@@ -1,0 +1,29 @@
+:root {
+  --el-font-weight-primary: 400;
+  --el-border-radius-base: 2px;
+}
+
+// el-table
+.el-table {
+  .cell {
+    line-height: 14px;
+  }
+}
+
+// el-select
+// 去掉下拉列表选项高
+// <el-select popper-class="unset-item-height" />
+.unset-item-height {
+  .el-select-dropdown__item {
+    height: unset;
+    line-height: unset;
+    max-height: unset;
+  }
+}
+
+// el-dropdown
+.el-dropdown-menu,
+.el-dropdown-menu--small,
+.el-dropdown-menu--default {
+  padding: 0;
+}
