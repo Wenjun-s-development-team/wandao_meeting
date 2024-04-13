@@ -34,3 +34,44 @@ type FrameRate =
       max?: number | undefined
       min?: number | undefined
     }
+
+interface ConfigurableNavigator {
+  navigator?: Navigator
+}
+
+interface UseDisplayMediaOptions extends ConfigurableNavigator {
+  enabled?: MaybeRef<boolean>
+  video?: boolean | MediaTrackConstraints | undefined
+  audio?: boolean | MediaTrackConstraints | undefined
+}
+
+interface UseUserMediaOptions extends ConfigurableNavigator {
+  /**
+   * If the stream is enabled
+   * @default false
+   */
+  enabled?: MaybeRef<boolean>
+  /**
+   * Recreate stream when deviceIds or constraints changed
+   *
+   * @default true
+   */
+  autoSwitch?: MaybeRef<boolean>
+  /**
+   * MediaStreamConstraints to be applied to the requested MediaStream
+   * If provided, the constraints will override videoDeviceId and audioDeviceId
+   *
+   * @default {}
+   */
+  constraints?: MaybeRef<MediaStreamConstraints>
+}
+
+interface UseMediaOptions extends ConfigurableNavigator {
+  enabled?: MaybeRef<boolean>
+  autoSwitch?: MaybeRef<boolean>
+  useScreen?: boolean
+  useVideo?: boolean
+  useAudio?: boolean
+  videoInputDeviceId?: string
+  audioInputDeviceId?: string
+}

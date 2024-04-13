@@ -1,5 +1,5 @@
 <script setup>
-import { getAudioConstraints, getVideoConstraints } from '@/utils/webrtc'
+import { useMedia, getAudioConstraints, getVideoConstraints } from '@/utils/webrtc'
 import DeviceSelect from './components/DeviceSelect.vue'
 
 const videoRef = ref(null)
@@ -34,37 +34,17 @@ const {
   }
 })
 
-const trackConstraints = computed(() => {
-  return {
-    constraints: {
-      video: useVideo.value ? getVideoConstraints(videoInputDeviceId.value) : false,
-      audio: useAudio.value ? getAudioConstraints(audioInputDeviceId.value) : false
-    }
-  }
+const { stream, restart } = useMedia({
+  useVideo,
+  useAudio,
+  useScreen,
+  videoInputDeviceId,
+  audioInputDeviceId
 })
-
-const { stream, stop, start } = useUserMedia(trackConstraints.value)
 
 watchEffect(() => {
   if (videoRef.value) {
     videoRef.value.srcObject = stream.value
-  }
-})
-
-watch([videoInputDeviceId, audioInputDeviceId], () => {
-  stop()
-  start()
-})
-
-watch([useVideo, useAudio], () => {
-  if (stream.value) {
-    stream.value.getTracks().forEach((track) => {
-      if (track.kind === 'audio') {
-        track.enabled = useAudio.value
-      } else if (track.kind === 'video') {
-        track.enabled = useVideo.value
-      }
-    })
   }
 })
 </script>

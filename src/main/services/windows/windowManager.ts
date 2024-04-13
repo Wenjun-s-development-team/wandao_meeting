@@ -18,12 +18,10 @@ export function loadPage(win: BrowserWindow, url: string) {
 export class Window extends Service {
   window: BrowserWindow
   type: 'start' | 'main' | 'default' = 'default'
-  currentBaseURL: string
 
   constructor(win: BrowserWindow, type?: 'start' | 'main' | 'default') {
     super()
     this.window = win
-    this.currentBaseURL = ''
     this.type = type || 'default'
   }
 

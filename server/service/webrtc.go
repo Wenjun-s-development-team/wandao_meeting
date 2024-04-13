@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// SignalMessage 表示信令消息的结构
+// SignalMessage 信令消息结构
 type SignalMessage struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`
@@ -105,8 +105,7 @@ func handleOffer(roomID string, offer webrtc.SessionDescription) {
 
 // handleAnswer 处理answer信令消息
 func handleAnswer(roomID string, answer webrtc.SessionDescription) {
-	// 在这个示例中，我们假设只有一个连接需要接收answer，
-	// 在实际应用中，你需要根据信令协议确定哪个连接应该接收这个answer
+	// 假设只有一个连接需要接收answer
 	ws, ok := connections[roomID]
 	if !ok || ws == nil {
 		log.Printf("No connections or invalid connection for answer in room: %s", roomID)

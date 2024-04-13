@@ -1,4 +1,5 @@
 import * as windows from './windows'
+import * as system from './system'
 
 function errorMessage(message: string) {
   ElMessage({
@@ -42,5 +43,6 @@ export class Request {
 }
 
 export const IPCRequest = {
-  windows
+  windows,
+  system
 }

@@ -14,7 +14,6 @@ export class WindowService extends Service {
 
   start() {
     ipcMain.handle('windows', this.methodHandler.bind(this))
-    return this
   }
 
   methodHandler(event: IpcMainInvokeEvent, method: string, args: string) {

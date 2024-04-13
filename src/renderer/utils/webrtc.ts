@@ -1,3 +1,5 @@
+import { IPCRequest } from '@/api'
+
 /**
  * Stop tracks from stream
  * @param {object} stream
@@ -128,4 +130,124 @@ export function getAudioConstraints(deviceId: string): MediaTrackConstraints {
   }
   console.log('Audio constraints', constraints)
   return constraints
+}
+
+export function useMedia(options: UseMediaOptions = {}) {
+  const enabled = ref(options.enabled ?? false)
+  const autoSwitch = ref(options.autoSwitch ?? true)
+  const useScreen = ref(options.useScreen ?? false)
+  const useVideo = ref(options.useVideo ?? true)
+  const useAudio = ref(options.useAudio ?? true)
+  const videoInputDeviceId = ref(options.videoInputDeviceId ?? '')
+  const audioInputDeviceId = ref(options.audioInputDeviceId ?? '')
+
+  const isSupported = useSupported(() =>
+    useScreen.value
+      ? window.navigator?.mediaDevices?.getUserMedia
+      : window.navigator?.mediaDevices?.getDisplayMedia
+  )
+
+  const stream: Ref<MediaStream | undefined> = shallowRef()
+
+  function getDeviceOptions(type: 'video' | 'audio') {
+    switch (type) {
+      case 'video': {
+        if (videoInputDeviceId.value && useVideo.value)
+          return getVideoConstraints(videoInputDeviceId.value) || false
+        break
+      }
+      case 'audio': {
+        if (audioInputDeviceId.value && useAudio.value)
+          return getAudioConstraints(audioInputDeviceId.value) || false
+        break
+      }
+    }
+    return false
+  }
+
+  async function _start() {
+    if (!isSupported.value) return
+    if (useScreen.value) {
+      const { data } = await IPCRequest.system.getSources()
+      console.log('getSources', data)
+      stream.value = await navigator.mediaDevices.getUserMedia({
+        audio: getDeviceOptions('video'),
+        video: {
+          // @ts-ignore
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: data[0].id
+          }
+        }
+      })
+      // stream.value = await window.navigator!.mediaDevices.getDisplayMedia({
+      //   video: getDeviceOptions('video'),
+      //   audio: getDeviceOptions('audio')
+      // })
+    } else {
+      stream.value = await window.navigator!.mediaDevices.getUserMedia({
+        video: getDeviceOptions('video'),
+        audio: getDeviceOptions('audio')
+      })
+    }
+
+    return stream.value
+  }
+
+  function _stop() {
+    stream.value?.getTracks().forEach((t) => t.stop())
+    stream.value = undefined
+  }
+
+  function stop() {
+    _stop()
+    enabled.value = false
+  }
+
+  async function start() {
+    await _start()
+    if (stream.value) enabled.value = true
+    return stream.value
+  }
+
+  async function restart() {
+    _stop()
+    return await start()
+  }
+
+  // 监听 屏幕共享、设备切换 - 需要重新创建 stream
+  watch(
+    [useScreen, videoInputDeviceId, audioInputDeviceId],
+    () => {
+      if (autoSwitch.value) restart()
+    },
+    { immediate: true }
+  )
+
+  // 监听 音频视频 启用/禁用 - 不需要重新创建 stream
+  watch([useVideo, useAudio], () => {
+    if (stream.value) {
+      stream.value.getTracks().forEach((track) => {
+        if (track.kind === 'video') {
+          track.enabled = useVideo.value
+        } else if (track.kind === 'audio') {
+          track.enabled = useAudio.value
+        }
+      })
+    }
+  })
+
+  tryOnScopeDispose(() => {
+    stop()
+  })
+
+  return {
+    isSupported,
+    stream,
+    start,
+    stop,
+    restart,
+    enabled,
+    autoSwitch
+  }
 }

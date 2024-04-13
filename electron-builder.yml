@@ -40,6 +40,7 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
     - NSHighResolutionCapable: Electron overriding High DPI support on macOS with SDL
+    - NSCameraUseContinuityCameraDeviceType: Application requests access to the device's camera.
     - CFBundleURLSchemes: protocol
   notarize: false
 dmg:

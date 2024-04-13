@@ -5,11 +5,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer
 const ipcInvoke = {
   clipboard,
-  // 用于与主进程进行数据相关通信
-  dataRequest: (dataSourceName: string, method: string, args: any) =>
-    ipcRenderer.invoke('data:request', dataSourceName, method, args),
   windows: (method: string, args: string) => ipcRenderer.invoke('windows', method, args),
-  system: (args: string) => ipcRenderer.invoke('system', args),
+  system: (method: string, args: string) => ipcRenderer.invoke('system', method, args),
   event: (callback: (event: Electron.IpcRendererEvent, type: string, args: string) => void) =>
     ipcRenderer.on('event', callback)
 }
