@@ -1,9 +1,37 @@
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 1s ease-in;
 }
 
-.fade-enter,
-.fade-leave-to {
+.v-enter-from,
+.v-leave-to {
   opacity: 0;
+}
+
+.fadeTopIn-enter-active,
+.fadeTopIn-leave-active {
+  transition:
+    opacity 1s,
+    transform 0.5s ease-in;
+  transform: translateY(0);
+}
+
+.fadeTopIn-enter-from,
+.fadeTopIn-leave-to {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.fadeLeftIn-enter-active,
+.fadeLeftIn-leave-active {
+  transition:
+    opacity 1s,
+    transform 0.5s ease-in;
+  transform: translateX(0);
+}
+
+.fadeLeftIn-enter-from,
+.fadeLeftIn-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
 }

@@ -1,19 +1,22 @@
+import process from 'node:process'
 import { desktopCapturer, ipcMain, systemPreferences } from 'electron'
 import { Service } from './service'
 
 async function applyDeviceAccessPrivilege() {
-  const cameraPrivilege = systemPreferences.getMediaAccessStatus('camera')
-  console.log(`相机访问特权: ${cameraPrivilege}`)
-  if (cameraPrivilege !== 'granted') {
-    await systemPreferences.askForMediaAccess('camera')
+  if (process.platform === 'darwin') {
+    const cameraPrivilege = systemPreferences.getMediaAccessStatus('camera')
+    console.log(`相机访问特权: ${cameraPrivilege}`)
+    if (cameraPrivilege !== 'granted') {
+      await systemPreferences.askForMediaAccess('camera')
+    }
+    const microphonePrivilege = systemPreferences.getMediaAccessStatus('microphone')
+    console.log(`麦克风访问特权: ${microphonePrivilege}`)
+    if (microphonePrivilege !== 'granted') {
+      await systemPreferences.askForMediaAccess('microphone')
+    }
+    const screenPrivilege = systemPreferences.getMediaAccessStatus('screen')
+    console.log(`屏幕访问特权: ${screenPrivilege}`)
   }
-  const microphonePrivilege = systemPreferences.getMediaAccessStatus('microphone')
-  console.log(`麦克风访问特权: ${microphonePrivilege}`)
-  if (microphonePrivilege !== 'granted') {
-    await systemPreferences.askForMediaAccess('microphone')
-  }
-  const screenPrivilege = systemPreferences.getMediaAccessStatus('screen')
-  console.log(`屏幕访问特权: ${screenPrivilege}`)
 }
 
 export class SystemService extends Service {

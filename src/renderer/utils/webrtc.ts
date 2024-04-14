@@ -1,4 +1,4 @@
-import { getAudioConstraints, getVideoConstraints } from './media'
+import { getAudioConstraints, getVideoConstraints, platform } from '@/utils'
 
 export function useClientMedia(options: UseMediaOptions = {}) {
   const enabled = ref(options.enabled ?? false)
@@ -39,7 +39,7 @@ export function useClientMedia(options: UseMediaOptions = {}) {
     }
     if (useScreen.value && screenId.value) {
       stream.value = await window.navigator.mediaDevices.getUserMedia({
-        audio: false,
+        audio: platform !== 'darwin' ? getAudioConstraints(audioInputDeviceId.value) : false,
         video: {
           // eslint-disable-next-line ts/ban-ts-comment
           // @ts-expect-error

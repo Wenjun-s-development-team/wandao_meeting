@@ -16,21 +16,27 @@ export const constantRoutes = [
         path: '/start',
         name: 'start',
         component: () => import('@/views/start/index.vue'),
-        meta: { title: '开始' }
+        meta: { title: '开始' },
+      },
+      {
+        path: '/join',
+        name: 'join',
+        component: () => import('@/views/join/index.vue'),
+        meta: { title: '连接' },
       },
       {
         path: '/room',
         name: 'room',
         component: () => import('@/views/room/index.vue'),
-        meta: { title: '房间' }
-      }
-    ]
-  }
+        meta: { title: '房间' },
+      },
+    ],
+  },
 ]
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes: constantRoutes
+  routes: constantRoutes,
 })
 
 router.beforeEach(async () => {

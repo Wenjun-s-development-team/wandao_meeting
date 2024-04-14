@@ -42,6 +42,9 @@ mac:
     - NSHighResolutionCapable: Electron overriding High DPI support on macOS with SDL
     - NSCameraUseContinuityCameraDeviceType: Application requests access to the device's camera.
     - CFBundleURLSchemes: protocol
+  extraFiles:
+    - from: node_modules/trtc-electron-sdk/build/Release/trtc_electron_sdk.node
+    - to: ./resources
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}

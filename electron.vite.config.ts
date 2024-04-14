@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import path from 'node:path'
 import { bytecodePlugin, defineConfig, externalizeDepsPlugin, swcPlugin } from 'electron-vite'
 import Vue from '@vitejs/plugin-vue'
 
@@ -37,7 +37,7 @@ export default defineConfig({
     },
     resolve: {
       alias: {
-        '@': resolve('src/renderer'),
+        '@': path.resolve('src/renderer'),
       },
     },
     css: {

@@ -22,7 +22,7 @@ function joinRoom(value) {
   roomId.value = value || roomId.value
   if (roomId.value) {
     lastRoomId.value = roomId.value
-    router.push({ path: '/room', query: { roomId: roomId.value } })
+    router.push({ path: '/join', query: { roomId: roomId.value } })
   } else {
     ElMessage.error({
       grouping: true,
