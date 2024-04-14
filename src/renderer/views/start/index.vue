@@ -1,22 +1,33 @@
 <script setup>
+import { useRouter } from 'vue-router'
 import { getRandomNumber } from '@/utils'
+
 const router = useRouter()
 
-const lastRoomId = useLocalStorage('lastRoomId', null)
+const webrtcStore = useLocalStorage('webrtcStore', {
+  lastRoomId: '',
+  useMirror: false,
+  useScreen: false,
+  useVideo: true,
+  useAudio: true,
+})
+
+const { lastRoomId } = toRefs(webrtcStore.value)
 const roomId = ref('')
 
-function genRoom(value) {
-  roomId.value = value || getRandomNumber(6)
+function genRoom() {
+  roomId.value = getRandomNumber(6)
 }
 
-function joinRoom() {
+function joinRoom(value) {
+  roomId.value = value || roomId.value
   if (roomId.value) {
     lastRoomId.value = roomId.value
     router.push({ path: '/room', query: { roomId: roomId.value } })
   } else {
     ElMessage.error({
       grouping: true,
-      message: '请输入房间号'
+      message: '请输入房间号',
     })
   }
 }
@@ -27,7 +38,7 @@ function joinRoom() {
     <section class="cta-container">
       <section class="cta-summary reveal">
         <h1>
-          基于浏览器的免费实时视频通话.<br />
+          基于浏览器的免费实时视频通话.<br>
           简单、安全、快速.
         </h1>
         <p>单击即可开始下一次视频通话。不需要下载、插件或登录。直接开始聊天、发信息和共享屏幕。</p>
@@ -35,27 +46,28 @@ function joinRoom() {
       <section class="cta-room reveal">
         <div class="cta-slogan">
           <h3>
-            选择房间名称。<br />
+            选择房间名称。<br>
             这个怎么样？
           </h3>
         </div>
         <div class="cta-action">
           <div class="form-group">
-            <input class="form-input" v-model="roomId" />
+            <input v-model="roomId" class="form-input">
             <button class="button" @click="genRoom()">
               <i class="i-fa6-solid-arrows-rotate" />
             </button>
             <button class="button" @click="joinRoom()">进入房间</button>
           </div>
-          <div class="last" v-if="lastRoomId">
+          <div v-if="lastRoomId" class="last">
             <span>您最近的房间: </span>
-            <a @click="genRoom(lastRoomId)">{{ lastRoomId }}</a>
+            <a @click="joinRoom(lastRoomId)">{{ lastRoomId }}</a>
           </div>
         </div>
       </section>
     </section>
   </section>
 </template>
+
 <style lang="scss" scoped>
 .start-page {
   color: #fff;

@@ -16,20 +16,16 @@ export class WindowService extends Service {
     ipcMain.handle('windows', this.methodHandler.bind(this))
   }
 
-  methodHandler(event: IpcMainInvokeEvent, method: string, args: string) {
-    console.log('methodHandler', method, args)
-    if (typeof this[method] === 'function') {
-      args = JSON.parse(args)
-      return this[method](event, args)
-    }
-    const message = `${method} does not exist on the instance`
-    console.log(message)
-    return this.error(message)
-  }
-
   // 打开新开始界面
   openStartWindow() {
     return this.windowManager.openStartWindow()
+  }
+
+  // 打开开发者工具
+  openDevTools(event: IpcMainInvokeEvent, args: KeyValue) {
+    const win = this.windowManager.getWindow(event.sender.id)?.window
+    win?.webContents.openDevTools({ mode: args.mode || 'bottom' })
+    return this.success()
   }
 
   // 关闭窗口

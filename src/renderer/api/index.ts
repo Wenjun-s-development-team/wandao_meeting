@@ -7,7 +7,7 @@ function errorMessage(message: string) {
     duration: 3000,
     grouping: true,
     message,
-    dangerouslyUseHTMLString: true
+    dangerouslyUseHTMLString: true,
   })
 }
 
@@ -19,16 +19,15 @@ export class Request {
    * @param {string} module 模块名
    * @param {string} method 接口名
    * @param {*} [data] 请求参数
-   * @return {*}  {Promise<IIpc.DataResponse>}
+   * @return {*}  {Promise<DataResponse>}
    * @memberof Request
    */
   static request(module: string, method: string, data: KeyValue = {}): Promise<DataResponse> {
     // console.log('dataRequest', dataSourceName, method, data)
 
     return new Promise(async (resolve, reject) => {
-      let response: any
       data = data || {}
-      response = await window.ipcInvoke[module](method, JSON.stringify(data))
+      const response = await window.ipcInvoke[module](method, JSON.stringify(data))
 
       if (response.code) {
         errorMessage(response.msg)
@@ -44,5 +43,5 @@ export class Request {
 
 export const IPCRequest = {
   windows,
-  system
+  system,
 }

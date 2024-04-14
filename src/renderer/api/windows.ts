@@ -28,3 +28,16 @@ export function minimize(): Promise<DataResponse> {
 export function maximize(): Promise<DataResponse> {
   return Request.request('windows', 'maximizeWindow')
 }
+
+/**
+ * 打开开发者工具
+ *
+ * @export
+ * @param {({ mode: 'bottom' | 'left' | 'right' | 'undocked' | 'detach' })} [data]
+ * @return {*}  {Promise<DataResponse>}
+ */
+export function openDevTools(
+  data: { mode: 'bottom' | 'left' | 'right' | 'undocked' | 'detach' } = { mode: 'bottom' },
+): Promise<DataResponse> {
+  return Request.request('windows', 'openDevTools', data)
+}

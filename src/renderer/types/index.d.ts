@@ -20,7 +20,7 @@ interface ReadonlyJSONArray extends ReadonlyArray<ReadonlyJSONValue> {}
 
 type ReadonlyJSONValue = JSONPrimitive | ReadonlyJSONObject | ReadonlyJSONArray
 
-interface DataResponse {
+interface DataResponse extends KeyValue {
   code: number
   msg: string
   data: any
@@ -29,44 +29,13 @@ interface DataResponse {
 type FrameRate =
   | number
   | {
-      exact?: number | undefined
-      ideal?: number | undefined
-      max?: number | undefined
-      min?: number | undefined
-    }
+    exact?: number | undefined
+    ideal?: number | undefined
+    max?: number | undefined
+    min?: number | undefined
+  }
 
-interface ConfigurableNavigator {
-  navigator?: Navigator
-}
-
-interface UseDisplayMediaOptions extends ConfigurableNavigator {
-  enabled?: MaybeRef<boolean>
-  video?: boolean | MediaTrackConstraints | undefined
-  audio?: boolean | MediaTrackConstraints | undefined
-}
-
-interface UseUserMediaOptions extends ConfigurableNavigator {
-  /**
-   * If the stream is enabled
-   * @default false
-   */
-  enabled?: MaybeRef<boolean>
-  /**
-   * Recreate stream when deviceIds or constraints changed
-   *
-   * @default true
-   */
-  autoSwitch?: MaybeRef<boolean>
-  /**
-   * MediaStreamConstraints to be applied to the requested MediaStream
-   * If provided, the constraints will override videoDeviceId and audioDeviceId
-   *
-   * @default {}
-   */
-  constraints?: MaybeRef<MediaStreamConstraints>
-}
-
-interface UseMediaOptions extends ConfigurableNavigator {
+interface UseMediaOptions {
   enabled?: MaybeRef<boolean>
   autoSwitch?: MaybeRef<boolean>
   useScreen?: boolean

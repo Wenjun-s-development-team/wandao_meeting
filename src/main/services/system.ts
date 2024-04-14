@@ -1,20 +1,19 @@
+import { desktopCapturer, ipcMain, systemPreferences } from 'electron'
 import { Service } from './service'
-import { ipcMain, desktopCapturer, systemPreferences } from 'electron'
-import type { IpcMainInvokeEvent } from 'electron'
 
-async function checkAndApplyDeviceAccessPrivilege() {
+async function applyDeviceAccessPrivilege() {
   const cameraPrivilege = systemPreferences.getMediaAccessStatus('camera')
-  console.log(`checkAndApplyDeviceAccessPrivilege before apply cameraPrivilege: ${cameraPrivilege}`)
+  console.log(`相机访问特权: ${cameraPrivilege}`)
   if (cameraPrivilege !== 'granted') {
     await systemPreferences.askForMediaAccess('camera')
   }
-  const micPrivilege = systemPreferences.getMediaAccessStatus('microphone')
-  console.log(`checkAndApplyDeviceAccessPrivilege before apply micPrivilege: ${micPrivilege}`)
-  if (micPrivilege !== 'granted') {
+  const microphonePrivilege = systemPreferences.getMediaAccessStatus('microphone')
+  console.log(`麦克风访问特权: ${microphonePrivilege}`)
+  if (microphonePrivilege !== 'granted') {
     await systemPreferences.askForMediaAccess('microphone')
   }
   const screenPrivilege = systemPreferences.getMediaAccessStatus('screen')
-  console.log(`checkAndApplyDeviceAccessPrivilege before apply screenPrivilege: ${screenPrivilege}`)
+  console.log(`屏幕访问特权: ${screenPrivilege}`)
 }
 
 export class SystemService extends Service {
@@ -25,23 +24,12 @@ export class SystemService extends Service {
 
   start() {
     ipcMain.handle('system', this.methodHandler.bind(this))
-    checkAndApplyDeviceAccessPrivilege()
-  }
-
-  methodHandler(event: IpcMainInvokeEvent, method: string, args: string) {
-    console.log('methodHandler', method, args)
-    if (typeof this[method] === 'function') {
-      args = JSON.parse(args)
-      return this[method](event, args)
-    }
-    const message = `${method} does not exist on the instance`
-    console.log(message)
-    return this.error(message)
   }
 
   async getSources() {
+    await applyDeviceAccessPrivilege()
     const sources = await desktopCapturer.getSources({ types: ['screen', 'window'] })
-    return this.success({ data: sources })
+    return this.success({ sources })
   }
 }
 

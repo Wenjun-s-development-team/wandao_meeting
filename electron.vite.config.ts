@@ -17,12 +17,12 @@ export default defineConfig({
       swcPlugin(),
       externalizeDepsPlugin(),
       bytecodePlugin({
-        protectedStrings: ['zAvl76MWpBDNL1FL']
-      })
-    ]
+        protectedStrings: ['zAvl76MWpBDNL1FL'],
+      }),
+    ],
   },
   preload: {
-    plugins: [externalizeDepsPlugin(), bytecodePlugin()]
+    plugins: [externalizeDepsPlugin(), bytecodePlugin()],
   },
   renderer: {
     build: {
@@ -33,41 +33,41 @@ export default defineConfig({
       // 是否提取 CSS 到单独的文件中
       cssCodeSplit: true,
       // 是否开启 CSS 压缩
-      cssMinify: true
+      cssMinify: true,
     },
     resolve: {
       alias: {
-        '@': resolve('src/renderer')
-      }
+        '@': resolve('src/renderer'),
+      },
     },
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@use "@/styles/element/index.scss" as *;`
-        }
-      }
+          additionalData: `@use "@/styles/element/index.scss" as *;`,
+        },
+      },
     },
     plugins: [
       Vue({
-        include: [/\.vue$/, /\.md$/]
+        include: [/\.vue$/, /\.md$/],
       }),
       AutoImport({
         dts: true,
         vueTemplate: true,
         // 自动导入 Vue 相关函数，如：ref, reactive, toRef 等
-        imports: ['vue', 'vue-router', '@vueuse/core'],
+        imports: ['vue', '@vueuse/core'],
         // imports: ['vue', 'vue-router', 'pinia', '@vueuse/core'],
         eslintrc: {
           enabled: false, // 是否自动生成 eslint 规则，建议生成之后设置 false，手动维护
           filepath: './.eslintrc-auto-import.json', // 指定自动导入函数 eslint 规则的文件路径
-          globalsPropValue: true
+          globalsPropValue: true,
         },
         resolvers: [
           // 自动导入 Element Plus 相关函数，如：ElMessage, ElMessageBox... (带样式)
           ElementPlusResolver({
-            importStyle: 'sass'
-          })
-        ]
+            importStyle: 'sass',
+          }),
+        ],
       }),
       Components({
         dts: true,
@@ -81,18 +81,18 @@ export default defineConfig({
         include: [/\.vue$/, /\.vue\?vue/, /\.md$/],
         resolvers: [
           ElementPlusResolver({
-            importStyle: 'sass'
+            importStyle: 'sass',
           }),
           // 自动导入图标组件
           IconsResolver({
-            enabledCollections: ['fa6-solid']
-          })
-        ]
+            enabledCollections: ['fa6-solid'],
+          }),
+        ],
       }),
       Unocss(),
       Icons({
-        autoInstall: true
-      })
-    ]
-  }
+        autoInstall: true,
+      }),
+    ],
+  },
 })

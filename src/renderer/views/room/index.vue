@@ -1,45 +1,49 @@
 <script setup>
-import { useMedia, getAudioConstraints, getVideoConstraints } from '@/utils/webrtc'
+import { useRouter } from 'vue-router'
 import DeviceSelect from './components/DeviceSelect.vue'
+import { useClientMedia } from '@/utils/webrtc'
+import { IPCRequest } from '@/api'
+
+const router = useRouter()
 
 const videoRef = ref(null)
 const videoInputDeviceId = ref('')
 const audioInputDeviceId = ref('')
 const audioOutputDeviceId = ref('')
 
-const useScreen = ref(false)
-const useMirror = ref(false)
-const useVideo = ref(true)
-const useAudio = ref(true)
+const webrtcStore = useLocalStorage('webrtcStore', {})
+const { useMirror, useScreen, useVideo, useAudio } = toRefs(webrtcStore.value)
 
 // 每秒帧数
-const videoFps = reactive([5, 15, 30, 60])
+// const videoFps = reactive([5, 15, 30, 60])
+
+// const { data } = await IPCRequest.system.getSources()
 
 const {
   videoInputs: videoInputDevices,
   audioInputs: audioInputDevices,
-  audioOutputs: audioOutputDevices
+  audioOutputs: audioOutputDevices,
 } = useDevicesList({
   requestPermissions: true,
   onUpdated() {
-    if (!videoInputDevices.value.find((i) => i.deviceId === videoInputDeviceId.value)) {
+    if (!videoInputDevices.value.find(i => i.deviceId === videoInputDeviceId.value)) {
       videoInputDeviceId.value = videoInputDevices.value[0]?.deviceId
     }
-    if (!audioInputDevices.value.find((i) => i.deviceId === audioInputDeviceId.value)) {
+    if (!audioInputDevices.value.find(i => i.deviceId === audioInputDeviceId.value)) {
       audioInputDeviceId.value = audioInputDevices.value[0]?.deviceId
     }
-    if (!audioOutputDevices.value.find((i) => i.deviceId === audioOutputDeviceId.value)) {
+    if (!audioOutputDevices.value.find(i => i.deviceId === audioOutputDeviceId.value)) {
       audioOutputDeviceId.value = audioOutputDevices.value[0]?.deviceId
     }
-  }
+  },
 })
 
-const { stream, restart } = useMedia({
+const { stream } = useClientMedia({
   useVideo,
   useAudio,
   useScreen,
   videoInputDeviceId,
-  audioInputDeviceId
+  audioInputDeviceId,
 })
 
 watchEffect(() => {
@@ -47,11 +51,17 @@ watchEffect(() => {
     videoRef.value.srcObject = stream.value
   }
 })
+
+IPCRequest.windows.openDevTools()
 </script>
+
 <template>
   <div class="room-page">
     <div class="swal2-popup">
-      <h2 class="swal2-title">Meeting P2P</h2>
+      <h2 class="swal2-title">
+        <span>Meeting P2P</span>
+        <button class="swal2-close" @click="router.back()"><i class="i-fa6-solid-xmark" /></button>
+      </h2>
       <div class="swal2-html-container">
         <div class="swal2-video-container">
           <video
@@ -61,7 +71,7 @@ watchEffect(() => {
             autoplay
             playsinline="true"
             poster="../../assets/images/loader.gif"
-          ></video>
+          />
         </div>
         <div class="swal2-comands">
           <div class="buttons">
@@ -84,33 +94,34 @@ watchEffect(() => {
           <div>
             <DeviceSelect
               v-model="videoInputDeviceId"
-              :options="videoInputDevices"
+              :devices="videoInputDevices"
               :disabled="!useVideo"
             />
           </div>
           <div>
             <DeviceSelect
               v-model="audioInputDeviceId"
-              :options="audioInputDevices"
+              :devices="audioInputDevices"
               :disabled="!useAudio"
             />
           </div>
           <div>
             <DeviceSelect
               v-model="audioOutputDeviceId"
-              :options="audioOutputDevices"
+              :devices="audioOutputDevices"
               :disabled="!useAudio"
             />
           </div>
         </div>
       </div>
-      <input class="swal2-input" maxlength="32" placeholder="请输入您的名称" />
+      <input class="swal2-input" maxlength="32" placeholder="请输入您的名称">
       <div class="swal2-actions">
         <button class="swal2-confirm">进 入 会 议</button>
       </div>
     </div>
   </div>
 </template>
+
 <style lang="scss" scoped>
 .room-page {
   width: 100%;
@@ -139,6 +150,16 @@ watchEffect(() => {
       font-size: 1.875em;
       font-weight: 600;
       text-align: center;
+      position: relative;
+      .swal2-close {
+        color: rgba(255, 255, 255, 0.6);
+        right: 25px;
+        font-size: 20px;
+        position: absolute;
+        &:hover {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
     }
     .swal2-html-container {
       display: flex;
@@ -214,6 +235,7 @@ watchEffect(() => {
       align-items: center;
       justify-content: center;
       margin: 1.25em 0;
+      position: relative;
       .swal2-confirm {
         color: #fff;
         font-size: 1.2em;

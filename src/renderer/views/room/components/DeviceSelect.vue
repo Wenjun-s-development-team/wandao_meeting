@@ -1,14 +1,16 @@
 <script setup>
 import DeviceOption from './DeviceOption.vue'
 
+const props = defineProps(['devices', 'disabled'])
 const model = defineModel()
-const props = defineProps(['options', 'disabled'])
+
+const { devices, disabled } = toRefs(props)
 </script>
 
 <template>
-  <el-select class="select-device" v-model="model" :disabled="disabled">
+  <el-select v-model="model" class="select-device" :disabled="disabled">
     <el-option
-      v-for="device in options"
+      v-for="device in devices"
       :key="device.deviceId"
       :value="device.deviceId"
       :label="device.label"
