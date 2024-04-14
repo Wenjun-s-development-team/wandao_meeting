@@ -28,7 +28,11 @@ export class SystemService extends Service {
 
   async getSources() {
     await applyDeviceAccessPrivilege()
-    const sources = await desktopCapturer.getSources({ types: ['screen', 'window'] })
+    const sources = await desktopCapturer.getSources({
+      types: ['screen', 'window'],
+      fetchWindowIcons: true,
+      thumbnailSize: { width: 1024, height: 1024 },
+    })
     return this.success({ sources })
   }
 }

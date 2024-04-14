@@ -1,9 +1,9 @@
 import { getAudioConstraints, getVideoConstraints } from './media'
-import { IPCRequest } from '@/api'
 
 export function useClientMedia(options: UseMediaOptions = {}) {
   const enabled = ref(options.enabled ?? false)
   const autoSwitch = ref(options.autoSwitch ?? true)
+  const screenId = ref(options.screenId ?? '')
   const useScreen = ref(options.useScreen ?? false)
   const useVideo = ref(options.useVideo ?? true)
   const useAudio = ref(options.useAudio ?? true)
@@ -37,8 +37,7 @@ export function useClientMedia(options: UseMediaOptions = {}) {
     if (!isSupported.value) {
       return
     }
-    if (useScreen.value) {
-      const { sources } = await IPCRequest.system.getSources()
+    if (useScreen.value && screenId.value) {
       stream.value = await window.navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
@@ -46,7 +45,7 @@ export function useClientMedia(options: UseMediaOptions = {}) {
           // @ts-expect-error
           mandatory: {
             chromeMediaSource: 'desktop',
-            chromeMediaSourceId: sources[0].id,
+            chromeMediaSourceId: screenId.value,
           },
         },
       })

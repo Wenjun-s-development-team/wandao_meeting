@@ -41,6 +41,7 @@ interface UseMediaOptions {
   useScreen?: boolean
   useVideo?: boolean
   useAudio?: boolean
+  screenId?: string
   videoInputDeviceId?: string
   audioInputDeviceId?: string
 }

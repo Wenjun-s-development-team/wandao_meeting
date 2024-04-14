@@ -1,6 +1,10 @@
 <script setup>
 import DeviceOption from './DeviceOption.vue'
 
+defineOptions({
+  name: 'DeviceSelect',
+})
+
 const props = defineProps(['devices', 'disabled'])
 const model = defineModel()
 

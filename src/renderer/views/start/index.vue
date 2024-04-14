@@ -7,7 +7,6 @@ const router = useRouter()
 const webrtcStore = useLocalStorage('webrtcStore', {
   lastRoomId: '',
   useMirror: false,
-  useScreen: false,
   useVideo: true,
   useAudio: true,
 })

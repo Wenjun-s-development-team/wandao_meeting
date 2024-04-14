@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import DeviceSelect from './components/DeviceSelect.vue'
+import ScreenSources from './components/ScreenSources.vue'
 import { useClientMedia } from '@/utils/webrtc'
 import { IPCRequest } from '@/api'
 
@@ -11,13 +12,14 @@ const videoInputDeviceId = ref('')
 const audioInputDeviceId = ref('')
 const audioOutputDeviceId = ref('')
 
+const screenId = ref('')
+const useScreen = ref(false)
+
 const webrtcStore = useLocalStorage('webrtcStore', {})
-const { useMirror, useScreen, useVideo, useAudio } = toRefs(webrtcStore.value)
+const { useMirror, useVideo, useAudio } = toRefs(webrtcStore.value)
 
 // 每秒帧数
 // const videoFps = reactive([5, 15, 30, 60])
-
-// const { data } = await IPCRequest.system.getSources()
 
 const {
   videoInputs: videoInputDevices,
@@ -42,6 +44,7 @@ const { stream } = useClientMedia({
   useVideo,
   useAudio,
   useScreen,
+  screenId,
   videoInputDeviceId,
   audioInputDeviceId,
 })
@@ -73,7 +76,7 @@ IPCRequest.windows.openDevTools()
             poster="../../assets/images/loader.gif"
           />
         </div>
-        <div class="swal2-comands">
+        <div class="swal2-actions">
           <div class="buttons">
             <button @click="useVideo = !useVideo">
               <i v-if="useVideo" class="i-fa6-solid-video" />
@@ -83,39 +86,30 @@ IPCRequest.windows.openDevTools()
               <i v-if="useAudio" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <button @click="useScreen = !useScreen">
-              <i v-if="!useScreen" class="i-fa6-solid-desktop" />
-              <i v-else class="i-fa6-solid-circle-stop" />
-            </button>
+            <ScreenSources v-model="screenId" v-model:useScreen="useScreen" />
             <button @click="useMirror = !useMirror">
-              <i class="i-fa6-solid-arrow-right-arrow-left" />
+              <i class="i-fa6-solid-arrow-right-arrow-left" :class="{ 'color-green': useMirror }" />
             </button>
           </div>
-          <div>
-            <DeviceSelect
-              v-model="videoInputDeviceId"
-              :devices="videoInputDevices"
-              :disabled="!useVideo"
-            />
-          </div>
-          <div>
-            <DeviceSelect
-              v-model="audioInputDeviceId"
-              :devices="audioInputDevices"
-              :disabled="!useAudio"
-            />
-          </div>
-          <div>
-            <DeviceSelect
-              v-model="audioOutputDeviceId"
-              :devices="audioOutputDevices"
-              :disabled="!useAudio"
-            />
-          </div>
+          <DeviceSelect
+            v-model="videoInputDeviceId"
+            :devices="videoInputDevices"
+            :disabled="!useVideo"
+          />
+          <DeviceSelect
+            v-model="audioInputDeviceId"
+            :devices="audioInputDevices"
+            :disabled="!useAudio"
+          />
+          <DeviceSelect
+            v-model="audioOutputDeviceId"
+            :devices="audioOutputDevices"
+            :disabled="!useAudio"
+          />
         </div>
       </div>
       <input class="swal2-input" maxlength="32" placeholder="请输入您的名称">
-      <div class="swal2-actions">
+      <div class="swal2-footer">
         <button class="swal2-confirm">进 入 会 议</button>
       </div>
     </div>
@@ -136,6 +130,7 @@ IPCRequest.windows.openDevTools()
   .swal2-popup {
     display: grid;
     width: 1024px !important;
+    position: relative;
     color: #fff;
     grid-column: 2;
     grid-row: 2;
@@ -179,14 +174,15 @@ IPCRequest.windows.openDevTools()
           position: relative;
           object-fit: contain;
           transform-origin: center center;
+          transform: rotateY(180deg);
           transition: transform 0.3s ease-in-out;
           &.mirror {
-            transform: rotateY(180deg);
+            transform: rotateY(0deg);
           }
         }
       }
 
-      .swal2-comands {
+      .swal2-actions {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -195,7 +191,7 @@ IPCRequest.windows.openDevTools()
           display: flex;
           gap: 5px;
           padding: 15px 0;
-          button {
+          :deep(button) {
             width: 50px;
             display: flex;
             align-items: center;
@@ -230,7 +226,7 @@ IPCRequest.windows.openDevTools()
         0 0 0 3px transparent;
       background: inherit;
     }
-    .swal2-actions {
+    .swal2-footer {
       display: flex;
       align-items: center;
       justify-content: center;

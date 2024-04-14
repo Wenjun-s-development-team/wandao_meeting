@@ -1,4 +1,8 @@
 <script setup>
+defineOptions({
+  name: 'DeviceOption',
+})
+
 const props = defineProps(['device'])
 const { device } = toRefs(props)
 </script>
