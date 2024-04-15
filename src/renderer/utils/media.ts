@@ -126,3 +126,30 @@ export function getAudioConstraints(deviceId: string): boolean | MediaTrackConst
   console.log('Audio constraints', constraints)
   return constraints
 }
+
+export async function playSound(name: string) {
+  const sound = `../assets/sounds/${name}.mp3`
+  const audio = new Audio(sound)
+  try {
+    audio.volume = 0.5
+    await audio.play()
+  } catch (err) {
+    // console.error("Cannot play sound", err);
+  }
+}
+
+export function hasAudioTrack(mediaStream: MediaStream) {
+  if (!mediaStream) {
+    return false
+  }
+  const audioTracks = mediaStream.getAudioTracks()
+  return audioTracks.length > 0
+}
+
+export function hasVideoTrack(mediaStream: MediaStream) {
+  if (!mediaStream) {
+    return false
+  }
+  const videoTracks = mediaStream.getVideoTracks()
+  return videoTracks.length > 0
+}

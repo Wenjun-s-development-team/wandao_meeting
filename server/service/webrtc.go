@@ -1,158 +1,57 @@
 package service
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
-	"github.com/pion/webrtc/v3"
+	socketio "github.com/googollee/go-socket.io"
 	"log"
-	"net/http"
-)
-
-// SignalMessage 信令消息结构
-type SignalMessage struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
-}
-
-var (
-	upgrader = websocket.Upgrader{
-		// 升级协议 允许跨域
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-	// 全局的WebSocket连接映射，用于跟踪哪些用户连接到了哪个房间
-	connections = make(map[string]*websocket.Conn)
 )
 
 func WebRTC(c *gin.Context) {
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		log.Println("Error upgrading to websocket:", err)
-		return
-	}
+	server := socketio.NewServer(nil)
 
-	defer func() {
-		if err := ws.Close(); err != nil {
-			log.Println(err.Error())
+	server.ServeHTTP(c.Writer, c.Request)
+
+	// 处理连接事件
+	server.OnConnect("/", func(so socketio.Conn) error {
+		fmt.Println("Client connected:", so.ID())
+		// 将客户端加入房间
+		so.Join("roomName")
+		so.Emit("connect")
+		return nil
+	})
+
+	// 处理断开连接事件
+	server.OnDisconnect("/", func(so socketio.Conn, reason string) {
+		fmt.Println("Client disconnected:", so.ID(), "Reason:", reason)
+		// 客户端断开连接时将其从房间中移除
+		so.Leave("roomName")
+	})
+
+	// 处理错误事件
+	server.OnError("/", func(so socketio.Conn, err error) {
+		log.Println("meet error:", err)
+	})
+
+	// 处理客户端发来的信令消息
+	server.OnEvent("/", "peer-signal", func(so socketio.Conn, msg string) {
+		fmt.Printf("Received peer signal from client %s: %s\n", so.ID(), msg)
+		// 处理信令消息，比如广播给其他客户端或者保存到数据库中
+
+		// 发送响应或广播给所有客户端
+		server.BroadcastToRoom("roomName", "peer-signal-response", msg)
+	})
+
+	go func() {
+		if err := server.Serve(); err != nil {
+			log.Fatalf("socketio listen error: %s\n", err)
 		}
 	}()
 
-	// TODO: 验证用户的身份，并分配到特定的房间
-	roomID := "default"
-	connections[roomID] = ws
-
-	// 监听信令消息
-	for {
-		_, message, err := ws.ReadMessage()
+	defer func() {
+		err := server.Close()
 		if err != nil {
-			break
+			log.Fatalf("socketio close error: %s\n", err)
 		}
-
-		var signal SignalMessage
-		err = json.Unmarshal(message, &signal)
-		if err != nil {
-			log.Printf("Error unmarshaling signal: %v", err)
-			continue
-		}
-
-		// 根据信令类型处理消息
-		switch signal.Type {
-		case "offer":
-			// 处理offer信令，可能需要转发给其他客户端
-			handleOffer(roomID, signal.Data.(webrtc.SessionDescription))
-		case "answer":
-			// 处理answer信令
-			handleAnswer(roomID, signal.Data.(webrtc.SessionDescription))
-		case "iceCandidate":
-			// 处理ICE候选者信令
-			handleIceCandidate(roomID, signal.Data.(*webrtc.ICECandidate))
-		default:
-			log.Printf("Unknown signal type: %s", signal.Type)
-		}
-	}
-
-	// 当连接关闭时，从连接映射中移除
-	delete(connections, roomID)
-}
-
-// handleOffer 处理offer信令消息
-func handleOffer(roomID string, offer webrtc.SessionDescription) {
-	// 遍历房间内其他所有连接，并将offer转发给它们
-	for _, ws := range connections {
-		if ws == nil {
-			continue
-		}
-		// 序列化offer为JSON格式
-		signal := SignalMessage{
-			Type: "offer",
-			Data: offer,
-		}
-		signalJSON, err := json.Marshal(signal)
-		if err != nil {
-			log.Printf("Error marshaling offer signal: %v", err)
-			continue
-		}
-		// 发送JSON格式的offer给WebSocket客户端
-		err = ws.WriteMessage(websocket.TextMessage, signalJSON)
-		if err != nil {
-			log.Printf("Error sending offer signal to client: %v", err)
-			continue
-		}
-	}
-}
-
-// handleAnswer 处理answer信令消息
-func handleAnswer(roomID string, answer webrtc.SessionDescription) {
-	// 假设只有一个连接需要接收answer
-	ws, ok := connections[roomID]
-	if !ok || ws == nil {
-		log.Printf("No connections or invalid connection for answer in room: %s", roomID)
-		return
-	}
-
-	// 序列化answer为JSON格式
-	signal := SignalMessage{
-		Type: "answer",
-		Data: answer,
-	}
-	signalJSON, err := json.Marshal(signal)
-	if err != nil {
-		log.Printf("Error marshaling answer signal: %v", err)
-		return
-	}
-
-	// 发送JSON格式的answer给WebSocket客户端
-	err = ws.WriteMessage(websocket.TextMessage, signalJSON)
-	if err != nil {
-		log.Printf("Error sending answer signal to client: %v", err)
-	}
-}
-
-// handleIceCandidate 处理ICE候选者信令消息
-func handleIceCandidate(roomID string, candidate *webrtc.ICECandidate) {
-	// 遍历房间内其他所有连接，并将ICE候选者转发给它们
-	for _, ws := range connections {
-		if ws == nil {
-			continue
-		}
-		// 序列化ICE候选者为JSON格式
-		signal := SignalMessage{
-			Type: "iceCandidate",
-			Data: candidate,
-		}
-		signalJSON, err := json.Marshal(signal)
-		if err != nil {
-			log.Printf("Error marshaling ICE candidate signal: %v", err)
-			continue
-		}
-
-		// 发送JSON格式的ICE候选者给WebSocket客户端
-		err = ws.WriteMessage(websocket.TextMessage, signalJSON)
-		if err != nil {
-			log.Printf("Error sending ICE candidate signal to client: %v", err)
-			continue
-		}
-	}
+	}()
 }

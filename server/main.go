@@ -1,17 +1,16 @@
 package main
 
 import (
-	"log"
-	"wdmeeting/models"
-	"wdmeeting/router"
+  "log"
+  "wdmeeting/models"
+  "wdmeeting/router"
 )
 
 func main() {
-	models.InitDb()
-	e := router.Router()
-	err := e.Run()
-	if err != nil {
-		log.Fatalln("run err.", err)
-		return
-	}
+  models.InitDb()
+  r := router.Router()
+
+  if err := r.Run(":8080"); err != nil {
+    log.Fatal("failed run app: ", err)
+  }
 }

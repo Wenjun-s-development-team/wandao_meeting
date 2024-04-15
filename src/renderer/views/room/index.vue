@@ -1,48 +1,16 @@
 <script setup>
-import { useClientMedia } from '@/utils/webrtc'
+import { Client } from '@/utils/client'
 
-const videoRef = ref(null)
-const videoInputDeviceId = ref('')
-const audioInputDeviceId = ref('')
-const audioOutputDeviceId = ref('')
+const videoElement = ref(null)
+const audioElement = ref(null)
+const volumeElement = ref(null)
 
-const screenId = ref('')
-const useScreen = ref(false)
-
-const webrtcStore = useLocalStorage('webrtcStore', {})
-const { useMirror, useVideo, useAudio } = toRefs(webrtcStore.value)
-
-const {
-  videoInputs: videoInputDevices,
-  audioInputs: audioInputDevices,
-  audioOutputs: audioOutputDevices,
-} = useDevicesList({
-  requestPermissions: true,
-  onUpdated() {
-    if (!videoInputDevices.value.find(i => i.deviceId === videoInputDeviceId.value)) {
-      videoInputDeviceId.value = videoInputDevices.value[0]?.deviceId
-    }
-    if (!audioInputDevices.value.find(i => i.deviceId === audioInputDeviceId.value)) {
-      audioInputDeviceId.value = audioInputDevices.value[0]?.deviceId
-    }
-    if (!audioOutputDevices.value.find(i => i.deviceId === audioOutputDeviceId.value)) {
-      audioOutputDeviceId.value = audioOutputDevices.value[0]?.deviceId
-    }
-  },
-})
-
-const { stream } = useClientMedia({
-  useVideo,
-  useAudio,
-  useScreen,
-  screenId,
-  videoInputDeviceId,
-  audioInputDeviceId,
-})
+const useMirror = ref(false)
 
 watchEffect(() => {
-  if (videoRef.value) {
-    videoRef.value.srcObject = stream.value
+  if (videoElement.value && audioElement.value) {
+    const client = new Client(videoElement.value, audioElement.value, volumeElement.value)
+    client.start()
   }
 })
 
@@ -129,16 +97,32 @@ onMounted(() => {
         </button>
       </div>
     </Transition>
+    <div ref="volumeElement" class="volume-container">
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+    </div>
     <div class="main">
       <div class="video-container">
         <video
-          ref="videoRef"
+          ref="videoElement"
           class="swal2-video"
           :class="{ mirror: useMirror }"
+          muted
           autoplay
           playsinline="true"
           poster="../../assets/images/loader.gif"
         />
+      </div>
+      <div class="audio-container">
+        <audio ref="audioElement" autoplay muted :volume="0" />
       </div>
     </div>
   </div>

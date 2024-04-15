@@ -12,11 +12,12 @@ func Router() *gin.Engine {
 	r.Use(middlewares.Cors())
 	r.Use(middlewares.ResponseHandler())
 
+	// 将Socket.IO服务器集成到Gin路由器中
+	r.GET("/p2p/*any", service.WebRTC)
+	r.POST("/p2p/*any", service.WebRTC)
+
 	// 用户登录
 	r.POST("/user/login", service.UserLogin)
-
-	// ws
-	r.GET("/ws/p2p/:room_identity/:user_identity", service.WsP2PConnection)
 
 	auth := r.Group("/auth", middlewares.Auth())
 
