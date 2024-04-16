@@ -1,60 +1,47 @@
 <script setup>
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import DeviceSelect from './components/DeviceSelect.vue'
 import ScreenSources from './components/ScreenSources.vue'
-import { useClientMedia } from '@/utils/webrtc'
+import { MediaServer } from '@/webrtc/media'
 import { IPCRequest } from '@/api'
+
+import { useWebrtcStore } from '@/store'
+
+const webrtcStore = useWebrtcStore()
 
 const router = useRouter()
 const query = useUrlSearchParams('hash')
 
-const videoRef = ref(null)
-const videoInputDeviceId = ref('')
-const audioInputDeviceId = ref('')
-const audioOutputDeviceId = ref('')
-
-const screenId = ref('')
-const useScreen = ref(false)
-
-const webrtcStore = useLocalStorage('webrtcStore', {})
-const { useMirror, useVideo, useAudio } = toRefs(webrtcStore.value)
-
-// 每秒帧数
-// const videoFps = reactive([5, 15, 30, 60])
+const videoElement = ref(null)
+const audioElement = ref(null)
 
 const {
-  videoInputs: videoInputDevices,
-  audioInputs: audioInputDevices,
-  audioOutputs: audioOutputDevices,
-} = useDevicesList({
-  requestPermissions: true,
-  onUpdated() {
-    if (!videoInputDevices.value.find(i => i.deviceId === videoInputDeviceId.value)) {
-      videoInputDeviceId.value = videoInputDevices.value[0]?.deviceId
-    }
-    if (!audioInputDevices.value.find(i => i.deviceId === audioInputDeviceId.value)) {
-      audioInputDeviceId.value = audioInputDevices.value[0]?.deviceId
-    }
-    if (!audioOutputDevices.value.find(i => i.deviceId === audioOutputDeviceId.value)) {
-      audioOutputDeviceId.value = audioOutputDevices.value[0]?.deviceId
-    }
-  },
-})
-
-const { stream } = useClientMedia({
+  useScreen,
+  useMirror,
   useVideo,
   useAudio,
-  useScreen,
   screenId,
   videoInputDeviceId,
   audioInputDeviceId,
-})
+  audioOutputDeviceId,
+  videoInputDevices,
+  audioInputDevices,
+  audioOutputDevices,
+} = storeToRefs(webrtcStore)
 
-watchEffect(() => {
-  if (videoRef.value) {
-    videoRef.value.srcObject = stream.value
-  }
-})
+function useMediaServer() {
+  const isMounted = useMounted()
+  watchOnce(isMounted, async () => {
+    if (videoElement.value && audioElement.value) {
+      const mediaServer = new MediaServer(videoElement.value, audioElement.value)
+      await mediaServer.start()
+      mediaServer.listen()
+    }
+  })
+}
+
+useMediaServer()
 
 function onJoin() {
   router.push({ path: '/room', query: { roomId: query.roomId } })
@@ -73,13 +60,14 @@ IPCRequest.windows.openDevTools()
       <div class="swal2-html-container">
         <div class="swal2-video-container">
           <video
-            ref="videoRef"
+            ref="videoElement"
             class="swal2-video"
             :class="{ mirror: useMirror }"
             autoplay
             playsinline="true"
             poster="../../assets/images/loader.gif"
           />
+          <audio ref="audioElement" autoplay muted />
         </div>
         <div class="swal2-actions">
           <div class="buttons">

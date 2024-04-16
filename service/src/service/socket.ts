@@ -1,7 +1,8 @@
 import type http from 'node:http'
 import type https from 'node:https'
 
-import { Server, type Socket } from 'socket.io'
+import type { ServerOptions, Socket } from 'socket.io'
+import { Server } from 'socket.io'
 import { bytesToSize, checkXSS, config, decodeToken, fmtError, isAuthPeer, isValidFileName, isValidHttpURL } from '@/utils'
 import { Logs } from '@/service'
 
@@ -15,13 +16,13 @@ export class SocketServer {
   peers: KeyValue = {}
   presenters: KeyValue = {}
 
-  constructor(server: http.Server | https.Server) {
+  constructor(server: http.Server | https.Server, option?: ServerOptions) {
     this.setIceServers()
     this.io = new Server({
       maxHttpBufferSize: 1e7,
       transports: ['websocket'],
       cors: config.cors,
-    }).listen(server)
+    }).listen(server, option)
 
     this.io.sockets.on('connect', (socket) => {
       log.debug(`[${socket.id}] connection accepted`, {
@@ -593,6 +594,6 @@ export class SocketServer {
   }
 }
 
-export function useSocketServer(server: http.Server | https.Server) {
-  return new SocketServer(server)
+export function useSocketServer(server: http.Server | https.Server, option?: ServerOptions) {
+  return new SocketServer(server, option)
 }

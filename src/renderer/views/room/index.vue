@@ -1,15 +1,17 @@
 <script setup>
-import { Client } from '@/utils/client'
+import { Client } from '@/webrtc/client'
 
 const videoElement = ref(null)
 const audioElement = ref(null)
 const volumeElement = ref(null)
 
 const useMirror = ref(false)
+const isMounted = useMounted()
 
-watchEffect(() => {
+watchOnce(isMounted, () => {
   if (videoElement.value && audioElement.value) {
-    const client = new Client(videoElement.value, audioElement.value, volumeElement.value)
+    const client = new Client()
+    client.setMedia(videoElement.value, audioElement.value, volumeElement.value)
     client.start()
   }
 })
