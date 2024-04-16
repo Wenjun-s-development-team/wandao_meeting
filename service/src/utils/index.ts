@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import CryptoJS from 'crypto-js'
-import { config } from '@/config'
+import { config } from '../config'
 
-export * from '@/config'
+export * from '../config'
 export * from './xss'
 export * as fns from 'date-fns'
 

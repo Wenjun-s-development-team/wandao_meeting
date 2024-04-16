@@ -6,6 +6,7 @@
   "license": "MIT",
   "main": "dist/app.js",
   "scripts": {
+    "start": "yarn build && node ./dist/app.js -p 8686",
     "build": "tsc"
   },
   "dependencies": {

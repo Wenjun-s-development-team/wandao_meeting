@@ -52,16 +52,16 @@ IPCRequest.windows.openDevTools()
 
 <template>
   <div class="join-page">
-    <div class="swal2-popup">
-      <h2 class="swal2-title">
+    <div class="page-popup">
+      <h2 class="page-title">
         <span>Meeting P2P</span>
-        <button class="swal2-close" @click="router.back()"><i class="i-fa6-solid-xmark" /></button>
+        <button class="page-close" @click="router.back()"><i class="i-fa6-solid-xmark" /></button>
       </h2>
-      <div class="swal2-html-container">
-        <div class="swal2-video-container">
+      <div class="page-html-container">
+        <div class="media-container">
           <video
             ref="videoElement"
-            class="swal2-video"
+            class="page-video"
             :class="{ mirror: useMirror }"
             autoplay
             playsinline="true"
@@ -69,7 +69,7 @@ IPCRequest.windows.openDevTools()
           />
           <audio ref="audioElement" autoplay muted />
         </div>
-        <div class="swal2-actions">
+        <div class="page-actions">
           <div class="buttons">
             <button @click="useVideo = !useVideo">
               <i v-if="useVideo" class="i-fa6-solid-video" />
@@ -101,9 +101,9 @@ IPCRequest.windows.openDevTools()
           />
         </div>
       </div>
-      <input class="swal2-input" maxlength="32" placeholder="请输入您的名称">
-      <div class="swal2-footer">
-        <button class="swal2-confirm" @click="onJoin()">进 入 会 议</button>
+      <input class="page-input" maxlength="32" placeholder="请输入您的名称">
+      <div class="page-footer">
+        <button class="page-confirm" @click="onJoin()">进 入 会 议</button>
       </div>
     </div>
   </div>
@@ -120,7 +120,7 @@ IPCRequest.windows.openDevTools()
   justify-content: center;
   background: radial-gradient(#393939, #000000);
 
-  .swal2-popup {
+  .page-popup {
     display: grid;
     width: 1024px !important;
     position: relative;
@@ -132,14 +132,14 @@ IPCRequest.windows.openDevTools()
     border-radius: 5px;
     border: 1px solid rgba(255, 255, 255, 0.32);
     background: radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0));
-    .swal2-title {
+    .page-title {
       max-width: 100%;
       padding: 0.8em 1em 0;
       font-size: 1.875em;
       font-weight: 600;
       text-align: center;
       position: relative;
-      .swal2-close {
+      .page-close {
         color: rgba(255, 255, 255, 0.6);
         right: 25px;
         font-size: 20px;
@@ -149,7 +149,7 @@ IPCRequest.windows.openDevTools()
         }
       }
     }
-    .swal2-html-container {
+    .page-html-container {
       display: flex;
       gap: 10px;
       margin: 1em 1.6em;
@@ -158,9 +158,9 @@ IPCRequest.windows.openDevTools()
       font-weight: 400;
       color: rgb(165, 165, 165) !important;
       background-color: transparent !important;
-      .swal2-video-container {
+      .media-container {
         flex: 1;
-        .swal2-video {
+        .page-video {
           z-index: 0;
           width: 100%;
           height: 240px;
@@ -175,7 +175,7 @@ IPCRequest.windows.openDevTools()
         }
       }
 
-      .swal2-actions {
+      .page-actions {
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -202,7 +202,7 @@ IPCRequest.windows.openDevTools()
         }
       }
     }
-    .swal2-input {
+    .page-input {
       outline: none;
       height: 3.5em;
       padding: 0 0.75em;
@@ -219,13 +219,13 @@ IPCRequest.windows.openDevTools()
         0 0 0 3px transparent;
       background: inherit;
     }
-    .swal2-footer {
+    .page-footer {
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 1.25em 0;
       position: relative;
-      .swal2-confirm {
+      .page-confirm {
         color: #fff;
         font-size: 1.2em;
         font-weight: 500;
@@ -240,9 +240,9 @@ IPCRequest.windows.openDevTools()
   }
 
   @media screen and (max-width: 1024px) {
-    .swal2-popup {
+    .page-popup {
       width: 480px !important;
-      .swal2-html-container {
+      .page-html-container {
         flex-direction: column;
       }
     }

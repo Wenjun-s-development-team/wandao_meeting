@@ -1,6 +1,6 @@
 import util from 'node:util'
 import colors from 'colors'
-import { fns } from '@/utils'
+import { fns } from '../utils'
 
 const options = {
   depth: null,

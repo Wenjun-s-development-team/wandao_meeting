@@ -1,5 +1,5 @@
 import xss from 'xss'
-import { Logs } from '@/service'
+import { Logs } from '../service'
 
 function objectToJSONString(dataObject: any): string | false {
   try {

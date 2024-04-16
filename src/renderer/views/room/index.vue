@@ -139,16 +139,18 @@ onMounted(() => {
   position: relative;
   background: radial-gradient(#393939, #000000);
   .statusbar {
-    top: 5px;
     gap: 5px;
     z-index: 8;
-    width: 100%;
+    top: 38px;
+    left: 5px;
+    right: 5px;
     height: 38px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     padding: 0 15px;
-    position: absolute;
+    position: fixed;
+    border-radius: 5px 5px 0 0;
     background: rgba(0, 0, 0, 0.2);
     button {
       display: inline;
@@ -170,7 +172,7 @@ onMounted(() => {
   .toolbar {
     z-index: 10;
     display: flex;
-    position: absolute;
+    position: fixed;
     padding: 10px;
     bottom: 20px;
     left: 15px;
