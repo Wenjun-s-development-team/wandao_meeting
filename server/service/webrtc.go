@@ -53,7 +53,6 @@ func WebRTCSocket(c *gin.Context) {
 		//if message == "ping" {
 		//	ws.WriteMessage(websocket.TextMessage, signalJSON)
 		//}
-		log.Printf("recv: %s, type: %s", message, websocket.FormatMessageType(mt))
 
 		var signal SignalMessage
 		err = json.Unmarshal(message, &signal)

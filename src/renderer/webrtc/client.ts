@@ -64,7 +64,7 @@ export class Client {
   }
 
   start() {
-    this.socket = io('ws://localhost:8686', {
+    this.socket = io('ws://192.168.2.5:8686', {
       path: '/webrtc/p2p',
       transports: ['websocket'],
     })
