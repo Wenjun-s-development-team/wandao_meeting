@@ -10,7 +10,7 @@ import bodyParser from 'body-parser'
 import express from 'express'
 
 import { checkXSS, config, encodeToken, getIP, isAuthPeer } from '../utils'
-import { Host, Logs } from './'
+import { Host, Logs } from '.'
 
 const log = new Logs('WebRTCServer')
 const authHost = new Host()

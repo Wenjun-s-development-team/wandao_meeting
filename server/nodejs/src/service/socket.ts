@@ -4,7 +4,7 @@ import type https from 'node:https'
 import type { ServerOptions, Socket } from 'socket.io'
 import { Server } from 'socket.io'
 import { bytesToSize, checkXSS, config, decodeToken, fmtError, isAuthPeer, isValidFileName, isValidHttpURL } from '../utils'
-import { Logs } from './'
+import { Logs } from '.'
 
 const log = new Logs('WebRTCSocket')
 
