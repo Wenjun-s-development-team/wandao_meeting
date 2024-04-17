@@ -25,8 +25,8 @@ export const config = {
   stun_server_enabled: true,
   stun_server_url: 'stun:stun.l.google.com:19302',
   // turn 服务
-  turn_server_enabled: false,
-  turn_server_url: 'turn:a.relay.metered.ca',
-  turn_server_username: 'e8dd65b92c62d3e36cafb807',
-  turn_server_credential: 'uWdWNmkhvyqTEswO',
+  turn_server_enabled: true,
+  turn_server_url: 'turn:turn.idreamsky.net:5349',
+  turn_server_username: 'dreamsky',
+  turn_server_credential: 'ilovewandao',
 }

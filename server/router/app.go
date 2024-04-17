@@ -12,9 +12,9 @@ func Router() *gin.Engine {
 	r.Use(middlewares.Cors())
 	r.Use(middlewares.ResponseHandler())
 
-	// 将Socket.IO服务器集成到Gin路由器中
-	r.GET("/p2p/*any", service.WebRTC)
-	r.POST("/p2p/*any", service.WebRTC)
+	// 将 WebRTCSocket 服务器集成到Gin路由器中
+	r.GET("/webrtc/p2p", service.WebRTCSocket)
+	r.POST("/webrtc/p2p", service.WebRTCSocket)
 
 	// 用户登录
 	r.POST("/user/login", service.UserLogin)

@@ -18,34 +18,18 @@ openssl req -x509 -newkey rsa:2048 -keyout /usr/local/etc/turn_server_pkey.pem -
 - /etc/turnserver.conf
 
 ```sh
-# 必须设置 cli-password
-cli-password=123456
-# 内网IP
-listening-ip=xxx
-# 外网IP
-listening-ip=xxx
- # 外网IP
-relay-ip=xxx
- # 外网IP
-external-ip=xxx
-# 外网IP
-realm=xxx
-# 在TURN信息中使用指纹
-# fingerprint
-# 长时验证
+listening-port=3478
+tls-listening-port=5349
+fingerprint
 lt-cred-mech
-# 服务名称 可以是IP
-server-name=xxx
-# 简单的添加 用户:密码
-user=admin:admin
-
-# 证书
-cert=/usr/local/etc/turn_server_cert.pem
-pkey=/usr/local/etc/turn_server_pkey.pem
-# 开启系统日志
+server-name=turn.idreamsky.net
+user=dreamsky:ilovewandao
+realm=turn.idreamsky.net
+cert=/etc/letsencrypt/live/turn.idreamsky.net/fullchain.pem
+pkey=/etc/letsencrypt/live/turn.idreamsky.net/privkey.pem
+cipher-list="ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384"
+no-stdout-log
 syslog
- # 开启移动端支持
-mobility
 ```
 
 ## 启动与检测

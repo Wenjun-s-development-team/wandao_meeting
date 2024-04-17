@@ -87,9 +87,9 @@ export class Client {
       peerVideo: useVideo.value,
       peerAudio: useAudio.value,
       peerScreen: useScreen.value,
-      handStatus: handStatus.value,
-      recordStatus: recordStatus.value,
-      privacyStatus: privacyStatus.value,
+      peerHandStatus: handStatus.value,
+      peerRecordStatus: recordStatus.value,
+      peerPrivacyStatus: privacyStatus.value,
     })
   }
 
@@ -175,7 +175,9 @@ export class Client {
         return
       }
 
-      const { type, candidate, address, sdpMLineIndex } = event.candidate
+      const { type, candidate, sdpMLineIndex } = event.candidate
+
+      console.log('[ICE candidate]', event.candidate)
 
       this.sendToServer('relayICE', {
         clientId,
@@ -185,32 +187,10 @@ export class Client {
         },
       })
 
-      // Get Ice address
-      const ipRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/
-      let addressInfo = candidate.match(ipRegex)
-      if (!addressInfo && address) {
-        addressInfo = [address]
-      }
-
-      // IP
-      if (addressInfo) {
-        // networkIP.innerText = addressInfo
-      }
-
-      // Display network information based on candidate type
-      switch (type) {
-        case 'host':
-          // networkHost.innerText = '🟢'
-          break
-        case 'srflx':
-          // networkStun.innerText = '🟢'
-          break
-        case 'relay':
-          // networkTurn.innerText = '🟢'
-          break
-        default:
-          console.warn(`[ICE candidate] unknown type: ${type}`, candidate)
-          break
+      if (['host', 'srflx', 'relay'].includes(type!)) {
+        // networkStun.innerText = '🟢'
+      } else {
+        console.warn(`[ICE candidate] unknown type: ${type}`, candidate)
       }
     }
 
