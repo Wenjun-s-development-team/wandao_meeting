@@ -89,6 +89,10 @@ export class ChatServer {
     playSound('speech')
   }
 
+  onRecording() {
+
+  }
+
   /**
    * 语音消息
    * https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance

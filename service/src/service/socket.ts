@@ -53,7 +53,7 @@ export class SocketServer {
   presenters: KeyValue = {}
 
   constructor(server: http.Server | https.Server, option?: ServerOptions) {
-    this.setIceServers()
+    this.iceServers = this.getIceServers()
     this.io = new Server({
       maxHttpBufferSize: 1e7,
       transports: ['websocket'],
@@ -256,7 +256,7 @@ export class SocketServer {
         args = checkXSS(args)
         const { roomId, clientId, peerUuid, peerName, peerVideo, peerAction, sendToAll } = args
 
-        // 只有演示者才能执行此操作
+        // 只有主持人才能执行此操作
         const presenterActions = ['muteAudio', 'hideVideo', 'ejectAll']
         if (presenterActions.includes(peerAction)) {
           const isPresenter = this.isPeerPresenter(roomId, clientId, peerName, peerUuid)
@@ -284,7 +284,7 @@ export class SocketServer {
         const { roomId, clientId, peerUuid, peerName } = args
         const isPresenter = this.isPeerPresenter(roomId, clientId, peerName, peerUuid)
 
-        // 只有演示者才能踢出其他人
+        // 只有主持人才能踢出其他人
         if (isPresenter) {
           log.debug(`[${socket.id}] kick out peer [${clientId}] from room_id [${roomId}]`)
 
@@ -409,7 +409,7 @@ export class SocketServer {
           const { username, password, presenter } = checkXSS(decodeToken(peerToken))
           const isPeerValid = isAuthPeer(username, password)
 
-          // 演示者
+          // 主持人
           isPresenter = presenter === '1'
           || presenter === 'true'
           || Object.keys(this.presenters[roomId]).length === 0
@@ -447,7 +447,7 @@ export class SocketServer {
       peerUuid,
       isPresenter,
     }
-    // 第一个进入者 或 config.roomPresenters 中指定的人 为演示者
+    // 第一个进入者 或 config.roomPresenters 中指定的人 为主持人
     if (config.roomPresenters && config.roomPresenters.includes(peerName)) {
       this.presenters[roomId][socket.id] = presenter
     } else {
@@ -492,17 +492,13 @@ export class SocketServer {
     })
   }
 
-  setIceServers() {
-    this.iceServers = []
-
-    // 非内部网络必须使用Stun
-    if (config.stun_server_enabled && config.stun_server_url) {
-      this.iceServers.push({ urls: config.stun_server_url })
-    }
-    // 如果无法进行直接对等连接，则建议使用Turn
-    if (config.turn_server_enabled && config.turn_server_url && config.turn_server_username && config.turn_server_credential) {
-      this.iceServers.push({ urls: config.turn_server_url, username: config.turn_server_username, credential: config.turn_server_credential })
-    }
+  getIceServers() {
+    return config.iceCandidate_servers
+      .filter(server => server.enabled)
+      .map((server) => {
+        const { type, urls, username, credential } = server
+        return type === 'stun' ? { urls } : { urls, username, credential }
+      })
   }
 
   getActiveRooms() {
@@ -600,7 +596,7 @@ export class SocketServer {
         case 2: // 最后一个与设置了房间锁和密码的房间断开连接的对等方
           if (this.peers[roomId].lock && this.peers[roomId].password) {
             delete this.peers[roomId] // 清除房间中的锁和密码值
-            delete this.presenters[roomId] // 清除频道中的演示者
+            delete this.presenters[roomId] // 清除频道中的主持人
           }
           break
       }

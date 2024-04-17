@@ -1,12 +1,9 @@
 export const config = {
-  host: 'localhost',
-  port: 8081,
+  port: 8686,
   https: false,
+  host: 'localhost',
 
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 
   ip_whitelist_enabled: false,
   ip_whitelist_allowed: ['127.0.0.1', '::1'],
@@ -18,15 +15,30 @@ export const config = {
   JWT_KEY: 'wdmeeting_jwt_secret',
   JWT_EXP: '1h',
 
-  // 演示者列表
+  // 主持人列表
   roomPresenters: ['admin'],
 
-  // stun 服务
-  stun_server_enabled: true,
-  stun_server_url: 'stun:stun.l.google.com:19302',
-  // turn 服务
-  turn_server_enabled: true,
-  turn_server_url: 'turn:turn.idreamsky.net:5349',
-  turn_server_username: 'dreamsky',
-  turn_server_credential: 'ilovewandao',
+  // stun / turn 服务设置
+  iceCandidate_servers: [
+    {
+      // 非内部网络必须提供 Stun
+      type: 'stun',
+      urls: 'stun:turn.idreamsky.net:5349',
+      enabled: true,
+    },
+    {
+      type: 'turn',
+      urls: 'turn:turn.idreamsky.net:5349',
+      username: 'dreamsky',
+      credential: 'ilovewandao',
+      enabled: true,
+    },
+    {
+      type: 'turn',
+      urls: 'turn:47.116.117.67:5349',
+      username: 'admin',
+      credential: '123456',
+      enabled: false,
+    },
+  ],
 }
