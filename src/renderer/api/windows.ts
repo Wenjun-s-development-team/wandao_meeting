@@ -7,7 +7,7 @@ import { Request } from '.'
  * @return {*}  {Promise<DataResponse>}
  */
 export function close(): Promise<DataResponse> {
-  return Request.request('windows', 'closeWindow')
+  return Request.ipc('windows', 'closeWindow')
 }
 
 /**
@@ -17,7 +17,7 @@ export function close(): Promise<DataResponse> {
  * @return {*}  {Promise<DataResponse>}
  */
 export function minimize(): Promise<DataResponse> {
-  return Request.request('windows', 'minimizeWindow')
+  return Request.ipc('windows', 'minimizeWindow')
 }
 /**
  * 窗口最大化
@@ -26,7 +26,7 @@ export function minimize(): Promise<DataResponse> {
  * @return {*}  {Promise<DataResponse>}
  */
 export function maximize(): Promise<DataResponse> {
-  return Request.request('windows', 'maximizeWindow')
+  return Request.ipc('windows', 'maximizeWindow')
 }
 
 /**
@@ -39,5 +39,5 @@ export function maximize(): Promise<DataResponse> {
 export function openDevTools(
   data: { mode: 'bottom' | 'left' | 'right' | 'undocked' | 'detach' } = { mode: 'bottom' },
 ): Promise<DataResponse> {
-  return Request.request('windows', 'openDevTools', data)
+  return Request.ipc('windows', 'openDevTools', data)
 }

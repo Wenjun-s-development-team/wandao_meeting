@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import DeviceSelect from './components/DeviceSelect.vue'
 import ScreenSources from './components/ScreenSources.vue'
 import { MediaServer } from '@/webrtc/media'
-import { IPCRequest } from '@/api'
+import { IPCRequest, RTCRequest } from '@/api'
 
 import { useWebrtcStore } from '@/store'
 
@@ -43,7 +43,8 @@ function useMediaServer() {
 
 useMediaServer()
 
-function onJoin() {
+async function userLogin() {
+  await webrtcStore.userLogin({ name: 'admin', passwd: 'admin' })
   router.push({ path: '/room', query: { roomId: query.roomId } })
 }
 
@@ -103,7 +104,7 @@ IPCRequest.windows.openDevTools()
       </div>
       <input class="page-input" maxlength="32" placeholder="请输入您的名称">
       <div class="page-footer">
-        <button class="page-confirm" @click="onJoin()">进 入 会 议</button>
+        <button class="page-confirm" @click="userLogin()">进 入 会 议</button>
       </div>
     </div>
   </div>

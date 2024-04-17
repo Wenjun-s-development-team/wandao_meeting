@@ -1,28 +1,23 @@
 <script setup>
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { getRandomNumber } from '@/utils'
+import { useWebrtcStore } from '@/store'
 
 const router = useRouter()
 
-const webrtcStore = useLocalStorage('webrtcStore', {
-  lastRoomId: '',
-  useMirror: false,
-  useVideo: true,
-  useAudio: true,
-})
+const webrtcStore = useWebrtcStore()
 
-const { lastRoomId } = toRefs(webrtcStore.value)
-const roomId = ref('')
+const { lastRoomId } = storeToRefs(webrtcStore)
 
 function genRoom() {
-  roomId.value = getRandomNumber(6)
+  lastRoomId.value = getRandomNumber(6)
 }
 
 function joinRoom(value) {
-  roomId.value = value || roomId.value
-  if (roomId.value) {
-    lastRoomId.value = roomId.value
-    router.push({ path: '/join', query: { roomId: roomId.value } })
+  lastRoomId.value = value || lastRoomId.value
+  if (lastRoomId.value) {
+    router.push({ path: '/join', query: { roomId: lastRoomId.value } })
   } else {
     ElMessage.error({
       grouping: true,
@@ -51,7 +46,7 @@ function joinRoom(value) {
         </div>
         <div class="cta-action">
           <div class="form-group">
-            <input v-model="roomId" class="form-input">
+            <input v-model="lastRoomId" class="form-input">
             <button class="button" @click="genRoom()">
               <i class="i-fa6-solid-arrows-rotate" />
             </button>

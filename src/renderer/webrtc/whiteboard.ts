@@ -71,13 +71,13 @@ export class WhiteboardServer {
         this.toggleWhiteboard()
         break
       case 'lock':
-        if (!this.client.isPresenter) {
+        if (!this.client.isOwner) {
           this.wbDrawing(false)
           this.isLocked = true
         }
         break
       case 'unlock':
-        if (!this.client.isPresenter) {
+        if (!this.client.isOwner) {
           this.wbDrawing(true)
           this.isLocked = false
         }
@@ -118,7 +118,7 @@ export class WhiteboardServer {
   }
 
   wbCanvasToJson() {
-    if (!this.client.isPresenter && this.isLocked) {
+    if (!this.client.isOwner && this.isLocked) {
       return
     }
     if (this.client.peerConnectCount > 0) {

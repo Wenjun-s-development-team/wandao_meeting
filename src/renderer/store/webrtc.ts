@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { RTCRequest } from '@/api'
 
 export const useWebrtcStore = defineStore('webrtcStore', {
   state: () => {
@@ -22,7 +23,41 @@ export const useWebrtcStore = defineStore('webrtcStore', {
 
       // 连接状态 '🟢' '🔴'
       iceNetwork: { host: false, stun: false, turn: false },
+
+      // 用户相关
+      token: '',
+      userId: '',
+      userName: '',
+      userAlias: '',
     }
+  },
+  getters: {
+    userPeerName: (state) => {
+      return state.userAlias || state.userName
+    },
+  },
+  actions: {
+    async userLogin(param: KeyValue): Promise<any> {
+      const { data } = await RTCRequest.post('/user/login', param)
+      this.token = data.token
+      this.userId = data.user.ID
+      this.userName = data.user.name
+      this.userAlias = data.user.alias
+      return data
+    },
+    async userInfo(): Promise<any> {
+      const { data } = await RTCRequest.get('/user/info')
+      this.userId = data.ID
+      this.userName = data.name
+      this.userAlias = data.alias
+      return data
+    },
+    userLogout() {
+      this.token = ''
+      this.userId = ''
+      this.userName = ''
+      this.userAlias = ''
+    },
   },
   persist: {
     enabled: true,
@@ -30,7 +65,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       {
         key: 'webrtc',
         storage: localStorage,
-        paths: ['lastRoomId', 'useAudio', 'useVideo'],
+        paths: ['lastRoomId', 'useAudio', 'useVideo', 'token', 'userId'],
       },
     ],
   },

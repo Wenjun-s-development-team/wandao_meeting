@@ -4,15 +4,47 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/pion/webrtc/v3"
 	"log"
 	"net/http"
+	"sync"
 )
 
 // SignalMessage 信令消息结构
 type SignalMessage struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
+	Type string                 `json:"type"`
+	Data map[string]interface{} `json:"data"`
+}
+
+// ConnectionQuery
+// ws://localhost:8686/webrtc/p2p/:roomId/:userId
+type ConnectionQuery struct {
+	RoomId string `json:"roomId" uri:"roomId"`
+	UserId string `json:"userId" uri:"userId"`
+}
+
+// Room 一个用户映射一个 socket
+type Room map[string]*websocket.Conn
+
+// readMessage 从 WebSocket 连接中读取 JSON 消息
+func readMessage(conn *websocket.Conn) (SignalMessage, error) {
+	var message SignalMessage
+	_, msgBytes, err := conn.ReadMessage()
+	if err != nil {
+		return SignalMessage{}, err
+	}
+	if err := json.Unmarshal(msgBytes, &message); err != nil {
+		return SignalMessage{}, err
+	}
+	return message, nil
+}
+
+// writeMessage 将 JSON 消息写入 WebSocket 连接
+func writeMessage(conn *websocket.Conn, message SignalMessage) error {
+	msgBytes, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	return conn.WriteMessage(websocket.TextMessage, msgBytes)
 }
 
 var (
@@ -22,141 +54,89 @@ var (
 			return true
 		},
 	}
-	// 全局的WebSocket连接映射，用于跟踪哪些用户连接到了哪个房间
-	connections = make(map[string]*websocket.Conn)
+	// Rooms 全局变量，使用sync.Map存储房间和用户连接
+	// key: 房间ID, value: Room (map[string]WebSocketConn)
+	Rooms = sync.Map{}
 )
 
-func WebRTCSocket(c *gin.Context) {
-	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+func WebRTCServer(c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("Error upgrading to websocket:", err)
 		return
 	}
 
 	defer func() {
-		if err := ws.Close(); err != nil {
-			log.Println(err.Error())
-		}
+		_ = conn.Close()
 	}()
 
-	// TODO: 验证用户的身份，并分配到特定的房间
-	roomID := "default"
-	connections[roomID] = ws
+	in := new(ConnectionQuery)
+	_ = c.ShouldBindUri(in)
 
 	// 监听信令消息
 	for {
-		_, message, err := ws.ReadMessage()
-		if err != nil {
-			break
-		}
-
-		//if message == "ping" {
-		//	ws.WriteMessage(websocket.TextMessage, signalJSON)
-		//}
-
-		var signal SignalMessage
-		err = json.Unmarshal(message, &signal)
-		if err != nil {
-			log.Printf("Error unmarshaling signal: %v", err)
-			continue
-		}
-
-		// 根据信令类型处理消息
+		signal, _ := readMessage(conn)
+		// 根据信令类型 处理消息
 		switch signal.Type {
+		case "ping":
+			_ = writeMessage(conn, SignalMessage{Type: "pong"})
+		case "register":
+			// 将 WebSocket连接 添加到房间中的用户
+			joinToRoom(in.RoomId, in.UserId, conn)
 		case "offer":
-			// 处理offer信令，可能需要转发给其他客户端
-			handleOffer(roomID, signal.Data.(webrtc.SessionDescription))
+			// 处理 offer 信令，可能需要转发给其他客户端
+			handleOffer(in.UserId, signal.Data["sessionDescription"].(string))
 		case "answer":
-			// 处理answer信令
-			handleAnswer(roomID, signal.Data.(webrtc.SessionDescription))
+			// 处理 answer 信令
+			handleAnswer(in.UserId, signal.Data["sessionDescription"].(string))
 		case "iceCandidate":
-			// 处理ICE候选者信令
-			handleIceCandidate(roomID, signal.Data.(*webrtc.ICECandidate))
+			// 处理 ICE候选者 信令
+			handleIceCandidate(in.UserId, signal.Data["ICECandidate"].(string))
 		default:
 			log.Printf("Unknown signal type: %s", signal.Type)
 		}
 	}
 
-	// 当连接关闭时，从连接映射中移除
-	delete(connections, roomID)
+	// TODO 当连接关闭时，从连接映射中移除
 }
 
-// handleOffer 处理offer信令消息
-func handleOffer(roomID string, offer webrtc.SessionDescription) {
-	// 遍历房间内其他所有连接，并将offer转发给它们
-	for _, ws := range connections {
-		if ws == nil {
-			continue
+// handleOffer 处理 offer 信令消息
+func handleOffer(userId string, sessionDescription string) {
+	// 遍历房间内所有连接，并将 offer 转发给它们
+	Rooms.Range(func(key, value interface{}) bool {
+		// roomID := key.(string)
+		room := value.(Room)
+		for _, conn := range room {
+			_ = writeMessage(conn, SignalMessage{Type: "pong"})
 		}
-		// 序列化offer为JSON格式
-		signal := SignalMessage{
-			Type: "offer",
-			Data: offer,
-		}
-		signalJSON, err := json.Marshal(signal)
-		if err != nil {
-			log.Printf("Error marshaling offer signal: %v", err)
-			continue
-		}
-		// 发送JSON格式的offer给WebSocket客户端
-		err = ws.WriteMessage(websocket.TextMessage, signalJSON)
-		if err != nil {
-			log.Printf("Error sending offer signal to client: %v", err)
-			continue
-		}
-	}
+		return true
+	})
 }
 
 // handleAnswer 处理answer信令消息
-func handleAnswer(roomID string, answer webrtc.SessionDescription) {
-	// 假设只有一个连接需要接收answer
-	ws, ok := connections[roomID]
-	if !ok || ws == nil {
-		log.Printf("No connections or invalid connection for answer in room: %s", roomID)
-		return
-	}
+func handleAnswer(userId string, sessionDescription string) {
 
-	// 序列化answer为JSON格式
-	signal := SignalMessage{
-		Type: "answer",
-		Data: answer,
-	}
-	signalJSON, err := json.Marshal(signal)
-	if err != nil {
-		log.Printf("Error marshaling answer signal: %v", err)
-		return
-	}
-
-	// 发送JSON格式的answer给WebSocket客户端
-	err = ws.WriteMessage(websocket.TextMessage, signalJSON)
-	if err != nil {
-		log.Printf("Error sending answer signal to client: %v", err)
-	}
 }
 
 // handleIceCandidate 处理ICE候选者信令消息
-func handleIceCandidate(roomID string, candidate *webrtc.ICECandidate) {
+func handleIceCandidate(userId string, candidate string) {
 	// 遍历房间内其他所有连接，并将ICE候选者转发给它们
-	for _, ws := range connections {
-		if ws == nil {
-			continue
-		}
-		// 序列化ICE候选者为JSON格式
-		signal := SignalMessage{
-			Type: "iceCandidate",
-			Data: candidate,
-		}
-		signalJSON, err := json.Marshal(signal)
-		if err != nil {
-			log.Printf("Error marshaling ICE candidate signal: %v", err)
-			continue
-		}
+}
 
-		// 发送JSON格式的ICE候选者给WebSocket客户端
-		err = ws.WriteMessage(websocket.TextMessage, signalJSON)
-		if err != nil {
-			log.Printf("Error sending ICE candidate signal to client: %v", err)
-			continue
-		}
+func joinToRoom(roomId string, userId string, conn *websocket.Conn) Room {
+	var room Room
+	// 尝试从sync.Map中加载房间
+	if val, loaded := Rooms.Load(roomId); loaded {
+		// 类型断言成功加载的值
+		room = val.(Room)
+	} else {
+		// 如果房间不存在，则创建
+		room = make(Room)
 	}
+
+	room[userId] = conn
+
+	// 将 WebSocket连接 添加到房间中的用户
+	Rooms.Store(roomId, room)
+	return room
 }

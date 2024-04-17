@@ -7,5 +7,5 @@ import { Request } from '.'
  * @return {*}  {Promise<DataResponse>}
  */
 export function getSources(): Promise<DataResponse> {
-  return Request.request('system', 'getSources')
+  return Request.ipc('system', 'getSources')
 }

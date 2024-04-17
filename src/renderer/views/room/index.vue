@@ -1,5 +1,8 @@
 <script setup>
+import { useRouter } from 'vue-router'
 import { Client } from '@/webrtc'
+
+const router = useRouter()
 
 const videoElement = ref(null)
 const audioElement = ref(null)
@@ -23,6 +26,10 @@ onMounted(() => {
   showToolBar.value = true
   showStatusBar.value = true
 })
+
+function onSignout() {
+  router.push({ path: '/start' })
+}
 </script>
 
 <template>
@@ -94,7 +101,7 @@ onMounted(() => {
         <button>
           <i class="i-fa6-solid-question" />
         </button>
-        <button>
+        <button @click="onSignout()">
           <i class="i-fa6-solid-right-from-bracket" />
         </button>
       </div>
