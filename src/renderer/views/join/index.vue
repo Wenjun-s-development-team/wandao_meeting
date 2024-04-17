@@ -34,8 +34,8 @@ function useMediaServer() {
   const isMounted = useMounted()
   watchOnce(isMounted, async () => {
     if (videoElement.value && audioElement.value) {
-      const mediaServer = new MediaServer(videoElement.value, audioElement.value)
-      await mediaServer.start()
+      const mediaServer = new MediaServer()
+      await mediaServer.init(videoElement.value, audioElement.value).start()
       mediaServer.listen()
     }
   })

@@ -1,4 +1,5 @@
 import { storeToRefs } from 'pinia'
+import type { Client } from './client'
 import { playSound } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
@@ -20,6 +21,7 @@ const {
  * 媒体
  */
 export class MediaServer {
+  client: Client | undefined
   // videoFps = reactive([5, 15, 30, 60]) // 每秒帧数
   declare videoElement: HTMLVideoElement
   declare audioElement: HTMLAudioElement
@@ -28,10 +30,19 @@ export class MediaServer {
   declare localVideoStream: MediaStream
   declare localAudioStream: MediaStream
 
-  constructor(videoElement: HTMLVideoElement, audioElement: HTMLAudioElement, volumeElement?: HTMLDivElement) {
+  declare remoteAvatarImage: HTMLImageElement
+  declare remoteVideoElement: HTMLVideoElement
+  declare remoteAudioElement: HTMLAudioElement
+
+  constructor(client?: Client) {
+    this.client = client
+  }
+
+  init(videoElement: HTMLVideoElement, audioElement: HTMLAudioElement, volumeElement?: HTMLDivElement) {
     this.videoElement = videoElement
     this.audioElement = audioElement
     this.volumeElement = volumeElement
+    return this
   }
 
   async start() {
@@ -140,6 +151,40 @@ export class MediaServer {
     }
   }
 
+  /**
+   * 加载远程媒体流
+   * @param {MediaStream} stream audio ｜ video媒体流
+   * @param {object} peers 同一房间所有 RTCPeer 信息
+   * @param {string} clientId socket.id
+   */
+  async loadRemoteMediaStream(stream: MediaStream, peers: KeyValue, clientId: string, kind: string) {
+    console.log('REMOTE PEER INFO', peers[clientId])
+
+    const peerName = peers[clientId].peerName
+    // const peerAudio = peers[clientId].peerAudio
+    // const peerVideo = peers[clientId].peerVideo
+    // const peerVideoStatus = peers[clientId].peerVideoStatus
+    // const peerAudioStatus = peers[clientId].peerAudioStatus
+    // const peerScreenStatus = peers[clientId].peerScreenStatus
+    // const peerHandStatus = peers[clientId].peerHandStatus
+    // const peerRecordStatus = peers[clientId].peerRecordStatus
+    // const peerPrivacyStatus = peers[clientId].peerPrivacyStatus
+
+    if (stream) {
+      console.log(`LOAD REMOTE MEDIA STREAM TRACKS - PeerName:[${peerName}]`, stream.getTracks())
+    }
+
+    if (kind === 'video') {
+      console.log('SETUP REMOTE VIDEO STREAM')
+      this.attachMediaStream(this.remoteVideoElement, stream)
+      // resize video elements
+      // adaptAspectRatio()
+    } else if (kind === 'audio') {
+      console.log('SETUP REMOTE AUDIO STREAM')
+      this.attachMediaStream(this.remoteAudioElement, stream)
+    }
+  }
+
   // 监听
   listen() {
     // 屏幕共享、设备切换 - 需重新创建 stream
@@ -215,6 +260,78 @@ export class MediaServer {
       this.localAudioStream.getTracks().forEach((track) => {
         track.enabled = enabled
       })
+    }
+  }
+
+  /**
+   * onTrack 轨道添加到 P2P 连接事件
+   * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/ontrack
+   * @param {string} clientId socket.id
+   * @param {KeyValue} peers 同一房间所有 RTCPeer 信息
+   */
+  async handleOnTrack(clientId: string, peers: KeyValue) {
+    if (this.client) {
+      console.log('[ON TRACK] - clientId', { clientId })
+
+      this.client.peerConnections[clientId].ontrack = (event) => {
+        const { remoteVideoElement, remoteAudioElement } = this
+        // remoteAvatarImage
+
+        const peerInfo = peers[clientId]
+        const { peerName } = peerInfo
+        const { kind } = event.track
+
+        console.log('[ON TRACK] - info', { clientId, peerName, kind })
+
+        if (event.streams && event.streams[0]) {
+          console.log('[ON TRACK] - peers', peers)
+
+          switch (kind) {
+            case 'video':
+              remoteVideoElement
+                ? this.attachMediaStream(remoteVideoElement, event.streams[0])
+                : this.loadRemoteMediaStream(event.streams[0], peers, clientId, kind)
+              break
+            case 'audio':
+              remoteAudioElement
+                ? this.attachMediaStream(remoteAudioElement, event.streams[0])
+                : this.loadRemoteMediaStream(event.streams[0], peers, clientId, kind)
+              break
+            default:
+              break
+          }
+        } else {
+          console.log('[ON TRACK] - SCREEN SHARING', { clientId, peerName, kind })
+          const inboundStream = new MediaStream([event.track])
+          this.attachMediaStream(remoteVideoElement, inboundStream)
+        }
+      }
+    }
+  }
+
+  /**
+   * 将本地音视频流添加到P2P连接中
+   * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTrack
+   * @param {string} clientId socket.id
+   */
+  async handleAddTracks(clientId: string) {
+    if (this.client) {
+      const peerName = this.client.allPeers[clientId].peerName
+      const { localVideoStream, localAudioStream } = this
+      const videoTrack = localVideoStream && localVideoStream.getVideoTracks()[0]
+      const audioTrack = localAudioStream && localAudioStream.getAudioTracks()[0]
+
+      console.log('handleAddTracks', { videoTrack, audioTrack })
+
+      if (videoTrack) {
+        console.log(`[ADD VIDEO TRACK] to Peer Name [${peerName}]`)
+        this.client.peerConnections[clientId].addTrack(videoTrack, localVideoStream)
+      }
+
+      if (audioTrack) {
+        console.log(`[ADD AUDIO TRACK] to Peer Name [${peerName}]`)
+        this.client.peerConnections[clientId].addTrack(audioTrack, localAudioStream)
+      }
     }
   }
 

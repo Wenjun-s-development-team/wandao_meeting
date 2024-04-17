@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js'
+
 export * from './array'
 export * from './datetime'
 export * from './lodash'
@@ -26,4 +28,8 @@ export function getRandomNumber(length: number = 5): string {
     result += characters.charAt(Math.floor(Math.random() * charactersLength))
   }
   return result
+}
+
+export function md5(input: string) {
+  return CryptoJS.MD5(input).toString()
 }

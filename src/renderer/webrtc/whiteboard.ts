@@ -5,12 +5,12 @@ import { playSound } from '@/utils'
 /**
  * 白板
  */
-export class Whiteboard {
+export class WhiteboardServer {
   client: Client
   wbPop: fabric.Object[] = []
-  wbIsOpen: boolean = false
-  wbIsLock: boolean = false
-  wbIsRedoing: boolean = false
+  isOpened: boolean = false
+  isLocked: boolean = false
+  isRedoing: boolean = false
   wbCanvas: fabric.Canvas = new fabric.Canvas('wbCanvas')
 
   constructor(client: Client) {
@@ -18,44 +18,38 @@ export class Whiteboard {
   }
 
   /**
-   * 白板
+   * 如果白板打开，则将画布更新到所有P2P连接中
    */
-  async wbUpdate() {
-    if (this.wbIsOpen && this.client.peerConnectCount > 0) {
+  async onUpdate() {
+    if (this.isOpened && this.client.peerConnectCount > 0) {
       this.wbCanvasToJson()
-      this.whiteboardAction(this.getWhiteboardAction(this.wbIsLock ? 'lock' : 'unlock'))
+      this.whiteboardAction(this.getWhiteboardAction(this.isLocked ? 'lock' : 'unlock'))
     }
   }
 
-  getWhiteboardAction(action) {
-    return {
-      roomId: this.client.roomId,
-      peerName: this.client.peerName,
-      action,
-    }
+  getWhiteboardAction(action: string) {
+    return { action, roomId: this.client.roomId, peerName: this.client.peerName }
   }
 
-  whiteboardAction(config) {
+  whiteboardAction(config: KeyValue) {
     if (this.client.peerConnectCount > 0) {
       this.client.sendToServer('whiteboardAction', config)
     }
     this.handleWhiteboardAction(config, false)
   }
 
-  wbCanvasBackgroundColor(color) {
-    // setSP('--wb-bg', color)
-    // wbBackgroundColorEl.value = color
+  wbCanvasBackgroundColor(color: string) {
     this.wbCanvas?.setBackgroundColor(color, () => {})
     this.wbCanvas?.renderAll()
   }
 
   /**
    * Whiteboard: handle actions
-   * @param {object} config data
+   * @param {object} args data
    * @param {boolean} logMe popup action
    */
-  handleWhiteboardAction(config, logMe = true) {
-    const { peer_name, action, color } = config
+  handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
+    const { peer_name, action, color } = args
 
     if (logMe) {
       console.log('toast', `${peer_name} \n whiteboard action: ${action}`)
@@ -79,13 +73,13 @@ export class Whiteboard {
       case 'lock':
         if (!this.client.isPresenter) {
           this.wbDrawing(false)
-          this.wbIsLock = true
+          this.isLocked = true
         }
         break
       case 'unlock':
         if (!this.client.isPresenter) {
           this.wbDrawing(true)
-          this.wbIsLock = false
+          this.isLocked = false
         }
         break
       // ...
@@ -96,27 +90,23 @@ export class Whiteboard {
 
   wbCanvasRedo() {
     if (this.wbPop.length > 0) {
-      this.wbIsRedoing = true
+      this.isRedoing = true
       this.wbCanvas.add(this.wbPop.pop()!)
     }
   }
 
   toggleWhiteboard() {
-    if (!this.wbIsOpen) {
+    if (!this.isOpened) {
       playSound('newMessage')
     }
-
-    // this.whiteboard.classList.toggle('show')
-    // this.whiteboard.style.top = '50%'
-    // this.whiteboard.style.left = '50%'
-    this.wbIsOpen = !this.wbIsOpen
+    this.isOpened = !this.isOpened
   }
 
-  wbDrawing(status) {
-    this.wbCanvas.isDrawingMode = status // Disable free drawing
-    this.wbCanvas.selection = status // Disable object selection
+  wbDrawing(status: boolean) {
+    this.wbCanvas.isDrawingMode = status
+    this.wbCanvas.selection = status
     this.wbCanvas.forEachObject((obj) => {
-      obj.selectable = status // Make all objects unselectable
+      obj.selectable = status
     })
   }
 
@@ -128,7 +118,7 @@ export class Whiteboard {
   }
 
   wbCanvasToJson() {
-    if (!this.client.isPresenter && this.wbIsLock) {
+    if (!this.client.isPresenter && this.isLocked) {
       return
     }
     if (this.client.peerConnectCount > 0) {

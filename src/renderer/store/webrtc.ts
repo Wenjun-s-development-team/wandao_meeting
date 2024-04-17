@@ -15,6 +15,10 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       videoInputDevices: <MediaDeviceInfo[]>[], // 视频输出设备
       audioInputDevices: <MediaDeviceInfo[]>[], // 音频输出设备
       audioOutputDevices: <MediaDeviceInfo[]>[], // 音频输入设备
+
+      handStatus: false, // 手状态和图标
+      recordStatus: false, // 是否录音
+      privacyStatus: false,
     }
   },
   persist: {

@@ -1,5 +1,5 @@
 <script setup>
-import { Client } from '@/webrtc/client'
+import { Client } from '@/webrtc'
 
 const videoElement = ref(null)
 const audioElement = ref(null)
@@ -11,7 +11,7 @@ const isMounted = useMounted()
 watchOnce(isMounted, () => {
   if (videoElement.value && audioElement.value) {
     const client = new Client()
-    client.setMedia(videoElement.value, audioElement.value, volumeElement.value)
+    client.mediaServer.init(videoElement.value, audioElement.value, volumeElement.value)
     client.start()
   }
 })
