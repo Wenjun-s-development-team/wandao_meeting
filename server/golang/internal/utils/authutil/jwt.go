@@ -6,24 +6,24 @@ import (
 	"fmt"
 	"wdmeeting/internal/conf"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type UserClaims struct {
 	Id   uint   `json:"id"`
 	Name string `json:"name"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 // GenerateToken 生成 token
 func GenerateToken(id uint, name string) (string, error) {
 	UserClaim := &UserClaims{
-		Id:             id,
-		Name:           name,
-		StandardClaims: jwt.StandardClaims{},
+		Id:               id,
+		Name:             name,
+		RegisteredClaims: jwt.RegisteredClaims{},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaim)
-	tokenString, err := token.SignedString(conf.Auth.SecretKey)
+	tokenString, err := token.SignedString([]byte(conf.Auth.SecretKey))
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func GenerateToken(id uint, name string) (string, error) {
 func AnalyseToken(tokenString string) (*UserClaims, error) {
 	userClaim := new(UserClaims)
 	claims, err := jwt.ParseWithClaims(tokenString, userClaim, func(token *jwt.Token) (interface{}, error) {
-		return conf.Auth.SecretKey, nil
+		return []byte(conf.Auth.SecretKey), nil
 	})
 	if err != nil {
 		return nil, err

@@ -1,15 +1,15 @@
 package db
 
 import (
-  "context"
-  "fmt"
-  "time"
-  "wdmeeting/internal/utils/cryptoutil"
-  "wdmeeting/internal/utils/errutil"
+	"context"
+	"fmt"
+	"time"
+	"wdmeeting/internal/utils/cryptoutil"
+	"wdmeeting/internal/utils/errutil"
 
-  "github.com/pkg/errors"
-  gouuid "github.com/satori/go.uuid"
-  "gorm.io/gorm"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 // AccessTokensStore 访问令牌存储接口
@@ -86,7 +86,7 @@ func (db *accessTokens) Create(ctx context.Context, userId int64, name string) (
 		return nil, err
 	}
 
-	token := cryptoutil.SHA1(gouuid.NewV4().String())
+	token := cryptoutil.SHA1(uuid.New().String())
 	sha256 := cryptoutil.SHA256(token)
 
 	accessToken := &AccessToken{
