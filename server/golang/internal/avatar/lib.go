@@ -270,9 +270,9 @@ func (v *Libravatar) FromURL(openid string) (string, error) {
 	}
 
 	if !ourl.IsAbs() {
-		return "", fmt.Errorf("Is not an absolute URL")
+		return "", fmt.Errorf("is not an absolute URL")
 	} else if ourl.Scheme != "http" && ourl.Scheme != "https" {
-		return "", fmt.Errorf("Invalid protocol: %s", ourl.Scheme)
+		return "", fmt.Errorf("invalid protocol: %s", ourl.Scheme)
 	}
 
 	link, err := v.process(nil, ourl)

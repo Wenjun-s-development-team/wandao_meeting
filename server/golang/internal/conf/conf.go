@@ -26,9 +26,7 @@ func init() {
 // File ini配置文件对象
 var File *ini.File
 
-// Init 从 ini配置文件 初始化配置.
-// NOTE: 加载配置顺序很重要，因为一个配置可能取决于另一个配置.
-// ⚠️ WARNING: 请勿在此功能中打印除警告以外的任何内容.
+// Init 从 ini配置文件 初始化配置
 func Init() error {
 	data, err := conf.Files.ReadFile("app.ini")
 	if err != nil {
@@ -56,10 +54,6 @@ func Init() error {
 	if err = File.Section(ini.DefaultSection).MapTo(&App); err != nil {
 		return errors.Wrap(err, "mapping default section")
 	}
-
-	// ***************************
-	// ----- 服务设置 -----
-	// ***************************
 
 	if err = File.Section("server").MapTo(&Server); err != nil {
 		return errors.Wrap(err, "mapping [server] section")
