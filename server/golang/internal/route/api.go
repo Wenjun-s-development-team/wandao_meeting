@@ -16,7 +16,9 @@ func APIServer() *flamego.Flame {
 		f.Use(flamego.Logger())
 	}
 
-	f.Use(flamego.Recovery())
+	f.Use(webrtc.Recovery())
+	f.Use(webrtc.Invoker())
+
 	f.Use(cors.CORS(cors.Options{
 		MaxAge:           conf.Cors.MaxAge,
 		Methods:          conf.Cors.AllowMethods,
@@ -24,8 +26,6 @@ func APIServer() *flamego.Flame {
 		AllowSubdomain:   conf.Cors.AllowSubdomain,
 		AllowCredentials: conf.Cors.AllowCredentials,
 	}))
-
-	f.Use(webrtc.Invoker())
 
 	// 将 WebRTCSocket 服务器集成到Gin路由器中
 	f.Get("/webrtc/p2p/{roomId}/{userId}", service.WebRTCServer)

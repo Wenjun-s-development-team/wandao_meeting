@@ -2,9 +2,10 @@ package service
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"sync"
+
+	log "unknwon.dev/clog/v2"
 
 	"github.com/flamego/flamego"
 	"github.com/gorilla/websocket"
@@ -48,19 +49,19 @@ var (
 			return true
 		},
 	}
-	// Rooms 全局变量，使用sync.Map存储房间和用户连接
-	// key: 房间ID, value: Room (map[string]WebSocketConn)
+	// Rooms 全局变量，使用 sync.Map 存储房间和用户连接
+	// key: 房间ID, value: Room (map[string]socket)
 	Rooms = sync.Map{}
 )
 
 func WebRTCServer(c flamego.Context) {
 	conn, err := upgrader.Upgrade(c.ResponseWriter(), c.Request().Request, nil)
 	if err != nil {
-		log.Println("Error upgrading to websocket:", err)
+		log.Error("Error upgrading to websocket: %s", err.Error())
 		return
 	}
 
-	defer func() { _ = conn.Close() }()
+	defer conn.Close()
 
 	in := c.Params()
 
@@ -84,7 +85,7 @@ func WebRTCServer(c flamego.Context) {
 			// 处理 ICE候选者 信令
 			handleIceCandidate(in["userId"], signal.Data["ICECandidate"].(string))
 		default:
-			log.Printf("Unknown signal type: %s", signal.Type)
+			log.Error("Unknown signal type: %s", signal.Type)
 		}
 	}
 

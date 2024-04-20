@@ -2,6 +2,7 @@ package webrtc
 
 import (
 	"encoding/xml"
+	"fmt"
 	"github.com/flamego/flamego"
 	"github.com/goccy/go-json"
 	"io"
@@ -179,5 +180,26 @@ func Auth() flamego.Handler {
 		}
 
 		ctx.Map(userClaim)
+	})
+}
+
+// Recovery 自动恢复的中间件
+func Recovery() flamego.Handler {
+	return flamego.ContextInvoker(func(ctx flamego.Context) {
+		r := &render{
+			responseWriter: ctx.ResponseWriter(),
+		}
+
+		defer func() {
+			if err := recover(); err != nil {
+				// 处理 panic 情况
+				fmtErr := fmt.Sprintf("PANIC: %s", err)
+				log.Error(fmtErr)
+				r.ErrorJson(fmtErr)
+				return
+			}
+		}()
+
+		ctx.Next()
 	})
 }

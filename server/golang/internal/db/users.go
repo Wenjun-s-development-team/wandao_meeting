@@ -203,8 +203,8 @@ func (db *users) Authenticate(ctx context.Context, name, passwd string) (*User, 
 
 	user := new(User)
 	err := query.First(user).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.Wrap(err, "get user")
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrUserNotExist{}
 	}
 
 	// 如果找到了
@@ -212,6 +212,8 @@ func (db *users) Authenticate(ctx context.Context, name, passwd string) (*User, 
 		// 验证密码
 		if userutil.ValidatePassword(user.Passwd, user.Salt, passwd) {
 			return user, nil
+		} else {
+			return nil, ErrBadCredentials{}
 		}
 	}
 

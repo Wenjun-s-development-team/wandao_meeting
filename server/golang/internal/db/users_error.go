@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ---- 用户 不存在 -----
+// ---- 用户不存在 -----
 
 type ErrUserNotExist struct {
 	args errutil.Args
@@ -16,7 +16,7 @@ type ErrUserNotExist struct {
 var _ errutil.NotFound = (*ErrUserNotExist)(nil)
 
 func (err ErrUserNotExist) Error() string {
-	return fmt.Sprintf("user does not exist: %v", err.args)
+	return "用户不存在"
 }
 
 func (ErrUserNotExist) NotFound() bool {
@@ -27,6 +27,21 @@ func IsErrUserNotExist(err error) bool {
 	var errUserNotExist ErrUserNotExist
 	ok := errors.As(errors.Cause(err), &errUserNotExist)
 	return ok
+}
+
+// ---- 密码错误 -----
+var _ errutil.NotFound = (*ErrBadCredentials)(nil)
+
+type ErrBadCredentials struct {
+	Args errutil.Args
+}
+
+func (err ErrBadCredentials) Error() string {
+	return "登录账号或密码错误"
+}
+
+func (ErrBadCredentials) NotFound() bool {
+	return true
 }
 
 // ---- 用户名 不允许的-----
