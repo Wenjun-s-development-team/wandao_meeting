@@ -1,0 +1,15 @@
+.DS_Store
+*.db
+*.log
+log/
+conf/
+data/
+.idea/
+*.iml
+*.exe
+*.exe~
+*.pem
+output*
+/release
+.task
+.envrc

@@ -30,7 +30,7 @@ COPY --from=builder /app/wdmeeting .
 LABEL MAINTAINER="elkon@qq.com"
 
 # 暴露端口
-EXPOSE 8080
+EXPOSE 8686
 
 # 设置默认启动的命令
 CMD ["./wdmeeting"]
@@ -38,4 +38,4 @@ CMD ["./wdmeeting"]
 # 构建镜像
 # docker build -t wdmeeting .
 # 创建容器
-# docker run -p 8080:8080 wdmeeting
+# docker run -p 8686:8686 wdmeeting
