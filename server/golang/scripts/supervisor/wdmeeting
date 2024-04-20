@@ -1,4 +1,4 @@
-[program:gogs]
+[program:wdmeeting]
 directory=wdmeeting
 command=/app/wdmeeting
 autostart=true

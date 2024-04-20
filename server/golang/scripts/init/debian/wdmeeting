@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          gogs
+# Provides:          wdmeeting
 # Required-Start:    $syslog $network
 # Required-Stop:     $syslog
 # Should-Start:      mysql
