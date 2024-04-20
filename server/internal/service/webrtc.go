@@ -61,7 +61,7 @@ func WebRTCServer(c flamego.Context) {
 		return
 	}
 
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	in := c.Params()
 

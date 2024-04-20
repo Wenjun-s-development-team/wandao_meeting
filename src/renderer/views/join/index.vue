@@ -44,7 +44,7 @@ function useMediaServer() {
 useMediaServer()
 
 async function userLogin() {
-  await webrtcStore.userLogin({ name: 'admin', passwd: 'admin' })
+  await webrtcStore.userLogin({ name: 'admin', passwd: '123456' })
   router.push({ path: '/room', query: { roomId: query.roomId } })
 }
 
