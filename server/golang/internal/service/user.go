@@ -1,31 +1,50 @@
 package service
 
 import (
-	"errors"
-	"wdmeeting/internal/db"
-	"wdmeeting/internal/result"
-	"wdmeeting/internal/utils/authutil"
-
-	"github.com/flamego/flamego"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"wdmeeting/internal/context/webrtc"
+	"wdmeeting/internal/db"
+	"wdmeeting/internal/utils/jwtutil"
 )
 
-func UserLogin(c flamego.Context, r flamego.Render) {
-	in := c.Params()
-	user, _ := db.Users.Authenticate(c.Request().Context(), in["name"], in["passwd"])
-	result.Success(r, user)
+type UserLoginStruct struct {
+	Name   string `json:"name"`
+	Passwd string `json:"passwd"`
 }
 
-func UserInfo(c flamego.Context, r flamego.Render, userClaim authutil.UserClaims) {
-	user, err := db.Users.GetByID(c.Request().Context(), int64(userClaim.Id))
+func UserLogin(c webrtc.Context, r webrtc.Render) {
+	var form UserLoginStruct
+	if err := c.ToJson(&form); err != nil {
+		r.ErrorJson(err.Error())
+		return
+	}
+	user, err := db.Users.Authenticate(c.Request().Context(), form.Name, form.Passwd)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			result.Error(r, "用户不存在")
-			return
-		}
-		result.Error(r, "Get UserBasic Error:"+err.Error())
+		r.ErrorJson(err.Error())
 		return
 	}
 
-	result.Success(r, user)
+	token, _ := jwtutil.GenerateToken(uint(user.Id), user.Name)
+
+	r.SuccessJson(MapData{
+		"token": token,
+		"user":  user,
+	})
+}
+
+func UserInfo(c webrtc.Context, r webrtc.Render, claim webrtc.UserClaims) {
+	user, err := db.Users.GetByID(c.Request().Context(), int64(claim.User.Id))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			r.ErrorJson("用户不存在")
+			return
+		}
+		r.ErrorJson("Unauthorized Authorization:" + err.Error())
+		return
+	}
+
+	r.SuccessJson(MapData{
+		"user": user,
+	})
 }

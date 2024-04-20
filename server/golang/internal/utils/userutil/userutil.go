@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"wdmeeting/internal/avatar"
 	"wdmeeting/internal/conf"
+  "wdmeeting/internal/utils/avatarutil"
 	"wdmeeting/internal/utils/strutil"
 
 	"github.com/nfnt/resize"
@@ -31,7 +31,7 @@ func GenerateRandomAvatar(userId int64, name, email string) error {
 		seed = name
 	}
 
-	img, err := avatar.RandomImage([]byte(seed))
+	img, err := avatarutil.RandomImage([]byte(seed))
 	if err != nil {
 		return errors.Wrap(err, "generate random image")
 	}
@@ -39,17 +39,17 @@ func GenerateRandomAvatar(userId int64, name, email string) error {
 	avatarPath := CustomAvatarPath(userId)
 	err = os.MkdirAll(filepath.Dir(avatarPath), os.ModePerm)
 	if err != nil {
-		return errors.Wrap(err, "create avatar directory")
+		return errors.Wrap(err, "create avatarutil directory")
 	}
 
 	f, err := os.Create(avatarPath)
 	if err != nil {
-		return errors.Wrap(err, "create avatar file")
+		return errors.Wrap(err, "create avatarutil file")
 	}
 	defer func() { _ = f.Close() }()
 
 	if err = png.Encode(f, img); err != nil {
-		return errors.Wrap(err, "encode avatar image to file")
+		return errors.Wrap(err, "encode avatarutil image to file")
 	}
 	return nil
 }
@@ -64,18 +64,18 @@ func SaveAvatar(userId int64, data []byte) error {
 	avatarPath := CustomAvatarPath(userId)
 	err = os.MkdirAll(filepath.Dir(avatarPath), os.ModePerm)
 	if err != nil {
-		return errors.Wrap(err, "create avatar directory")
+		return errors.Wrap(err, "create avatarutil directory")
 	}
 
 	f, err := os.Create(avatarPath)
 	if err != nil {
-		return errors.Wrap(err, "create avatar file")
+		return errors.Wrap(err, "create avatarutil file")
 	}
 	defer func() { _ = f.Close() }()
 
-	m := resize.Resize(avatar.DefaultSize, avatar.DefaultSize, img, resize.NearestNeighbor)
+	m := resize.Resize(avatarutil.DefaultSize, avatarutil.DefaultSize, img, resize.NearestNeighbor)
 	if err = png.Encode(f, m); err != nil {
-		return errors.Wrap(err, "encode avatar image to file")
+		return errors.Wrap(err, "encode avatarutil image to file")
 	}
 	return nil
 }

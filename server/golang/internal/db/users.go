@@ -2,11 +2,9 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
-	"wdmeeting/internal/auth"
 	"wdmeeting/internal/utils/cryptoutil"
 	"wdmeeting/internal/utils/errutil"
 	"wdmeeting/internal/utils/userutil"
@@ -18,22 +16,22 @@ import (
 // User 用户表结构体
 type User struct {
 	// gorm.Model
-	Id     int64 `gorm:"primaryKey"`
-	Type   UserType
-	Name   string `xorm:"UNIQUE NOT NULL" gorm:"unique;not null" json:"name"`
-	Passwd string `xorm:"passwd NOT NULL" gorm:"column:passwd;not null" json:"-"`
-	Alias  string `xorm:"VARCHAR(255)" gorm:"type:varchar(255);" json:"alias"`
-	Email  string `xorm:"NOT NULL" gorm:"not null"`
-	Avatar string `xorm:"VARCHAR(2048)" gorm:"type:VARCHAR(2048);"`
-	Salt   string `xorm:"VARCHAR(10)" gorm:"type:VARCHAR(10)"`
+	Id     int64    `gorm:"primaryKey" json:"id"`
+	Type   UserType `json:"type"`
+	Name   string   `xorm:"UNIQUE NOT NULL" gorm:"unique;not null" json:"name"`
+	Passwd string   `xorm:"passwd NOT NULL" gorm:"column:passwd;not null" json:"-"`
+	Alias  string   `xorm:"VARCHAR(255)" gorm:"type:varchar(255);" json:"alias"`
+	Email  string   `xorm:"NOT NULL" gorm:"not null" json:"email"`
+	Avatar string   `xorm:"VARCHAR(2048)" gorm:"type:VARCHAR(2048);" json:"avatar"`
+	Salt   string   `xorm:"VARCHAR(10)" gorm:"type:VARCHAR(10)" json:"-"`
 
-	Created     time.Time `xorm:"-" gorm:"-" json:"-"`
+	Created     time.Time `xorm:"-" gorm:"-" json:"createdAt"`
 	CreatedUnix int64
-	Updated     time.Time `xorm:"-" gorm:"-" json:"-"`
+	Updated     time.Time `xorm:"-" gorm:"-" json:"updatedAt"`
 	UpdatedUnix int64
 
-	IsActive bool
-	IsAdmin  bool
+	IsActive bool `json:"isActive"`
+	IsAdmin  bool `json:"isAdmin"`
 }
 
 type CreateUserOptions struct {
@@ -47,26 +45,44 @@ type CreateUserOptions struct {
 	Admin     bool
 }
 
-type ErrUserNotExist struct {
-	args errutil.Args
-}
+type UserType int
 
-var _ errutil.NotFound = (*ErrUserNotExist)(nil)
+const (
+	UserTypeIndividual UserType = iota
+)
 
-// IsErrUserNotExist 如果错误类型为 ErrUserNotExist 返回 true
-func IsErrUserNotExist(err error) bool {
-	var errUserNotExist ErrUserNotExist
-	ok := errors.As(errors.Cause(err), &errUserNotExist)
-	return ok
-}
-
-func (err ErrUserNotExist) Error() string {
-	return fmt.Sprintf("user does not exist: %v", err.args)
-}
-
-func (ErrUserNotExist) NotFound() bool {
-	return true
-}
+var (
+	reservedUsernames = map[string]struct{}{
+		"-":          {},
+		"explore":    {},
+		"create":     {},
+		"assets":     {},
+		"css":        {},
+		"img":        {},
+		"js":         {},
+		"less":       {},
+		"plugins":    {},
+		"debug":      {},
+		"raw":        {},
+		"install":    {},
+		"api":        {},
+		"avatarutil": {},
+		"user":       {},
+		"org":        {},
+		"help":       {},
+		"stars":      {},
+		"issues":     {},
+		"pulls":      {},
+		"commits":    {},
+		"repo":       {},
+		"template":   {},
+		"admin":      {},
+		"new":        {},
+		".":          {},
+		"..":         {},
+	}
+	reservedUsernamePatterns = []string{"*.keys"}
+)
 
 // BeforeCreate GORM 创建前钩子
 func (u *User) BeforeCreate(tx *gorm.DB) error {
@@ -82,66 +98,6 @@ func (u *User) AfterFind(_ *gorm.DB) error {
 	u.Created = time.Unix(u.CreatedUnix, 0).Local()
 	u.Updated = time.Unix(u.UpdatedUnix, 0).Local()
 	return nil
-}
-
-var (
-	reservedUsernames = map[string]struct{}{
-		"-":        {},
-		"explore":  {},
-		"create":   {},
-		"assets":   {},
-		"css":      {},
-		"img":      {},
-		"js":       {},
-		"less":     {},
-		"plugins":  {},
-		"debug":    {},
-		"raw":      {},
-		"install":  {},
-		"api":      {},
-		"avatar":   {},
-		"user":     {},
-		"org":      {},
-		"help":     {},
-		"stars":    {},
-		"issues":   {},
-		"pulls":    {},
-		"commits":  {},
-		"repo":     {},
-		"template": {},
-		"admin":    {},
-		"new":      {},
-		".":        {},
-		"..":       {},
-	}
-	reservedUsernamePatterns = []string{"*.keys"}
-)
-
-type ErrNameNotAllowed struct {
-	args errutil.Args
-}
-
-func IsErrNameNotAllowed(err error) bool {
-	_, ok := errors.Cause(err).(ErrNameNotAllowed)
-	return ok
-}
-
-func (err ErrNameNotAllowed) Value() string {
-	val, ok := err.args["name"].(string)
-	if ok {
-		return val
-	}
-
-	val, ok = err.args["pattern"].(string)
-	if ok {
-		return val
-	}
-
-	return "<value not found>"
-}
-
-func (err ErrNameNotAllowed) Error() string {
-	return fmt.Sprintf("name is not allowed: %v", err.args)
 }
 
 func isNameAllowed(names map[string]struct{}, patterns []string, name string) error {
@@ -182,57 +138,14 @@ func isUsernameAllowed(name string) error {
 	return isNameAllowed(reservedUsernames, reservedUsernamePatterns, name)
 }
 
-// UsersStore 定义用户Db操作接口
+// UsersStore 定义用户 Db 操作接口
 type UsersStore interface {
 	Authenticate(ctx context.Context, name, passwd string) (*User, error)
 	GetByID(ctx context.Context, id int64) (*User, error)
 	IsUsernameUsed(ctx context.Context, username string, excludeUserId int64) bool
 }
 
-type ErrUserAlreadyExist struct {
-	args errutil.Args
-}
-
-// IsErrUserAlreadyExist returns true if the underlying error has the type
-// ErrUserAlreadyExist.
-func IsErrUserAlreadyExist(err error) bool {
-	_, ok := errors.Cause(err).(ErrUserAlreadyExist)
-	return ok
-}
-
-func (err ErrUserAlreadyExist) Error() string {
-	return fmt.Sprintf("user already exists: %v", err.args)
-}
-
-type ErrEmailAlreadyUsed struct {
-	args errutil.Args
-}
-
-// IsErrEmailAlreadyUsed returns true if the underlying error has the type ErrEmailAlreadyUsed.
-func IsErrEmailAlreadyUsed(err error) bool {
-	_, ok := errors.Cause(err).(ErrEmailAlreadyUsed)
-	return ok
-}
-
-func (err ErrEmailAlreadyUsed) Email() string {
-	email, ok := err.args["email"].(string)
-	if ok {
-		return email
-	}
-	return "<email not found>"
-}
-
-func (err ErrEmailAlreadyUsed) Error() string {
-	return fmt.Sprintf("email has been used: %v", err.args)
-}
-
-type UserType int
-
-const (
-	UserTypeIndividual UserType = iota
-	UserTypeOrganization
-)
-
+// Create 创建用户
 func (db *users) Create(ctx context.Context, username, email string, opts CreateUserOptions) (*User, error) {
 	err := isUsernameAllowed(username)
 	if err != nil {
@@ -302,10 +215,10 @@ func (db *users) Authenticate(ctx context.Context, name, passwd string) (*User, 
 		}
 	}
 
-	return nil, auth.ErrBadCredentials{Args: map[string]any{"login": name, "userId": user.Id}}
+	return nil, err
 }
 
-// GetByEmail 按ID查找用户
+// GetByID 按ID查找用户
 func (db *users) GetByID(ctx context.Context, id int64) (*User, error) {
 	user := new(User)
 	err := db.WithContext(ctx).Where("id = ?", id).First(user).Error
@@ -340,11 +253,11 @@ func (db *users) IsUsernameUsed(ctx context.Context, username string, excludeUse
 	if username == "" {
 		return false
 	}
-	return db.WithContext(ctx).
+	return !errors.Is(db.WithContext(ctx).
 		Select("id").
 		Where("name = ? AND id != ?", strings.ToLower(username), excludeUserId).
 		First(&User{}).
-		Error != gorm.ErrRecordNotFound
+		Error, gorm.ErrRecordNotFound)
 }
 
 var Users UsersStore

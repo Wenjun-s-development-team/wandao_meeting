@@ -1,4 +1,4 @@
-package authutil
+package jwtutil
 
 import (
 	"encoding/base64"
@@ -23,7 +23,7 @@ func GenerateToken(id uint, name string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaim)
-	tokenString, err := token.SignedString([]byte(conf.Auth.SecretKey))
+	tokenString, err := token.SignedString([]byte(conf.Security.SecretKey))
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func GenerateToken(id uint, name string) (string, error) {
 func AnalyseToken(tokenString string) (*UserClaims, error) {
 	userClaim := new(UserClaims)
 	claims, err := jwt.ParseWithClaims(tokenString, userClaim, func(token *jwt.Token) (interface{}, error) {
-		return []byte(conf.Auth.SecretKey), nil
+		return []byte(conf.Security.SecretKey), nil
 	})
 	if err != nil {
 		return nil, err

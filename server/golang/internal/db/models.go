@@ -13,14 +13,16 @@ import (
 	"strings"
 	"time"
 	"wdmeeting/internal/conf"
-	"wdmeeting/internal/utils/dbutil"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
-	log "unknwon.dev/clog/v2"
 	"xorm.io/core"
 	"xorm.io/xorm"
+	xlog "xorm.io/xorm/log"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+
+	log "unknwon.dev/clog/v2"
 )
 
 // Engine represents a XORM engine or session.
@@ -109,8 +111,7 @@ func SetEngine() (*gorm.DB, error) {
 
 	x.SetMapper(core.GonicMapper{})
 
-	var logPath string
-	logPath = filepath.Join(conf.Log.RootPath, "xorm.log")
+	logPath := filepath.Join(conf.Log.RootPath, "xorm.log")
 	sec := conf.File.Section("log.xorm")
 	fileWriter, err := log.NewFileWriter(logPath,
 		log.FileRotationConfig{
@@ -129,9 +130,9 @@ func SetEngine() (*gorm.DB, error) {
 	x.SetConnMaxLifetime(time.Second)
 
 	if conf.IsProdMode() {
-		x.SetLogger(dbutil.NewSimpleLogger3(fileWriter, dbutil.DEFAULT_LOG_PREFIX, dbutil.DEFAULT_LOG_FLAG, core.LOG_ERR))
+		x.SetLogger(xlog.NewSimpleLogger3(fileWriter, xlog.DEFAULT_LOG_PREFIX, xlog.DEFAULT_LOG_FLAG, xlog.DEFAULT_LOG_LEVEL))
 	} else {
-		x.SetLogger(dbutil.NewSimpleLogger(fileWriter))
+		x.SetLogger(xlog.NewSimpleLogger(fileWriter))
 	}
 	x.ShowSQL(true)
 

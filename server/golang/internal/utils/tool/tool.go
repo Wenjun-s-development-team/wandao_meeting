@@ -12,7 +12,6 @@ import (
 	"wdmeeting/internal/utils/cryptoutil"
 
 	"github.com/unknwon/com"
-	log "unknwon.dev/clog/v2"
 )
 
 // ShortSHA1 truncates SHA1 string length to at most 10.
@@ -35,7 +34,7 @@ func BasicAuthDecode(encoded string) (string, string, error) {
 	return auth[0], auth[1], nil
 }
 
-// verify time limit code
+// VerifyTimeLimitCode verify time limit code
 func VerifyTimeLimitCode(data string, minutes int, code string) bool {
 	if len(code) <= 18 {
 		return false
@@ -99,35 +98,6 @@ func CreateTimeLimitCode(data string, minutes int, startInf any) string {
 // https://en.gravatar.com/site/implement/hash/
 func HashEmail(email string) string {
 	return cryptoutil.MD5(strings.ToLower(strings.TrimSpace(email)))
-}
-
-// AvatarLink returns relative avatar link to the site domain by given email,
-// which includes app sub-url as prefix. However, it is possible
-// to return full URL if user enables Gravatar-like service.
-func AvatarLink(email string) (url string) {
-	if conf.Avatar.EnableFederatedAvatar && conf.Avatar.LibravatarService != nil &&
-		strings.Contains(email, "@") {
-		var err error
-		url, err = conf.Avatar.LibravatarService.FromEmail(email)
-		if err != nil {
-			log.Warn("AvatarLink.LibravatarService.FromEmail [%s]: %v", email, err)
-		}
-	}
-	if url == "" && !conf.Avatar.DisableGravatar {
-		url = conf.Avatar.GravatarSource + HashEmail(email) + "?d=identicon"
-	}
-	if url == "" {
-		url = conf.Server.Subpath + "/img/avatar_default.png"
-	}
-	return url
-}
-
-// AppendAvatarSize appends avatar size query parameter to the URL in the correct format.
-func AppendAvatarSize(url string, size int) string {
-	if strings.Contains(url, "?") {
-		return url + "&s=" + com.ToStr(size)
-	}
-	return url + "?s=" + com.ToStr(size)
 }
 
 // Seconds-based time units

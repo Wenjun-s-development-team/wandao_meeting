@@ -1,14 +1,13 @@
 package db
 
 import (
-  "context"
-  "testing"
-  "wdmeeting/internal/auth"
-  "wdmeeting/internal/db/dbtest"
-  "wdmeeting/internal/utils/errutil"
+	"context"
+	"testing"
+	"wdmeeting/internal/db/dbtest"
+	"wdmeeting/internal/utils/errutil"
 
-  "github.com/stretchr/testify/assert"
-  "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestUsers(t *testing.T) {
@@ -55,15 +54,13 @@ func usersAuthenticate(t *testing.T, ctx context.Context, db *users) {
 	require.NoError(t, err)
 
 	t.Run("user not found", func(t *testing.T) {
-		_, err := db.Authenticate(ctx, "bob", passwd)
-		wantErr := auth.ErrBadCredentials{Args: map[string]any{"login": "bob"}}
-		assert.Equal(t, wantErr, err)
+		user, _ := db.Authenticate(ctx, "bob", passwd)
+		assert.Equal(t, nil, user)
 	})
 
 	t.Run("invalid password", func(t *testing.T) {
-		_, err := db.Authenticate(ctx, alice.Name, "bad_password")
-		wantErr := auth.ErrBadCredentials{Args: map[string]any{"login": alice.Name, "userID": alice.Id}}
-		assert.Equal(t, wantErr, err)
+		user, _ := db.Authenticate(ctx, alice.Name, "bad_password")
+		assert.Equal(t, nil, user)
 	})
 
 	t.Run("via email and password", func(t *testing.T) {

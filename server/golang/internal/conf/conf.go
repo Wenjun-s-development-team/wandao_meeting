@@ -4,16 +4,15 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
+	"time"
+	"wdmeeting/conf"
+	"wdmeeting/internal/libs/libravatar"
 	"wdmeeting/internal/utils/osutil"
 
 	"github.com/pkg/errors"
 	"gopkg.in/ini.v1"
 	log "unknwon.dev/clog/v2"
-
-	"wdmeeting/conf"
-	"wdmeeting/internal/avatar"
 )
 
 func init() {
@@ -33,70 +32,67 @@ func Init() error {
 		return errors.Wrap(err, `read default "app.ini"`)
 	}
 
-	File, err = ini.LoadSources(ini.LoadOptions{
-		IgnoreInlineComment: true,
-	}, data)
+	File, err = ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, data)
+
 	if err != nil {
 		return errors.Wrap(err, `parse "app.ini"`)
 	}
+
 	File.NameMapper = ini.SnackCase
 
-	iniConf := filepath.Join("conf", "app.ini")
+	ConfigFile = filepath.Join(ConfigDir(), "app.ini")
 
-	if osutil.IsFile(iniConf) {
-		if err = File.Append(iniConf); err != nil {
-			return errors.Wrapf(err, "append %q", iniConf)
+	if osutil.IsFile(ConfigFile) {
+		// 合并配置
+		if err = File.Append(ConfigFile); err != nil {
+			return errors.Wrapf(err, "append %q", ConfigFile)
 		}
 	} else {
-		log.Warn("config %q not found.", iniConf)
+		log.Warn("config %q not found.", ConfigFile)
+		_ = os.MkdirAll(filepath.Dir(ConfigFile), os.ModePerm)
+		if err = File.SaveTo(ConfigFile); err != nil {
+			return errors.Wrapf(err, "save to config error: %q", ConfigFile)
+		}
 	}
 
 	if err = File.Section(ini.DefaultSection).MapTo(&App); err != nil {
 		return errors.Wrap(err, "mapping default section")
-	}
-
-	if err = File.Section("server").MapTo(&Server); err != nil {
+	} else if err = File.Section("database").MapTo(&Database); err != nil {
+		return errors.Wrap(err, "mapping [database] section")
+	} else if err = File.Section("server").MapTo(&Server); err != nil {
 		return errors.Wrap(err, "mapping [server] section")
+	} else if err = File.Section("cors").MapTo(&Cors); err != nil {
+		return errors.Wrap(err, "mapping [cors] section")
+	} else if err = File.Section("security").MapTo(&Security); err != nil {
+		return errors.Wrap(err, "mapping [security] section")
+	} else if err = File.Section("avatarutil").MapTo(&Avatar); err != nil {
+		return errors.Wrap(err, "mapping [avatarutil] section")
+	} else if err = File.Section("attachment").MapTo(&Attachment); err != nil {
+		return errors.Wrap(err, "mapping [attachment] section")
 	}
-	Server.AppDataPath = ensureAbs(Server.AppDataPath)
 
+	// ----- Server 设置 -----
+	Server.AppDataPath = ensureAbs(Server.AppDataPath)
 	if !strings.HasSuffix(Server.ExternalURL, "/") {
 		Server.ExternalURL += "/"
 	}
+
 	Server.URL, err = url.Parse(Server.ExternalURL)
 	if err != nil {
 		return errors.Wrapf(err, "parse '[server] EXTERNAL_URL' %q", err)
 	}
 
-	// 子路径应以 / 开头, 不以 / 结尾, i.e. '/{subpath}'.
+	// 子路径应以 / 开头, 不以 / 结尾, i.e. conf.Server.Subpath + "/data".
 	Server.Subpath = strings.TrimRight(Server.URL.Path, "/")
 	Server.SubpathDepth = strings.Count(Server.Subpath, "/")
 
-	unixSocketMode, err := strconv.ParseUint(Server.UnixSocketPermission, 8, 32)
-	if err != nil {
-		return errors.Wrapf(err, "parse '[server] UNIX_SOCKET_PERMISSION' %q", Server.UnixSocketPermission)
-	}
-	if unixSocketMode > 0777 {
-		unixSocketMode = 0666
-	}
-	Server.UnixSocketMode = os.FileMode(unixSocketMode)
-
-	// *****************************
-	// ----- 数据库设置 -----
-	// *****************************
-
-	if err = File.Section("database").MapTo(&Database); err != nil {
-		return errors.Wrap(err, "mapping [database] section")
-	}
+	// ----- Database 设置 -----
 	Database.Path = ensureAbs(Database.Path)
 
-	// ****************************
-	// ----- Avatar设置 -----
-	// ****************************
+	// ----- Cors 跨域设置 -----
+	Cors.MaxAge = Cors.MaxAge * time.Second
 
-	if err = File.Section("avatar").MapTo(&Avatar); err != nil {
-		return errors.Wrap(err, "mapping [avatar] section")
-	}
+	// ----- Avatar 设置 -----
 	Avatar.AvatarUploadPath = ensureAbs(Avatar.AvatarUploadPath)
 	Avatar.RepositoryAvatarUploadPath = ensureAbs(Avatar.RepositoryAvatarUploadPath)
 
@@ -107,20 +103,17 @@ func Init() error {
 		Avatar.GravatarSource = "https://seccdn.libravatar.org/avatar/"
 	}
 
-	if Server.OfflineMode {
-		Avatar.DisableGravatar = true
-		Avatar.EnableFederatedAvatar = false
-	}
 	if Avatar.DisableGravatar {
 		Avatar.EnableFederatedAvatar = false
 	}
+
 	if Avatar.EnableFederatedAvatar {
 		gravatarURL, err := url.Parse(Avatar.GravatarSource)
 		if err != nil {
 			return errors.Wrapf(err, "parse Gravatar source %q", Avatar.GravatarSource)
 		}
 
-		Avatar.LibravatarService = avatar.NewLibravatar()
+		Avatar.LibravatarService = libravatar.NewLibravatar()
 		if gravatarURL.Scheme == "https" {
 			Avatar.LibravatarService.SetUseHTTPS(true)
 			Avatar.LibravatarService.SetSecureFallbackHost(gravatarURL.Host)
@@ -130,18 +123,5 @@ func Init() error {
 		}
 	}
 
-	if err = File.Section("cache").MapTo(&Cache); err != nil {
-		return errors.Wrap(err, "mapping [cache] section")
-	} else if err = File.Section("http").MapTo(&HTTP); err != nil {
-		return errors.Wrap(err, "mapping [http] section")
-	}
-
 	return nil
-}
-
-func MustInit() {
-	err := Init()
-	if err != nil {
-		panic(err)
-	}
 }

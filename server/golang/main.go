@@ -28,5 +28,5 @@ func main() {
 		log.Fatal("Failed to start application: %v", err)
 	}
 
-	route.GlobalInit()
+	route.Install()
 }

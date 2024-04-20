@@ -1,4 +1,4 @@
-package avatar
+package libravatar
 
 import (
 	"crypto/md5"
@@ -72,14 +72,14 @@ func NewLibravatar() *Libravatar {
 	}
 }
 
-// SetFallbackHost sets the hostname for fallbacks in case no avatar
+// SetFallbackHost sets the hostname for fallbacks in case no avatarutil
 // service is defined for a domain
 func (v *Libravatar) SetFallbackHost(host string) {
 	v.fallbackHost = host
 }
 
 // SetSecureFallbackHost sets the hostname for fallbacks in case no
-// avatar service is defined for a domain, when requiring secure domains
+// avatarutil service is defined for a domain, when requiring secure domains
 func (v *Libravatar) SetSecureFallbackHost(host string) {
 	v.secureFallbackHost = host
 }
@@ -134,7 +134,7 @@ func (v *Libravatar) process(email *mail.Address, openid *url.URL) (string, erro
 	if err != nil {
 		return "", err
 	}
-	res := fmt.Sprintf("%s/avatar/%s", URL, v.genHash(email, openid))
+	res := fmt.Sprintf("%s/avatarutil/%s", URL, v.genHash(email, openid))
 
 	values := make(url.Values)
 	if v.defURL != "" {
@@ -241,7 +241,7 @@ func (v *Libravatar) baseURL(email *mail.Address, openid *url.URL) (string, erro
 	return protocol + domain, nil
 }
 
-// FromEmail returns the url of the avatar for the given email
+// FromEmail returns the url of the avatarutil for the given email
 func (v *Libravatar) FromEmail(email string) (string, error) {
 	addr, err := mail.ParseAddress(email)
 	if err != nil {
@@ -261,7 +261,7 @@ func FromEmail(email string) (string, error) {
 	return DefaultLibravatar.FromEmail(email)
 }
 
-// FromURL returns the url of the avatar for the given url (typically
+// FromURL returns the url of the avatarutil for the given url (typically
 // for OpenID)
 func (v *Libravatar) FromURL(openid string) (string, error) {
 	ourl, err := url.Parse(openid)
