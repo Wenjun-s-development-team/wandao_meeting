@@ -1,6 +1,7 @@
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import { ChatServer, FileSharingServer, MediaServer, WebSocketServer, WhiteboardServer } from './'
+import type { ChatServer, FileSharingServer, WhiteboardServer } from '.'
+import { MediaServer, WebSocketServer } from '.'
 import { playSound } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
@@ -61,25 +62,24 @@ export class Client {
     this.roomId = lastRoomId.value
     this.userName = userPeerName.value
     this.userId = userId.value
-    this.chatServer = new ChatServer(this)
+    // this.chatServer = new ChatServer(this)
     this.mediaServer = new MediaServer(this)
-    this.fileSharingServer = new FileSharingServer(this)
-    this.whiteboardServer = new WhiteboardServer(this)
+    // this.fileSharingServer = new FileSharingServer(this)
+    // this.whiteboardServer = new WhiteboardServer(this)
   }
 
   start() {
     console.log('02. 连接到信令服务器')
-    this.socket = new WebSocketServer(`ws://192.168.2.5:8686/webrtc/p2p/${this.roomId}/${this.userId}`)
-    this.socket.onMessage(this.onMessage)
+    this.socket = new WebSocketServer(`ws://192.168.2.5:8687/webrtc`)
+    this.socket.onOpen(this.handleConnect.bind(this))
+    this.socket.onMessage(this.onMessage.bind(this))
+    this.socket.onClose(this.handleDisconnect.bind(this))
   }
 
-  onMessage(type: string, args: KeyValue) {
-    switch (type) {
-      case 'connect':
-        this.handleConnect()
-        break
-      case 'createPeer':
-        this.handleCreatePeer(args)
+  onMessage(cmd: string, args: KeyValue) {
+    switch (cmd) {
+      case 'createRTCPeerConnection':
+        this.createRTCPeerConnection(args)
         break
       case 'unauthorized':
         this.handleUnauthorized()
@@ -144,11 +144,11 @@ export class Client {
   async handleConnect() {
     console.log('03. 信令服务器连接成功')
     this.mediaServer && await this.mediaServer.start()
-    this.joinToRoom()
+    this.login()
   }
 
-  handleDisconnect(reason) {
-    console.log('Disconnected from signaling server', { reason })
+  handleDisconnect(args: KeyValue) {
+    console.log('Disconnected from signaling server', { args })
 
     // checkRecording()
 
@@ -174,13 +174,12 @@ export class Client {
   }
 
   // 进入房间
-  async joinToRoom() {
+  async login() {
     console.log('12. join to room', this.roomId)
-    this.sendToServer('join', {
+    this.sendToServer('login', {
       roomId: this.roomId,
-      roomPasswd: '',
-      peerToken: '',
       userId: this.userId,
+      token: '',
       userName: this.userName,
       peerVideo: useVideo.value,
       peerAudio: useAudio.value,
@@ -195,7 +194,7 @@ export class Client {
    * 当加入一个房间后，收到信令服务器发送的 createPeer 事件
    * @param {object} args data
    */
-  async handleCreatePeer(args: KeyValue) {
+  async createRTCPeerConnection(args: KeyValue) {
     const { userId, shouldCreateOffer, iceServers, peers } = args
     const { userName, peerVideo } = peers[userId]
 
@@ -606,7 +605,7 @@ export class Client {
         break
       case 'checkPassword':
         this.isRoomLocked = true
-        password === 'OK' ? this.joinToRoom() : this.handleRoomLocked()
+        password === 'OK' ? this.login() : this.handleRoomLocked()
         break
       default:
         break

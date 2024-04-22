@@ -1,3 +1,7 @@
+import { getUUID } from '@/utils'
+import { useWebrtcStore } from '@/store'
+
+const webrtcStore = useWebrtcStore()
 export class WebSocketServer {
   private url: string
   private heartbeatInterval: number
@@ -10,7 +14,7 @@ export class WebSocketServer {
   private onErrorCallback?: (error: Event) => void
   private onCloseCallback?: (event: CloseEvent) => void
 
-  constructor(url: string, heartbeatInterval: number = 5000, reconnectInterval: number = 3000) {
+  constructor(url: string, heartbeatInterval: number = 30000, reconnectInterval: number = 3000) {
     this.url = url
     this.heartbeatInterval = heartbeatInterval
     this.reconnectInterval = reconnectInterval
@@ -27,14 +31,13 @@ export class WebSocketServer {
 
     this.socket.onopen = (event) => {
       console.log('[WebSocket]: 连接成功')
-      this.send('signin')
       this.startHeartbeat()
       this.onOpenCallback?.(event)
     }
 
     this.socket.onmessage = (event) => {
-      const { type, args } = JSON.parse(event.data)
-      this.onMessageCallback?.(type, args)
+      const { cmd, data } = JSON.parse(event.data)
+      this.onMessageCallback?.(cmd, data)
       this.resetHeartbeat()
     }
 
@@ -58,7 +61,7 @@ export class WebSocketServer {
     this.heartbeatTimeout = setTimeout(() => {
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
         // 发送心跳信息
-        this.send('ping')
+        this.send('heartbeat', { userId: webrtcStore.userId })
       }
       this.startHeartbeat()
     }, this.heartbeatInterval)
@@ -83,9 +86,10 @@ export class WebSocketServer {
     }, this.reconnectInterval)
   }
 
-  public send(type: string, message: KeyValue = {}): void {
+  public send(cmd: string, message: KeyValue = {}): void {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ type, data: message || {} }))
+      const seq = getUUID()
+      this.socket.send(JSON.stringify({ seq, cmd, data: message || {} }))
     } else {
       console.error('[WebSocket]未打开, 消息未能发送:', message)
     }

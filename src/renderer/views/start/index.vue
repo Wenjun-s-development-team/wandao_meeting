@@ -15,7 +15,7 @@ function genRoom() {
 }
 
 function joinRoom(value) {
-  lastRoomId.value = value || lastRoomId.value
+  lastRoomId.value = 101 || value || lastRoomId.value
   if (lastRoomId.value) {
     router.push({ path: '/join', query: { roomId: lastRoomId.value } })
   } else {

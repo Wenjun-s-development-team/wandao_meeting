@@ -38,9 +38,9 @@ export const useWebrtcStore = defineStore('webrtcStore', {
   },
   actions: {
     async userLogin(param: KeyValue): Promise<any> {
-      const { data } = await RTCRequest.post('/user/login', param)
+      const { data } = await RTCRequest.post('/login', param)
       this.token = data.token
-      this.userId = data.user.ID
+      this.userId = data.user.id
       this.userName = data.user.name
       this.userAlias = data.user.alias
       return data
