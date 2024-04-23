@@ -21,11 +21,19 @@ export class ChatServer {
     this.client = client
   }
 
-  async createDataChannel(userId: string) {
+  async createDataChannel(userId: number) {
     this.chatDataChannels[userId] = this.client.peerConnections[userId].createDataChannel('chat_channel')
     this.chatDataChannels[userId].onopen = (event) => {
       console.log('chatDataChannels created', event)
     }
+  }
+
+  removeDataChannel(userId: number) {
+    delete this.chatDataChannels[userId]
+  }
+
+  cleanDataChannel() {
+    this.chatDataChannels = {}
   }
 
   /**
@@ -44,14 +52,14 @@ export class ChatServer {
     const msgPrivate = filterXSS(dataMessage.privateMsg)
     // const msgId = filterXSS(dataMessage.id)
 
-    const fromPeerName = this.client.allPeers[msgFromId].peerName
+    const fromPeerName = this.client.allPeers[msgFromId].roomName
     if (fromPeerName !== msgFrom) {
       console.log('Fake message detected', { realFrom: fromPeerName, fakeFrom: msgFrom, msg })
       return
     }
 
     // private message but not for me return
-    if (msgPrivate && msgTo !== this.client.peerName) {
+    if (msgPrivate && msgTo !== this.client.roomName) {
       return
     }
 
@@ -76,12 +84,12 @@ export class ChatServer {
     console.log('Handle speech transcript', dataMessage)
 
     dataMessage.textData = filterXSS(dataMessage.textData)
-    dataMessage.peerName = filterXSS(dataMessage.peerName)
+    dataMessage.roomName = filterXSS(dataMessage.roomName)
 
-    const { peerName, textData } = dataMessage
+    const { roomName, textData } = dataMessage
 
     const timeStamp = this.getFormatDate(new Date())
-    const avatarImage = this.isValidEmail(peerName) ? this.genGravatar(peerName) : this.genAvatarSvg(peerName, 32)
+    const avatarImage = this.isValidEmail(roomName) ? this.genGravatar(roomName) : this.genAvatarSvg(roomName, 32)
     console.log(timeStamp, avatarImage, textData)
     if (!this.isCaptionBoxVisible) {
       // TODO
@@ -98,7 +106,7 @@ export class ChatServer {
    * https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance
    *
    * @param {boolean} newMsg true/false
-   * @param {string} from peerName
+   * @param {string} from roomName
    * @param {string} msg message
    */
   speechMessage(newMsg: boolean = true, from: string, msg: string) {
@@ -130,15 +138,15 @@ export class ChatServer {
   }
 
   /**
-   * Create round svg image with first 2 letters of peerName in center
+   * Create round svg image with first 2 letters of roomName in center
    * Thank you: https://github.com/phpony
    *
-   * @param {string} peerName
+   * @param {string} roomName
    * @param {integer} avatarImgSize width and height in px
    */
-  genAvatarSvg(peerName: string, avatarImgSize: number) {
-    const charCodeRed = peerName.charCodeAt(0)
-    const charCodeGreen = peerName.charCodeAt(1) || charCodeRed
+  genAvatarSvg(roomName: string, avatarImgSize: number) {
+    const charCodeRed = roomName.charCodeAt(0)
+    const charCodeGreen = roomName.charCodeAt(1) || charCodeRed
     const red = charCodeRed ** 7 % 200
     const green = charCodeGreen ** 7 % 200
     const blue = (red + green) % 200
@@ -170,7 +178,7 @@ export class ChatServer {
               font-weight="normal"
               dy=".1em"
               dominant-baseline="middle"
-              fill="${textColor}">${peerName.substring(0, 2).toUpperCase()}
+              fill="${textColor}">${roomName.substring(0, 2).toUpperCase()}
           </text>
       </svg>`
     return `data:image/svg+xml,${svg.replace(/#/g, '%23').replace(/"/g, '\'').replace(/&/g, '&amp;')}`

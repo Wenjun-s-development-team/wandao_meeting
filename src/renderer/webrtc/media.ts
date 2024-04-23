@@ -192,6 +192,11 @@ export class MediaServer {
     }
   }
 
+  cleanRemoteMedia() {
+    remoteVideo.value = []
+    remoteAudio.value = []
+  }
+
   // 监听
   listen() {
     // 屏幕共享、设备切换 - 需重新创建 stream

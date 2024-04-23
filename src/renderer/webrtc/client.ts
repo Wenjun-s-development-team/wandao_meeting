@@ -28,8 +28,9 @@ export class Client {
   declare fileSharingServer: FileSharingServer
   declare whiteboardServer: WhiteboardServer
 
-  declare roomId: string
-  declare userId: string
+  declare roomId: number
+  declare roomName: string
+  declare userId: number
   declare userName: string
 
   declare socket: WebSocketServer
@@ -150,32 +151,6 @@ export class Client {
     }
   }
 
-  handleDisconnect(args: KeyValue) {
-    console.log('Disconnected from signaling server', { args })
-
-    // checkRecording()
-
-    // for (const peer_id in peerConnections) {
-    //   const peerVideoId = `${peer_id}___video`
-    //   const peerAudioId = `${peer_id}___audio`
-    //   peerVideoMediaElements[peerVideoId].parentNode.removeChild(peerVideoMediaElements[peerVideoId])
-    //   peerAudioMediaElements[peerAudioId].parentNode.removeChild(peerAudioMediaElements[peerAudioId])
-    //   peerConnections[peer_id].close()
-    //   msgerRemovePeer(peer_id)
-    //   removeVideoPinMediaContainer(peer_id)
-    // }
-
-    // adaptAspectRatio()
-
-    // chatDataChannels = {}
-    // fileDataChannels = {}
-    // peerConnections = {}
-    // peerVideoMediaElements = {}
-    // peerAudioMediaElements = {}
-
-    // isPeerReconnected = true
-  }
-
   // 进入房间
   async login() {
     console.log('12. join to room', this.roomId)
@@ -191,6 +166,45 @@ export class Client {
       peerRecordStatus: recordStatus.value,
       peerVideoPrivacy: videoPrivacy.value,
     })
+  }
+
+  handleDisconnect(args: KeyValue) {
+    console.log('Disconnected from signaling server', { args })
+
+    // 录音相关的UI
+    // checkRecording()
+
+    for (const userId in this.peerConnections) {
+      this.peerConnections[userId].close()
+    }
+
+    // adaptAspectRatio()
+
+    this.chatServer.cleanDataChannel()
+    this.fileSharingServer.cleanDataChannel()
+    this.mediaServer.cleanRemoteMedia()
+    this.peerConnections = {}
+
+    this.isPeerReconnected = true
+  }
+
+  handleRemovePeer(args: KeyValue) {
+    console.log('Signaling server said to remove peer:', args)
+
+    const { userId } = args
+
+    if (userId in this.peerConnections) {
+      this.peerConnections[userId].close()
+    }
+
+    delete this.allPeers[userId]
+    delete this.peerConnections[userId]
+
+    this.chatServer.removeDataChannel(userId)
+    this.fileSharingServer.removeDataChannel(userId)
+
+    playSound('removePeer')
+    console.log('ALL PEERS', this.allPeers)
   }
 
   /**
@@ -246,48 +260,11 @@ export class Client {
     playSound('createPeer')
   }
 
-  handleRemovePeer(args: KeyValue) {
-    console.log(args)
-    // console.log('Signaling server said to remove peer:', args)
-
-    // const { peer_id } = args
-
-    // const peerVideoId = `${peer_id}___video`
-    // const peerAudioId = `${peer_id}___audio`
-
-    // if (peerVideoId in peerVideoMediaElements) {
-    //   peerVideoMediaElements[peerVideoId].parentNode.removeChild(peerVideoMediaElements[peerVideoId])
-    //   adaptAspectRatio()
-    // }
-
-    // if (peerAudioId in peerAudioMediaElements) {
-    //   peerAudioMediaElements[peerAudioId].parentNode.removeChild(peerAudioMediaElements[peerAudioId])
-    // }
-
-    // if (peer_id in peerConnections) {
-    //   peerConnections[peer_id].close()
-    // }
-
-    // msgerRemovePeer(peer_id)
-    // removeVideoPinMediaContainer(peer_id)
-
-    // delete chatDataChannels[peer_id]
-    // delete fileDataChannels[peer_id]
-    // delete peerConnections[peer_id]
-    // delete peerVideoMediaElements[peerVideoId]
-    // delete peerAudioMediaElements[peerAudioId]
-    // delete allPeers[peer_id]
-
-    // playSound('removePeer')
-
-    // console.log('ALL PEERS', allPeers)
-  }
-
   /**
    * 打印 RTC 连接状态
    * @param {string} userId socket.id
    */
-  async logConnectionStatus(userId: string) {
+  async logConnectionStatus(userId: number) {
     this.peerConnections[userId].onconnectionstatechange = () => {
       const connectionStatus = this.peerConnections[userId].connectionState
       const signalingState = this.peerConnections[userId].signalingState
@@ -305,7 +282,7 @@ export class Client {
    * onICECandidate 处理 ICE 候选人
    * @param {string} userId socket.id
    */
-  async handleOnIceCandidate(userId: string) {
+  async handleOnIceCandidate(userId: number) {
     this.peerConnections[userId].onicecandidate = (event) => {
       if (!event.candidate || !event.candidate.candidate) {
         return
@@ -352,7 +329,7 @@ export class Client {
    * onDataChannel 创建 RTC 数据通道
    * @param {string} userId socket.id
    */
-  async handleRTCDataChannels(userId: string) {
+  async handleRTCDataChannels(userId: number) {
     this.peerConnections[userId].ondatachannel = (event) => {
       console.log(`handleRTCDataChannels ${userId}`, event)
       event.channel.onmessage = (msg) => {
@@ -394,7 +371,7 @@ export class Client {
    * 当需要通过信令通道进行连接协商时， 将发送一个 negotiationneeded事件
    * @param {string} userId socket.id
    */
-  async handleCreateRTCOffer(userId: string) {
+  async handleCreateRTCOffer(userId: number) {
     this.peerConnections[userId].onnegotiationneeded = () => {
       console.log(`Creating RTC offer to ${this.allPeers[userId].userName}`)
       this.peerConnections[userId].createOffer().then((localDescription) => {

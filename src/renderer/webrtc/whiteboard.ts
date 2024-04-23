@@ -28,7 +28,7 @@ export class WhiteboardServer {
   }
 
   getWhiteboardAction(action: string) {
-    return { action, roomId: this.client.roomId, peerName: this.client.peerName }
+    return { action, roomId: this.client.roomId, roomName: this.client.roomName }
   }
 
   whiteboardAction(config: KeyValue) {

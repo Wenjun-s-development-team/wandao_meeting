@@ -4,7 +4,7 @@ import { RTCRequest } from '@/api'
 export const useWebrtcStore = defineStore('webrtcStore', {
   state: () => {
     return {
-      lastRoomId: '', // 最近访问的房号
+      lastRoomId: 0, // 最近访问的房号
       useMirror: false, // 是否翻转视频
       useAudio: true, // 启用/禁用 音频
       useVideo: true, // 启用/禁用 视频
@@ -26,7 +26,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
 
       // 用户相关
       token: '',
-      userId: '',
+      userId: 0,
       userName: '',
       userAlias: '',
 
@@ -51,14 +51,14 @@ export const useWebrtcStore = defineStore('webrtcStore', {
     },
     async userInfo(): Promise<any> {
       const { data } = await RTCRequest.get('/user/info')
-      this.userId = data.ID
+      this.userId = data.id
       this.userName = data.name
       this.userAlias = data.alias
       return data
     },
     userLogout() {
       this.token = ''
-      this.userId = ''
+      this.userId = 0
       this.userName = ''
       this.userAlias = ''
     },
