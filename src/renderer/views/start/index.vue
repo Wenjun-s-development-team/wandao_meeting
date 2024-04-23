@@ -11,8 +11,10 @@ const webrtcStore = useWebrtcStore()
 const { lastRoomId } = storeToRefs(webrtcStore)
 
 function genRoom() {
-  lastRoomId.value = getRandomNumber(6)
+  lastRoomId.value = 101 // getRandomNumber(6)
 }
+
+lastRoomId.value = 101
 
 function joinRoom(value) {
   lastRoomId.value = 101 || value || lastRoomId.value
@@ -46,7 +48,7 @@ function joinRoom(value) {
         </div>
         <div class="cta-action">
           <div class="form-group">
-            <input v-model="lastRoomId" class="form-input">
+            <input v-model="lastRoomId" disabled class="form-input">
             <button class="button" @click="genRoom()">
               <i class="i-fa6-solid-arrows-rotate" />
             </button>
