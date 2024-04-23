@@ -17,6 +17,7 @@ type CreateRoom struct {
 }
 
 type RoomsStore interface {
+	Get(id uint64) (*Room, error)
 }
 
 type rooms struct {
@@ -26,9 +27,9 @@ type rooms struct {
 var Rooms RoomsStore
 var _ RoomsStore = (*rooms)(nil)
 
-func (db *rooms) Get(ctx context.Context, id uint64) (*Room, error) {
+func (db *rooms) Get(id uint64) (*Room, error) {
 	room := new(Room)
-	err := db.WithContext(ctx).Where("id = ?", id).First(room).Error
+	err := db.Where("id = ?", id).First(room).Error
 	if err != nil {
 		return nil, err
 	}

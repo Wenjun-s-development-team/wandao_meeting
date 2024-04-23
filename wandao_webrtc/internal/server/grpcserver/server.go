@@ -4,6 +4,7 @@ package grpcserver
 import (
 	"context"
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 	"net"
 
 	"io.wandao.meeting/internal/conf"
@@ -14,7 +15,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"io.wandao.meeting/internal/common"
-	"io.wandao.meeting/internal/models"
 	"io.wandao.meeting/internal/protobuf"
 	"io.wandao.meeting/internal/server/websocket"
 )

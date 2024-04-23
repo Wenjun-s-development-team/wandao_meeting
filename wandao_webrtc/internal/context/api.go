@@ -163,7 +163,7 @@ func AuthMiddleware(ctx *gin.Context) {
 		return
 	}
 
-	user, err := db.Users.GetByID(ctx.Request.Context(), uc.Id)
+	user, err := db.Users.Get(uc.Id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(
 			http.StatusOK,

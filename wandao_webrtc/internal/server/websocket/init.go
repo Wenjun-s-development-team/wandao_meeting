@@ -3,13 +3,13 @@ package websocket
 
 import (
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"io.wandao.meeting/internal/conf"
 	"io.wandao.meeting/internal/helper"
-	"io.wandao.meeting/internal/models"
 	log "unknwon.dev/clog/v2"
 )
 

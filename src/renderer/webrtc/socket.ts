@@ -1,4 +1,3 @@
-import { getUUID } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
 const webrtcStore = useWebrtcStore()
@@ -88,7 +87,7 @@ export class WebSocketServer {
 
   public send(cmd: string, message: KeyValue = {}): void {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      const seq = getUUID()
+      const seq = Date.now().toString()
       this.socket.send(JSON.stringify({ seq, cmd, data: message || {} }))
     } else {
       console.error('[WebSocket]未打开, 消息未能发送:', message)

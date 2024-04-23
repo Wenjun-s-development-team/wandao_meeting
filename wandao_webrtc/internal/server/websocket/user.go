@@ -4,10 +4,10 @@ package websocket
 import (
 	"errors"
 	"fmt"
+	models "io.wandao.meeting/internal/server/models"
 	"time"
 
 	"io.wandao.meeting/internal/libs/cache"
-	"io.wandao.meeting/internal/models"
 	"io.wandao.meeting/internal/server/grpcclient"
 
 	"github.com/redis/go-redis/v9"

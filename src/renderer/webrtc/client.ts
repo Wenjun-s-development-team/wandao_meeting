@@ -1,22 +1,21 @@
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import type { ChatServer, FileSharingServer, WhiteboardServer } from '.'
-import { MediaServer, WebSocketServer } from '.'
+import { ChatServer, FileSharingServer, MediaServer, WebSocketServer, WhiteboardServer } from '.'
 import { playSound } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
 const router = useRouter()
 const webrtcStore = useWebrtcStore()
 const {
+  userId,
   useVideo,
   useAudio,
   useScreen,
   handStatus,
   recordStatus,
-  privacyStatus,
+  videoPrivacy,
   iceNetwork,
   lastRoomId,
-  userId,
   userPeerName,
 } = storeToRefs(webrtcStore)
 
@@ -62,10 +61,10 @@ export class Client {
     this.roomId = lastRoomId.value
     this.userName = userPeerName.value
     this.userId = userId.value
-    // this.chatServer = new ChatServer(this)
+    this.chatServer = new ChatServer(this)
     this.mediaServer = new MediaServer(this)
-    // this.fileSharingServer = new FileSharingServer(this)
-    // this.whiteboardServer = new WhiteboardServer(this)
+    this.fileSharingServer = new FileSharingServer(this)
+    this.whiteboardServer = new WhiteboardServer(this)
   }
 
   start() {
@@ -177,21 +176,21 @@ export class Client {
   async login() {
     console.log('12. join to room', this.roomId)
     this.sendToServer('login', {
+      token: '',
       roomId: this.roomId,
       userId: this.userId,
-      token: '',
       userName: this.userName,
       peerVideo: useVideo.value,
       peerAudio: useAudio.value,
       peerScreen: useScreen.value,
       peerHandStatus: handStatus.value,
       peerRecordStatus: recordStatus.value,
-      peerPrivacyStatus: privacyStatus.value,
+      peerVideoPrivacy: videoPrivacy.value,
     })
   }
 
   /**
-   * 当加入一个房间后，收到信令服务器发送的 createPeer 事件
+   * 当加入一个房间后，收到信令服务器发送的 createRTCPeerConnection 事件
    * @param {object} args data
    */
   async createRTCPeerConnection(args: KeyValue) {
@@ -312,7 +311,7 @@ export class Client {
 
       // console.log('[ICE candidate]', event.candidate)
 
-      this.sendToServer('relayICE', {
+      this.sendToServer('onIceCandidate', {
         userId,
         iceCandidate: {
           sdpMLineIndex,
@@ -397,7 +396,7 @@ export class Client {
       this.peerConnections[userId].createOffer().then((localDescription) => {
         console.log('Local offer description is', localDescription)
         this.peerConnections[userId].setLocalDescription(localDescription).then(() => {
-          this.sendToServer('relaySDP', {
+          this.sendToServer('onSessionDescription', {
             userId,
             sessionDescription: localDescription,
           })
@@ -426,7 +425,7 @@ export class Client {
         this.peerConnections[userId].createAnswer().then((localDescription) => {
           console.log('Answer description is: ', localDescription)
           this.peerConnections[userId].setLocalDescription(localDescription).then(() => {
-            this.sendToServer('relaySDP', { userId, sessionDescription: localDescription })
+            this.sendToServer('onSessionDescription', { userId, sessionDescription: localDescription })
             console.log('Answer setLocalDescription done!')
             if (this.needToCreateOffer) {
               this.needToCreateOffer = false
@@ -555,7 +554,7 @@ export class Client {
   /**
    * 房间操作
    * @param {KeyValue} args data
-   * @param {boolean} emit 是否告知信令服务器
+   * @param {boolean} emit 是否通知其它用户
    */
   handleRoomAction(args: KeyValue, emit: boolean = false) {
     const { action } = args
@@ -763,6 +762,21 @@ export class Client {
 
   handleVideoPlayer(args: KeyValue) {
     console.log(args)
+  }
+
+  emitPeerAction(userId: number, action: string) {
+    if (!this.peerConnectCount) {
+      return
+    }
+
+    this.sendToServer('peerAction', {
+      action,
+      userId,
+      roomId: this.roomId,
+      peerVideo: useVideo.value,
+      roomName: '',
+      sendToAll: false,
+    })
   }
 
   sendToServer(type: string, args = {}) {

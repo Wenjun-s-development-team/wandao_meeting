@@ -4,10 +4,10 @@ package websocket
 import (
 	"encoding/json"
 	"fmt"
+	models "io.wandao.meeting/internal/server/models"
 	"sync"
 
 	"io.wandao.meeting/internal/common"
-	"io.wandao.meeting/internal/models"
 )
 
 // DisposeFunc 处理函数
@@ -41,7 +41,7 @@ func ProcessData(client *Client, message []byte) {
 			fmt.Println("处理数据 stop", r)
 		}
 	}()
-	request := &models.Request{}
+	request := &models.SendRequest{}
 	if err := json.Unmarshal(message, request); err != nil {
 		fmt.Println("处理数据 json Unmarshal", err)
 		client.SendMsg([]byte("数据不合法"))

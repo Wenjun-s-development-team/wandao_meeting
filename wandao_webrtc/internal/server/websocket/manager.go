@@ -3,24 +3,27 @@ package websocket
 
 import (
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 	"sync"
 	"time"
 
+	log "unknwon.dev/clog/v2"
+
 	"io.wandao.meeting/internal/helper"
 	"io.wandao.meeting/internal/libs/cache"
-	"io.wandao.meeting/internal/models"
 )
 
 // ClientManager 连接管理
 type ClientManager struct {
-	Clients     map[*Client]bool   // 全部的连接
-	ClientsLock sync.RWMutex       // 读写锁
-	Users       map[string]*Client // 登录的用户 // roomId+uuid
-	UserLock    sync.RWMutex       // 读写锁
-	Register    chan *Client       // 连接连接处理
-	Login       chan *login        // 用户登录处理
-	Unregister  chan *Client       // 断开连接处理程序
-	Broadcast   chan []byte        // 广播 向全部成员发送数据
+	Clients     map[*Client]bool                    // 全部的连接
+	ClientsLock sync.RWMutex                        // 读写锁
+	Users       map[string]*Client                  // 登录的用户 key=roomId+userId
+	Peers       map[uint64]map[uint64]*models.Peers // [roomId][userId]
+	UserLock    sync.RWMutex                        // 读写锁
+	Register    chan *Client                        // 连接连接处理
+	Login       chan *login                         // 用户登录处理
+	Unregister  chan *Client                        // 断开连接处理程序
+	Broadcast   chan []byte                         // 广播 向全部成员发送数据
 }
 
 // NewClientManager 创建连接管理
@@ -28,6 +31,7 @@ func NewClientManager() (clientManager *ClientManager) {
 	clientManager = &ClientManager{
 		Clients:    make(map[*Client]bool),
 		Users:      make(map[string]*Client),
+		Peers:      make(map[uint64]map[uint64]*models.Peers),
 		Register:   make(chan *Client, 1000),
 		Login:      make(chan *login, 1000),
 		Unregister: make(chan *Client, 1000),
@@ -113,10 +117,14 @@ func (manager *ClientManager) GetUsersLen() (userLen int) {
 }
 
 // AddUsers 添加用户
-func (manager *ClientManager) AddUsers(key string, client *Client) {
+func (manager *ClientManager) AddUsers(key string, client *Client, roomInfo *models.Peers) {
 	manager.UserLock.Lock()
 	defer manager.UserLock.Unlock()
 	manager.Users[key] = client
+	if _, ok := manager.Peers[client.RoomId]; !ok {
+		clientManager.Peers[client.RoomId] = make(map[uint64]*models.Peers)
+	}
+	manager.Peers[client.RoomId][client.UserId] = roomInfo
 }
 
 // DelUsers 删除用户
@@ -130,6 +138,10 @@ func (manager *ClientManager) DelUsers(client *Client) (result bool) {
 			return
 		}
 		delete(manager.Users, key)
+		delete(manager.Peers[client.RoomId], client.UserId)
+		if len(manager.Peers[client.RoomId]) == 0 {
+			delete(manager.Peers, client.UserId)
+		}
 		result = true
 	}
 	return
@@ -156,7 +168,16 @@ func (manager *ClientManager) GetUserList(roomId uint64) (userList []uint64) {
 			userList = append(userList, v.UserId)
 		}
 	}
-	fmt.Println("GetUserList len:", len(manager.Users))
+	log.Info("GetUserList len: %d", len(manager.Users))
+	return
+}
+
+// GetRoomPeers 获取房间信息
+func (manager *ClientManager) GetRoomPeers(roomId uint64) (peers map[uint64]*models.Peers) {
+	manager.UserLock.RLock()
+	defer manager.UserLock.RUnlock()
+	peers = manager.Peers[roomId]
+	log.Info("GetRoomPeers len: %d", len(peers))
 	return
 }
 
@@ -194,7 +215,7 @@ func (manager *ClientManager) sendRoomIdAll(message []byte, roomId uint64, self 
 // EventRegister 用户建立连接事件
 func (manager *ClientManager) EventRegister(client *Client) {
 	manager.AddClients(client)
-	fmt.Println("EventRegister 用户建立连接", client.Addr)
+	log.Info("EventRegister 用户建立连接: %s", client.Addr)
 	// client.Send <- []byte("连接成功")
 }
 
@@ -204,9 +225,11 @@ func (manager *ClientManager) EventLogin(login *login) {
 	// 连接存在，在添加
 	if manager.InClient(client) {
 		userKey := login.GetKey()
-		manager.AddUsers(userKey, login.Client)
+		manager.AddUsers(userKey, login.Client, login.Peers)
+		client.SendCreateRTCPeerConnection(false)
+		client.SendCreateRTCPeerConnection(true)
 	}
-	fmt.Println("EventLogin 用户登录", client.Addr, login.RoomId, login.UserId)
+	log.Info("EventLogin 用户登录: %s|%d|%d", client.Addr, login.RoomId, login.UserId)
 	orderID := helper.GetOrderIDTime()
 	_, _ = SendUserMessageAll(login.RoomId, login.UserId, orderID, models.MessageCmdEnter, "哈喽~")
 }
@@ -231,7 +254,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 
 	// 关闭 chan
 	// close(client.Send)
-	fmt.Println("EventUnregister 用户断开连接", client.Addr, client.RoomId, client.UserId)
+	log.Info("EventUnregister 用户断开连接: %s|%d|%d", client.Addr, client.RoomId, client.UserId)
 	if client.UserId > 0 {
 		orderID := helper.GetOrderIDTime()
 		_, _ = SendUserMessageAll(client.RoomId, client.UserId, orderID, models.MessageCmdExit, "用户已经离开~")
@@ -299,7 +322,7 @@ func ClearTimeoutConnections() {
 	clients := clientManager.GetClients()
 	for client := range clients {
 		if client.IsHeartbeatTimeout(currentTime) {
-			fmt.Println("心跳时间超时 关闭连接", client.Addr, client.UserId, client.LoginTime, client.HeartbeatTime)
+			log.Info("心跳时间超时 关闭连接", client.Addr, client.UserId, client.LoginTime, client.HeartbeatTime)
 			_ = client.Socket.Close()
 		}
 	}
@@ -307,14 +330,14 @@ func ClearTimeoutConnections() {
 
 // GetUserList 获取全部用户
 func GetUserList(roomId uint64) (userList []uint64) {
-	fmt.Println("获取全部用户", roomId)
+	log.Info("获取全部用户", roomId)
 	userList = clientManager.GetUserList(roomId)
 	return
 }
 
 // AllSendMessages 全员广播
 func AllSendMessages(roomId uint64, userId uint64, data string) {
-	fmt.Println("全员广播", roomId, userId, data)
+	log.Info("全员广播", roomId, userId, data)
 	ignoreClient := clientManager.GetUserClient(roomId, userId)
 	clientManager.sendRoomIdAll([]byte(data), roomId, ignoreClient)
 }

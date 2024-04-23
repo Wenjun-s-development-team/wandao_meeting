@@ -2,13 +2,12 @@ package db
 
 import (
 	"context"
-	"strings"
-	"time"
-	"unicode/utf8"
-
 	"io.wandao.meeting/internal/utils/cryptoutil"
 	"io.wandao.meeting/internal/utils/errutil"
 	"io.wandao.meeting/internal/utils/userutil"
+	"strings"
+	"time"
+	"unicode/utf8"
 
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -141,9 +140,10 @@ func isUsernameAllowed(name string) error {
 
 // UsersStore 定义用户 Db 操作接口
 type UsersStore interface {
+	Get(id uint64) (*User, error)
+	GetListById(uuids []uint64) ([]*User, error)
 	Authenticate(ctx context.Context, name, passwd string) (*User, error)
-	GetByID(ctx context.Context, id uint64) (*User, error)
-	IsUsernameUsed(ctx context.Context, username string, excludeUserId uint64) bool
+	Create(ctx context.Context, username, email string, opts CreateUserOptions) (*User, error)
 }
 
 // Create 创建用户
@@ -221,14 +221,11 @@ func (db *users) Authenticate(ctx context.Context, name, passwd string) (*User, 
 	return nil, err
 }
 
-// GetByID 按ID查找用户
-func (db *users) GetByID(ctx context.Context, id uint64) (*User, error) {
+// Get 按ID查找用户
+func (db *users) Get(id uint64) (*User, error) {
 	user := new(User)
-	err := db.WithContext(ctx).Where("id = ?", id).First(user).Error
+	err := db.Where("id = ?", id).First(user).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrUserNotExist{args: errutil.Args{"userId": id}}
-		}
 		return nil, err
 	}
 	return user, nil
@@ -249,6 +246,19 @@ func (db *users) GetByEmail(ctx context.Context, email string) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (db *users) GetListById(uuids []uint64) ([]*User, error) {
+	if len(uuids) == 0 {
+		return []*User{}, nil
+	}
+	userList := make([]*User, 0, len(uuids))
+	err := db.Where("id IN (?)", uuids).Find(&userList).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return userList, nil
 }
 
 // IsUsernameUsed 用户是否存在

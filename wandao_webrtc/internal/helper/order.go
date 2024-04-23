@@ -8,7 +8,7 @@ import (
 
 // GetOrderIDTime 获取订单 ID
 func GetOrderIDTime() (orderID string) {
-	currentTime := time.Now().Nanosecond()
+	currentTime := time.Now().UnixNano()
 	orderID = fmt.Sprintf("%d", currentTime)
 	return
 }

@@ -4,8 +4,8 @@ package websocket
 import (
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
-	"io.wandao.meeting/internal/models"
-	"io.wandao.meeting/internal/utils/strutil"
+	"io.wandao.meeting/internal/helper"
+	"io.wandao.meeting/internal/server/models"
 	"runtime/debug"
 
 	"github.com/gorilla/websocket"
@@ -21,6 +21,7 @@ type login struct {
 	RoomId uint64
 	UserId uint64
 	Client *Client
+	Peers  *models.Peers
 }
 
 // GetKey 获取 key
@@ -166,8 +167,8 @@ func (c *Client) SendMessage(cmd string, data interface{}) {
 		}
 	}()
 
-	msg, err := jsoniter.Marshal(models.Reply{
-		Seq:  strutil.GenUUID(),
+	msg, err := jsoniter.Marshal(models.SendRequest{
+		Seq:  helper.GetOrderIDTime(),
 		Cmd:  cmd,
 		Data: data,
 	})

@@ -3,6 +3,7 @@ package user
 
 import (
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -10,7 +11,6 @@ import (
 	"io.wandao.meeting/internal/controller/types"
 	"io.wandao.meeting/internal/db"
 	"io.wandao.meeting/internal/libs/cache"
-	"io.wandao.meeting/internal/models"
 	"io.wandao.meeting/internal/server/websocket"
 	"io.wandao.meeting/internal/utils/jwtutil"
 )

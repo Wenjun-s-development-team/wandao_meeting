@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 	"strconv"
 
 	"io.wandao.meeting/internal/libs/redislib"
-	"io.wandao.meeting/internal/models"
 )
 
 const (

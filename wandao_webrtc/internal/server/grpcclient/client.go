@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"io.wandao.meeting/internal/common"
-	"io.wandao.meeting/internal/models"
 	"io.wandao.meeting/internal/protobuf"
 )
 

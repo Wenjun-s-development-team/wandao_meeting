@@ -19,7 +19,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
 
       handStatus: false, // 手状态和图标
       recordStatus: false, // 是否录音
-      privacyStatus: false,
+      videoPrivacy: false,
 
       // 连接状态 '🟢' '🔴'
       iceNetwork: { host: false, stun: false, turn: false },

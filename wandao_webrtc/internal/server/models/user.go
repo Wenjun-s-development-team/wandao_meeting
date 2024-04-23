@@ -16,24 +16,25 @@ type UserOnline struct {
 	AppPort       string `json:"appPort"`       // 端口
 	RoomId        uint64 `json:"roomId"`        // roomId
 	UserId        uint64 `json:"userId"`        // 用户ID
+	UserName      string `json:"userName"`      // 用户名称
+	UserLock      bool   `json:"userLock"`      // 是否锁定
 	ClientIp      string `json:"clientIp"`      // 客户端Ip
 	ClientPort    string `json:"clientPort"`    // 客户端端口
 	LoginTime     uint64 `json:"loginTime"`     // 用户上次登录时间
 	HeartbeatTime uint64 `json:"heartbeatTime"` // 用户上次心跳时间
-	LogOutTime    uint64 `json:"logOutTime"`    // 用户退出登录的时间
-	Qua           string `json:"qua"`           // qua
+	LogoutTime    uint64 `json:"logoutTime"`    // 用户退出登录的时间
 	DeviceInfo    string `json:"deviceInfo"`    // 设备信息
 	IsLogoff      bool   `json:"isLogoff"`      // 是否下线
 }
 
 // UserLogin 用户登录
-func UserLogin(appIp, appPort string, roomId uint64, userId uint64, addr string, loginTime uint64) (userOnline *UserOnline) {
+func UserLogin(appIp, appPort string, roomId uint64, userId uint64, clientIp string, loginTime uint64) (userOnline *UserOnline) {
 	userOnline = &UserOnline{
 		AppIp:         appIp,
 		AppPort:       appPort,
 		RoomId:        roomId,
 		UserId:        userId,
-		ClientIp:      addr,
+		ClientIp:      clientIp,
 		LoginTime:     loginTime,
 		HeartbeatTime: loginTime,
 		IsLogoff:      false,
@@ -50,7 +51,7 @@ func (u *UserOnline) Heartbeat(currentTime uint64) {
 // LogOut 用户退出登录
 func (u *UserOnline) LogOut() {
 	currentTime := uint64(time.Now().Unix())
-	u.LogOutTime = currentTime
+	u.LogoutTime = currentTime
 	u.IsLogoff = true
 }
 

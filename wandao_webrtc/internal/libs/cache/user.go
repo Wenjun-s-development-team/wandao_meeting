@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io.wandao.meeting/internal/server/models"
 
 	"github.com/redis/go-redis/v9"
 
 	"io.wandao.meeting/internal/libs/redislib"
-	"io.wandao.meeting/internal/models"
 )
 
 const (

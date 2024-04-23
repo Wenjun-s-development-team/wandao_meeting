@@ -17,13 +17,6 @@ type Response struct {
 	Data    interface{} `json:"data"` // 数据 json
 }
 
-// Reply 应答数据体
-type Reply struct {
-	Seq  string      `json:"seq"`            // 消息的唯一ID
-	Cmd  string      `json:"cmd"`            // 应答事件
-	Data interface{} `json:"data,omitempty"` // 数据 json
-}
-
 // PushMsg 数据结构体
 type PushMsg struct {
 	Seq  string `json:"seq"`
