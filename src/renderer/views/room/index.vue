@@ -1,20 +1,28 @@
 <script setup>
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { Client } from '@/webrtc'
+import { useWebrtcStore } from '@/store'
 
+const webrtcStore = useWebrtcStore()
 const router = useRouter()
 
-const videoElement = ref(null)
-const audioElement = ref(null)
-const volumeElement = ref(null)
+const {
+  remoteVideo,
+  remoteAudio,
+} = storeToRefs(webrtcStore)
+
+const localVideo = ref(null)
+const localAudio = ref(null)
+const localVolume = ref(null)
 
 const useMirror = ref(false)
 const isMounted = useMounted()
 
 watchOnce(isMounted, () => {
-  if (videoElement.value && audioElement.value) {
+  if (localVideo.value && localAudio.value) {
     const client = new Client()
-    client.mediaServer.init(videoElement.value, audioElement.value, volumeElement.value)
+    client.mediaServer.init(localVideo.value, localAudio.value, localVolume.value)
     client.start()
   }
 })
@@ -106,7 +114,7 @@ function onSignout() {
         </button>
       </div>
     </Transition>
-    <div ref="volumeElement" class="volume-container">
+    <div ref="localVolume" class="volume-container">
       <div class="volume-bar" />
       <div class="volume-bar" />
       <div class="volume-bar" />
@@ -119,19 +127,41 @@ function onSignout() {
       <div class="volume-bar" />
     </div>
     <div class="main">
-      <div class="video-container">
-        <video
-          ref="videoElement"
-          class="swal2-video"
-          :class="{ mirror: useMirror }"
-          muted
-          autoplay
-          playsinline="true"
-          poster="../../assets/images/loader.gif"
-        />
-      </div>
+      <TransitionGroup name="cameraIn" tag="div" class="video-container">
+        <div key="localVideo" class="camera">
+          <video
+            ref="localVideo"
+            class="video"
+            :class="{ mirror: useMirror }"
+            muted
+            autoplay
+            playsinline="true"
+            poster="../../assets/images/loader.gif"
+          />
+        </div>
+        <template v-for="(video, index) in remoteVideo" :key="`remoteVideo${index}`">
+          <div class="camera">
+            <video
+              class="video"
+              :srcObject="video.stream"
+              muted
+              autoplay
+              playsinline="true"
+              poster="../../assets/images/loader.gif"
+            />
+            <div class="name">{{ video.userId }}</div>
+          </div>
+        </template>
+      </TransitionGroup>
       <div class="audio-container">
-        <audio ref="audioElement" autoplay muted :volume="0" />
+        <div class="audio-wrap">
+          <audio ref="localAudio" autoplay muted :volume="0" />
+        </div>
+        <template v-for="(audio, index) in remoteAudio" :key="index">
+          <div class="audio-wrap">
+            <audio autoplay muted :volume="0" />
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -210,23 +240,68 @@ function onSignout() {
     flex: 1;
     position: relative;
     .video-container {
-      margin: 5px;
+      gap: 8px;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      display: flex;
+      padding: 8px;
       border-radius: 5px;
+      align-content: center;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
       overflow: hidden;
-      .swal2-video {
-        z-index: 0;
-        width: 100%;
-        height: 100%;
+      .camera {
+        flex: 1;
+        vertical-align: middle;
+        align-self: center;
+        overflow: hidden;
+        display: inline-block;
         position: relative;
+        background: radial-gradient(#393939, #000000);
+        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
         border-radius: 10px;
-        object-fit: contain;
-        transform-origin: center center;
-        transform: rotateY(0deg);
-        transition: transform 0.3s ease-in-out;
-        &.mirror {
-          transform: rotateY(180deg);
+        .video {
+          z-index: 0;
+          width: 100%;
+          height: 100%;
+          position: relative;
+          border-radius: 10px;
+          object-fit: cover;
+          transform-origin: center center;
+          transform: rotateY(0deg);
+          transition: transform 0.3s ease-in-out;
+          &.mirror {
+            transform: rotateY(180deg);
+          }
+        }
+        .name {
+          z-index: 8;
+          right: 0;
+          bottom: 0;
+          color: #fff;
+          font-size: 12px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 5px;
+          width: auto;
+          height: 25px;
+          min-width: 40px;
+          position: absolute;
+          border-radius: 5px;
+          background: rgba(0, 0, 0, 0.3);
+          transition: all 0.5s;
+          &:hover {
+            background: rgba(0, 0, 0, 0.8);
+          }
         }
       }
+    }
+    .audio-container {
+      display: none;
     }
   }
 }

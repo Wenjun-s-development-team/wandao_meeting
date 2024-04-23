@@ -55,7 +55,7 @@ func (c *Client) SendIceCandidate(request *models.IceCandidateRequest) {
 	client := clientManager.GetUserClient(c.RoomId, request.UserId)
 	client.SendMessage("iceCandidate", gin.H{
 		"userId":       c.UserId,
-		"IceCandidate": request.IceCandidate,
+		"iceCandidate": request.IceCandidate,
 	})
 }
 
@@ -63,6 +63,6 @@ func (c *Client) SendSessionDescription(request *models.SessionDescriptionReques
 	client := clientManager.GetUserClient(c.RoomId, request.UserId)
 	client.SendMessage("sessionDescription", gin.H{
 		"userId":             c.UserId,
-		"SessionDescription": request.SessionDescription,
+		"sessionDescription": request.SessionDescription,
 	})
 }

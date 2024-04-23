@@ -29,6 +29,10 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       userId: '',
       userName: '',
       userAlias: '',
+
+      // 远程媒体
+      remoteVideo: <KeyValue[]>[],
+      remoteAudio: <KeyValue[]>[],
     }
   },
   getters: {

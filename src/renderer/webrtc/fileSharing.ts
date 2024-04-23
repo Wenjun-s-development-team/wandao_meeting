@@ -12,10 +12,10 @@ export class FileSharingServer {
     this.client = client
   }
 
-  async createDataChannel(clientId: string) {
-    this.fileDataChannels[clientId] = this.client.peerConnections[clientId].createDataChannel('file_sharing_channel')
-    this.fileDataChannels[clientId].binaryType = 'arraybuffer'
-    this.fileDataChannels[clientId].onopen = (event) => {
+  async createDataChannel(userId: string) {
+    this.fileDataChannels[userId] = this.client.peerConnections[userId].createDataChannel('file_sharing_channel')
+    this.fileDataChannels[userId].binaryType = 'arraybuffer'
+    this.fileDataChannels[userId].onopen = (event) => {
       console.log('fileDataChannels created', event)
     }
   }

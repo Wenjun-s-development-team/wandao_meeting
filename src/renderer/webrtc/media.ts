@@ -15,6 +15,8 @@ const {
   videoInputDevices,
   audioInputDevices,
   audioOutputDevices,
+  remoteVideo,
+  remoteAudio,
 } = storeToRefs(webrtcStore)
 
 /**
@@ -42,6 +44,8 @@ export class MediaServer {
     this.videoElement = videoElement
     this.audioElement = audioElement
     this.volumeElement = volumeElement
+    remoteVideo.value = []
+    remoteAudio.value = []
     return this
   }
 
@@ -155,33 +159,36 @@ export class MediaServer {
    * 加载远程媒体流
    * @param {MediaStream} stream audio ｜ video媒体流
    * @param {object} peers 同一房间所有 RTCPeer 信息
-   * @param {string} clientId socket.id
+   * @param {string} userId socket.id
    */
-  async loadRemoteMediaStream(stream: MediaStream, peers: KeyValue, clientId: string, kind: string) {
-    console.log('REMOTE PEER INFO', peers[clientId])
+  async loadRemoteMediaStream(stream: MediaStream, peers: KeyValue, userId: string, kind: string) {
+    const room = peers[userId]
+    console.log('REMOTE PEER INFO', room)
 
-    const peerName = peers[clientId].peerName
-    // const peerAudio = peers[clientId].peerAudio
-    // const peerVideo = peers[clientId].peerVideo
-    // const peerVideoStatus = peers[clientId].peerVideoStatus
-    // const peerAudioStatus = peers[clientId].peerAudioStatus
-    // const peerScreenStatus = peers[clientId].peerScreenStatus
-    // const peerHandStatus = peers[clientId].peerHandStatus
-    // const peerRecordStatus = peers[clientId].peerRecordStatus
-    // const peerPrivacyStatus = peers[clientId].peerPrivacyStatus
+    // const peerAudio = peers[userId].peerAudio
+    // const peerVideo = peers[userId].peerVideo
+    // const peerVideoStatus = peers[userId].peerVideoStatus
+    // const peerAudioStatus = peers[userId].peerAudioStatus
+    // const peerScreenStatus = peers[userId].peerScreenStatus
+    // const peerHandStatus = peers[userId].peerHandStatus
+    // const peerRecordStatus = peers[userId].peerRecordStatus
+    // const peerPrivacyStatus = peers[userId].peerPrivacyStatus
 
     if (stream) {
-      console.log(`LOAD REMOTE MEDIA STREAM TRACKS - PeerName:[${peerName}]`, stream.getTracks())
+      console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${room.roomName}]`, stream.getTracks())
     }
 
     if (kind === 'video') {
-      console.log('SETUP REMOTE VIDEO STREAM')
-      this.attachMediaStream(this.remoteVideoElement, stream)
+      console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
+      remoteVideo.value.push({ userId, stream, room, kind })
+
+      // this.attachMediaStream(this.remoteVideoElement, stream)
       // resize video elements
       // adaptAspectRatio()
     } else if (kind === 'audio') {
-      console.log('SETUP REMOTE AUDIO STREAM')
-      this.attachMediaStream(this.remoteAudioElement, stream)
+      console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
+      remoteAudio.value.push({ userId, stream, room, kind })
+      // this.attachMediaStream(this.remoteAudioElement, stream)
     }
   }
 
@@ -209,7 +216,7 @@ export class MediaServer {
         deviceId: audioInputDeviceId.value,
         ...this.getAudioConstraints(),
       })
-    })
+    }, { immediate: true })
 
     // 监听 音频视频 启用/禁用 - 不需重新创建 stream
     watch([useVideo, useAudio], () => {
@@ -266,22 +273,22 @@ export class MediaServer {
   /**
    * onTrack 轨道添加到 P2P 连接事件
    * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/ontrack
-   * @param {string} clientId socket.id
+   * @param {string} userId socket.id
    * @param {KeyValue} peers 同一房间所有 RTCPeer 信息
    */
-  async handleOnTrack(clientId: string, peers: KeyValue) {
+  async handleOnTrack(userId: string, peers: KeyValue) {
     if (this.client) {
-      console.log('[ON TRACK] - clientId', { clientId })
+      console.log('[ON TRACK] - userId', { userId })
 
-      this.client.peerConnections[clientId].ontrack = (event) => {
+      this.client.peerConnections[userId].ontrack = (event) => {
         const { remoteVideoElement, remoteAudioElement } = this
         // remoteAvatarImage
 
-        const peerInfo = peers[clientId]
-        const { peerName } = peerInfo
+        const peerInfo = peers[userId]
+        const { roomName } = peerInfo
         const { kind } = event.track
 
-        console.log('[ON TRACK] - info', { clientId, peerName, kind })
+        console.log('[ON TRACK] - info', { userId, roomName, kind })
 
         if (event.streams && event.streams[0]) {
           console.log('[ON TRACK] - peers', peers)
@@ -290,18 +297,18 @@ export class MediaServer {
             case 'video':
               remoteVideoElement
                 ? this.attachMediaStream(remoteVideoElement, event.streams[0])
-                : this.loadRemoteMediaStream(event.streams[0], peers, clientId, kind)
+                : this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
               break
             case 'audio':
               remoteAudioElement
                 ? this.attachMediaStream(remoteAudioElement, event.streams[0])
-                : this.loadRemoteMediaStream(event.streams[0], peers, clientId, kind)
+                : this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
               break
             default:
               break
           }
         } else {
-          console.log('[ON TRACK] - SCREEN SHARING', { clientId, peerName, kind })
+          console.log('[ON TRACK] - SCREEN SHARING', { userId, roomName, kind })
           const inboundStream = new MediaStream([event.track])
           this.attachMediaStream(remoteVideoElement, inboundStream)
         }
@@ -312,11 +319,11 @@ export class MediaServer {
   /**
    * 将本地音视频流添加到P2P连接中
    * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/addTrack
-   * @param {string} clientId socket.id
+   * @param {string} userId socket.id
    */
-  async handleAddTracks(clientId: string) {
+  async handleAddTracks(userId: string) {
     if (this.client) {
-      const peerName = this.client.allPeers[clientId].peerName
+      const roomName = this.client.allPeers[userId].roomName
       const { localVideoStream, localAudioStream } = this
       const videoTrack = localVideoStream && localVideoStream.getVideoTracks()[0]
       const audioTrack = localAudioStream && localAudioStream.getAudioTracks()[0]
@@ -324,13 +331,13 @@ export class MediaServer {
       console.log('handleAddTracks', { videoTrack, audioTrack })
 
       if (videoTrack) {
-        console.log(`[ADD VIDEO TRACK] to Peer Name [${peerName}]`)
-        this.client.peerConnections[clientId].addTrack(videoTrack, localVideoStream)
+        console.log(`[ADD VIDEO TRACK] to Peer Name [${roomName}]`)
+        this.client.peerConnections[userId].addTrack(videoTrack, localVideoStream)
       }
 
       if (audioTrack) {
-        console.log(`[ADD AUDIO TRACK] to Peer Name [${peerName}]`)
-        this.client.peerConnections[clientId].addTrack(audioTrack, localAudioStream)
+        console.log(`[ADD AUDIO TRACK] to Peer Name [${roomName}]`)
+        this.client.peerConnections[userId].addTrack(audioTrack, localAudioStream)
       }
     }
   }

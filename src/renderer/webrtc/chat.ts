@@ -21,9 +21,9 @@ export class ChatServer {
     this.client = client
   }
 
-  async createDataChannel(clientId: string) {
-    this.chatDataChannels[clientId] = this.client.peerConnections[clientId].createDataChannel('chat_channel')
-    this.chatDataChannels[clientId].onopen = (event) => {
+  async createDataChannel(userId: string) {
+    this.chatDataChannels[userId] = this.client.peerConnections[userId].createDataChannel('chat_channel')
+    this.chatDataChannels[userId].onopen = (event) => {
       console.log('chatDataChannels created', event)
     }
   }
