@@ -149,8 +149,8 @@ func HeartbeatController(client *Client, seq string, message []byte) (code uint6
 	return
 }
 
-// OnIceCandidate 应答 onIceCandidate 事件
-func OnIceCandidate(client *Client, seq string, message []byte) (code uint64, msg string, data interface{}) {
+// RelayIceCandidate 应答 onIceCandidate 事件
+func RelayIceCandidate(client *Client, seq string, message []byte) (code uint64, msg string, data interface{}) {
 	code = common.OK
 	request := &models.IceCandidateRequest{}
 	if err := json.Unmarshal(message, request); err != nil {
@@ -162,7 +162,7 @@ func OnIceCandidate(client *Client, seq string, message []byte) (code uint64, ms
 	return
 }
 
-func OnSessionDescription(client *Client, seq string, message []byte) (code uint64, msg string, data interface{}) {
+func RelaySessionDescription(client *Client, seq string, message []byte) (code uint64, msg string, data interface{}) {
 	code = common.OK
 	request := &models.SessionDescriptionRequest{}
 	if err := json.Unmarshal(message, request); err != nil {

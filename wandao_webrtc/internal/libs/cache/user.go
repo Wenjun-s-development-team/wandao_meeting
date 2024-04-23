@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io.wandao.meeting/internal/server/models"
+	log "unknwon.dev/clog/v2"
 
 	"github.com/redis/go-redis/v9"
 
@@ -39,10 +40,11 @@ func GetUserOnlineInfo(userKey string) (userOnline *models.UserOnline, err error
 	userOnline = &models.UserOnline{}
 	err = json.Unmarshal(data, userOnline)
 	if err != nil {
-		fmt.Println("获取用户在线数据 json Unmarshal", userKey, err)
+		log.Error("[Redist]获取用户在线数据: json Unmarshal: %s | %v", userKey, err)
 		return
 	}
-	fmt.Println("获取用户在线数据", userKey, "time", userOnline.LoginTime, userOnline.HeartbeatTime, "AppIp",
+	log.Info("[Redist]获取用户在线数据: ", userKey, "time",
+		userOnline.LoginTime, userOnline.HeartbeatTime, "AppIp",
 		userOnline.AppIp, userOnline.IsLogoff)
 	return
 }

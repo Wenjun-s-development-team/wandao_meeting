@@ -6,8 +6,8 @@ type IceCandidateEvent struct {
 }
 
 type IceCandidateRequest struct {
-	UserId       string                       `json:"userId"`
-	IceCandidate map[string]IceCandidateEvent `json:"iceCandidate"`
+	UserId       uint64            `json:"userId"`
+	IceCandidate IceCandidateEvent `json:"iceCandidate"`
 }
 
 type RTCSdpType struct {
@@ -16,8 +16,8 @@ type RTCSdpType struct {
 }
 
 type SessionDescriptionRequest struct {
-	UserId             string                `json:"userId"`
-	SessionDescription map[string]RTCSdpType `json:"sessionDescription"`
+	UserId             uint64     `json:"userId"`
+	SessionDescription RTCSdpType `json:"sessionDescription"`
 }
 
 type RoomAction struct {

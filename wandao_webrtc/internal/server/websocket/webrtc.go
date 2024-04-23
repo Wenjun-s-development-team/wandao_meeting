@@ -23,11 +23,28 @@ func getIceServers() (iceServers []map[string]interface{}) {
 	return
 }
 
-func (c *Client) SendCreateRTCPeerConnection(createOffer bool) {
+// CreateRoomRTCPeerConnection 用户登录后 通知客户端创建 offer
+// 应先于 clientManager.AddUsers 执行该通知
+func CreateRoomRTCPeerConnection(client *Client) {
+	clientManager.UserLock.RLock()
+	defer clientManager.UserLock.RUnlock()
+	// 用户登录后，尚未注册该用户到 clientManager.Users
+	// 因此只会向已经注册的用户发送通知
+	for _, other := range clientManager.Users {
+		if other.RoomId == client.RoomId {
+			// 向其它用户发送通知
+			other.SendCreateRTCPeerConnection(client.UserId, false)
+			// 向自己发送通知
+			client.SendCreateRTCPeerConnection(other.UserId, true)
+		}
+	}
+}
+
+func (c *Client) SendCreateRTCPeerConnection(userId uint64, createOffer bool) {
 	iceServers := getIceServers()
 	peers := clientManager.GetRoomPeers(c.RoomId)
 	c.SendMessage("createRTCPeerConnection", gin.H{
-		"userId":            c.UserId,
+		"userId":            userId,
 		"peers":             peers,
 		"shouldCreateOffer": createOffer,
 		"iceServers":        iceServers,
@@ -35,14 +52,16 @@ func (c *Client) SendCreateRTCPeerConnection(createOffer bool) {
 }
 
 func (c *Client) SendIceCandidate(request *models.IceCandidateRequest) {
-	c.SendMessage("iceCandidate", gin.H{
+	client := clientManager.GetUserClient(c.RoomId, request.UserId)
+	client.SendMessage("iceCandidate", gin.H{
 		"userId":       c.UserId,
 		"IceCandidate": request.IceCandidate,
 	})
 }
 
 func (c *Client) SendSessionDescription(request *models.SessionDescriptionRequest) {
-	c.SendMessage("sessionDescription", gin.H{
+	client := clientManager.GetUserClient(c.RoomId, request.UserId)
+	client.SendMessage("sessionDescription", gin.H{
 		"userId":             c.UserId,
 		"SessionDescription": request.SessionDescription,
 	})

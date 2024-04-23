@@ -30,9 +30,9 @@ func RandomChars(n int) (string, error) {
 	}
 
 	buffer := make([]byte, n)
-	max := big.NewInt(int64(len(alphanum)))
+	maxBig := big.NewInt(int64(len(alphanum)))
 	for i := 0; i < n; i++ {
-		index, err := randomInt(max)
+		index, err := randomInt(maxBig)
 		if err != nil {
 			return "", err
 		}

@@ -9,8 +9,8 @@ func WebRtcInit() {
 	websocket.Register("ping", websocket.PingController)
 	websocket.Register("heartbeat", websocket.HeartbeatController)
 
-	websocket.Register("onIceCandidate", websocket.OnIceCandidate)
-	websocket.Register("onSessionDescription", websocket.OnSessionDescription)
+	websocket.Register("relayICE", websocket.RelayIceCandidate)
+	websocket.Register("relaySDP", websocket.RelaySessionDescription)
 
 	websocket.Register("roomAction", websocket.RoomAction)
 	websocket.Register("peerAction", websocket.PeerAction)

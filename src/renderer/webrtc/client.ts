@@ -142,8 +142,12 @@ export class Client {
   // 连接成功
   async handleConnect() {
     console.log('03. 信令服务器连接成功')
-    this.mediaServer && await this.mediaServer.start()
-    this.login()
+    if (this.mediaServer.localVideoStream && this.mediaServer.localAudioStream) {
+      this.login()
+    } else {
+      await this.mediaServer.start()
+      this.login()
+    }
   }
 
   handleDisconnect(args: KeyValue) {
@@ -311,7 +315,7 @@ export class Client {
 
       // console.log('[ICE candidate]', event.candidate)
 
-      this.sendToServer('onIceCandidate', {
+      this.sendToServer('relayICE', {
         userId,
         iceCandidate: {
           sdpMLineIndex,
@@ -396,7 +400,7 @@ export class Client {
       this.peerConnections[userId].createOffer().then((localDescription) => {
         console.log('Local offer description is', localDescription)
         this.peerConnections[userId].setLocalDescription(localDescription).then(() => {
-          this.sendToServer('onSessionDescription', {
+          this.sendToServer('relaySDP', {
             userId,
             sessionDescription: localDescription,
           })
@@ -425,7 +429,7 @@ export class Client {
         this.peerConnections[userId].createAnswer().then((localDescription) => {
           console.log('Answer description is: ', localDescription)
           this.peerConnections[userId].setLocalDescription(localDescription).then(() => {
-            this.sendToServer('onSessionDescription', { userId, sessionDescription: localDescription })
+            this.sendToServer('relaySDP', { userId, sessionDescription: localDescription })
             console.log('Answer setLocalDescription done!')
             if (this.needToCreateOffer) {
               this.needToCreateOffer = false

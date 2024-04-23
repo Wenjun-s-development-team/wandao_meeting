@@ -20,6 +20,7 @@ type ClientManager struct {
 	Users       map[string]*Client                  // 登录的用户 key=roomId+userId
 	Peers       map[uint64]map[uint64]*models.Peers // [roomId][userId]
 	UserLock    sync.RWMutex                        // 读写锁
+	PeersLock   sync.RWMutex                        // 读写锁
 	Register    chan *Client                        // 连接连接处理
 	Login       chan *login                         // 用户登录处理
 	Unregister  chan *Client                        // 断开连接处理程序
@@ -117,14 +118,31 @@ func (manager *ClientManager) GetUsersLen() (userLen int) {
 }
 
 // AddUsers 添加用户
-func (manager *ClientManager) AddUsers(key string, client *Client, roomInfo *models.Peers) {
+func (manager *ClientManager) AddUsers(key string, client *Client) {
 	manager.UserLock.Lock()
 	defer manager.UserLock.Unlock()
 	manager.Users[key] = client
+
+}
+
+// AddPeers 添加房间信息
+func (manager *ClientManager) AddPeers(key string, client *Client, roomInfo *models.Peers) {
+	manager.PeersLock.Lock()
+	defer manager.PeersLock.Unlock()
 	if _, ok := manager.Peers[client.RoomId]; !ok {
 		clientManager.Peers[client.RoomId] = make(map[uint64]*models.Peers)
 	}
 	manager.Peers[client.RoomId][client.UserId] = roomInfo
+}
+
+// DelPeers 删除房间信息
+func (manager *ClientManager) DelPeers(client *Client) {
+	manager.PeersLock.Lock()
+	defer manager.PeersLock.Unlock()
+	delete(manager.Peers[client.RoomId], client.UserId)
+	if len(manager.Peers[client.RoomId]) == 0 {
+		delete(manager.Peers, client.UserId)
+	}
 }
 
 // DelUsers 删除用户
@@ -138,10 +156,7 @@ func (manager *ClientManager) DelUsers(client *Client) (result bool) {
 			return
 		}
 		delete(manager.Users, key)
-		delete(manager.Peers[client.RoomId], client.UserId)
-		if len(manager.Peers[client.RoomId]) == 0 {
-			delete(manager.Peers, client.UserId)
-		}
+		manager.DelPeers(client)
 		result = true
 	}
 	return
@@ -225,9 +240,9 @@ func (manager *ClientManager) EventLogin(login *login) {
 	// 连接存在，在添加
 	if manager.InClient(client) {
 		userKey := login.GetKey()
-		manager.AddUsers(userKey, login.Client, login.Peers)
-		client.SendCreateRTCPeerConnection(false)
-		client.SendCreateRTCPeerConnection(true)
+		manager.AddPeers(userKey, login.Client, login.Peers)
+		CreateRoomRTCPeerConnection(client)
+		manager.AddUsers(userKey, login.Client)
 	}
 	log.Info("EventLogin 用户登录: %s|%d|%d", client.Addr, login.RoomId, login.UserId)
 	orderID := helper.GetOrderIDTime()
