@@ -188,8 +188,8 @@ func (manager *ClientManager) GetUserList(roomId uint64) (userList []uint64) {
 
 // GetRoomPeers 获取房间信息
 func (manager *ClientManager) GetRoomPeers(roomId uint64) (peers map[uint64]*models.Peers) {
-	manager.UserLock.RLock()
-	defer manager.UserLock.RUnlock()
+	manager.PeersLock.RLock()
+	defer manager.PeersLock.RUnlock()
 	peers = manager.Peers[roomId]
 	log.Info("GetRoomPeers len: %d", len(peers))
 	return
@@ -216,7 +216,7 @@ func (manager *ClientManager) sendAll(message []byte, self *Client) {
 	}
 }
 
-// sendRoomIdAll 向全部成员(除了自己)发送数据
+// sendRoomIdAll 向房间内全部成员(除了自己)发送数据
 func (manager *ClientManager) sendRoomIdAll(message []byte, roomId uint64, self *Client) {
 	clients := manager.GetUserClients()
 	for _, conn := range clients {

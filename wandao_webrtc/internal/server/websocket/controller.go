@@ -81,6 +81,7 @@ func LoginController(client *Client, seq string, message []byte) (code uint64, m
 		PeerScreen:       request.PeerScreen,
 		VideoStatus:      request.VideoStatus,
 		AudioStatus:      request.AudioStatus,
+		ScreenStatus:     request.ScreenStatus,
 		PeerHandStatus:   request.PeerHandStatus,
 		PeerRecordStatus: request.PeerRecordStatus,
 		PeerVideoPrivacy: request.PeerVideoPrivacy,
@@ -224,6 +225,48 @@ func PeerAction(client *Client, seq string, message []byte) (code uint64, msg st
 		u.RoomPasswd = ""
 		relayRoomAction(client, request)
 	}
+	return
+}
+
+func PeerStatus(client *Client, seq string, message []byte) (code uint64, msg string, data interface{}) {
+	code = common.OK
+	request := &models.RoomStatus{}
+	if err := json.Unmarshal(message, request); err != nil {
+		code = common.ParameterIllegal
+		log.Error("[WebSocket] RoomStatus 参数解析失败: %s, %v", seq, err)
+		return
+	}
+	peers := clientManager.GetRoomPeers(request.RoomId)
+	for _, peer := range peers {
+		if peer.UserId == request.UserId {
+			switch request.Action {
+			case "video":
+				peer.VideoStatus = request.Status
+			case "audio":
+				peer.AudioStatus = request.Status
+			case "screen":
+				peer.ScreenStatus = request.Status
+			case "hand":
+				peer.PeerHandStatus = request.Status
+			case "record":
+				peer.PeerRecordStatus = request.Status
+			case "privacy":
+				peer.PeerVideoPrivacy = request.Status
+			}
+		}
+	}
+
+	d, err := jsoniter.Marshal(models.SendRequest{
+		Seq:  helper.GetOrderIDTime(),
+		Cmd:  "peerStatus",
+		Data: request,
+	})
+
+	if err != nil {
+		return
+	}
+
+	clientManager.sendRoomIdAll(d, request.RoomId, client)
 	return
 }
 

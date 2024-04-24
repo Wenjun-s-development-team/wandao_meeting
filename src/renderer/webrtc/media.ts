@@ -44,6 +44,7 @@ export class MediaServer {
 
   declare videoStatus: boolean
   declare audioStatus: boolean
+  declare audioVolume: boolean
   declare screenStatus: boolean
   localVideoStatusBefore: boolean = false
   isVideoPinned: boolean = false // 是否固定
@@ -424,9 +425,9 @@ export class MediaServer {
 
         if (this.isScreenStreaming) {
           this.setLocalVideoStatusTrue()
-          this.emitPeersAction('screenStart')
+          this.emitPeerAction('screenStart')
         } else {
-          this.emitPeersAction('screenStop')
+          this.emitPeerAction('screenStop')
         }
 
         await this.emitPeerStatus('screen', this.screenStatus)
@@ -481,7 +482,7 @@ export class MediaServer {
       this.emitPeerStatus('privacy', this.isVideoPrivacyActive)
 
       // Inform peers about screen sharing stop
-      this.emitPeersAction('screenStop')
+      this.emitPeerAction('screenStop')
 
       // Turn off your video
       this.setLocalVideoOff()
@@ -514,20 +515,22 @@ export class MediaServer {
     }
   }
 
-  async emitPeerStatus(cmd: string, status: boolean) {
-    this.client?.sendToServer(cmd, {
-      roomId: this.client.roomId,
-      userId: this.client.userId,
+  async emitPeerStatus(action: string, status: boolean) {
+    this.client?.sendToServer('peerStatus', {
+      action,
       status,
+      userId: this.client.userId,
+      roomId: this.client.roomId,
     })
   }
 
-  emitPeersAction(cmd: string) {
+  emitPeerAction(action: string) {
     if (!this.client?.peerCount) {
       return
     }
 
-    this.client?.sendToServer(cmd, {
+    this.client?.sendToServer('peerAction', {
+      action,
       roomId: this.client.roomId,
       userId: this.client.userId,
       peerVideo: useVideo.value,
@@ -552,6 +555,48 @@ export class MediaServer {
     // send my video status to all peers in the room
     this.emitPeerStatus('video', status)
     playSound(status ? 'on' : 'off')
+  }
+
+  setPeerVideoStatus(userId: number, status: boolean) {
+    console.log('更新UI', userId)
+    if (status) {
+      if (this.videoStatus) {
+        playSound('on')
+      }
+    } else {
+      if (this.videoStatus) {
+        playSound('off')
+      }
+    }
+  }
+
+  setPeerAudioStatus(userId: number, status: boolean) {
+    console.log('更新UI', userId)
+    if (this.audioStatus) {
+      status ? playSound('on') : playSound('off')
+    }
+    if (this.audioVolume) {
+      // audioVolume
+    }
+  }
+
+  setPeerHandStatus(userId: number, status: boolean) {
+    console.log('更新UI', userId)
+    if (status) {
+      playSound('raiseHand')
+    } else {
+      // elemDisplay(peerHandStatus, false);
+    }
+  }
+
+  setVideoPrivacyStatus(status: boolean, userId?: number) {
+    console.log(userId)
+    // const peer = remoteVideo.value.find(v => v.userId === userId)
+    if (status) {
+      this.videoElement.style.objectFit = 'cover'
+    } else {
+      this.videoElement.style.objectFit = 'cover'
+    }
   }
 
   async setLocalVideoStatusTrue() {
@@ -622,7 +667,7 @@ export class MediaServer {
     if (isScreenStreaming) {
       // refresh video privacy mode on screen sharing
       this.isVideoPrivacyActive = false
-      this.setVideoPrivacyStatus()
+      this.setVideoPrivacyStatus(this.isVideoPrivacyActive)
 
       // on toggleScreenSharing video stop from popup bar
       stream.getVideoTracks()[0].onended = () => {
@@ -721,14 +766,6 @@ export class MediaServer {
           }
         }
       }
-    }
-  }
-
-  setVideoPrivacyStatus() {
-    if (this.isVideoPrivacyActive) {
-      this.videoElement.style.objectFit = 'cover'
-    } else {
-      this.videoElement.style.objectFit = 'cover'
     }
   }
 

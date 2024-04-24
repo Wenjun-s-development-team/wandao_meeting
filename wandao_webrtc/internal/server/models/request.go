@@ -30,6 +30,7 @@ type Peers struct {
 	PeerScreen       bool   `json:"useScreen"`        // 是否开启屏幕分享
 	VideoStatus      bool   `json:"videoStatus"`      // 视频状态
 	AudioStatus      bool   `json:"audioStatus"`      // 音频状态
+	ScreenStatus     bool   `json:"screenStatus"`     // 屏幕分享状态
 	PeerHandStatus   bool   `json:"peerHandStatus"`   // 手形
 	PeerRecordStatus bool   `json:"peerRecordStatus"` // 录音状态
 	PeerVideoPrivacy bool   `json:"peerVideoPrivacy"` // 视频

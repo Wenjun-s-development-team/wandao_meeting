@@ -447,8 +447,24 @@ export class Client {
    * @param {KeyValue} args data
    */
   handlePeerStatus(args: KeyValue) {
-    const { userId, userName, element, status } = args
-    console.log({ userId, userName, element, status })
+    const { userId, action, status } = args
+
+    switch (action) {
+      case 'video':
+        this.mediaServer.setPeerVideoStatus(userId, status)
+        break
+      case 'audio':
+        this.mediaServer.setPeerAudioStatus(userId, status)
+        break
+      case 'hand':
+        this.mediaServer.setPeerHandStatus(userId, status)
+        break
+      case 'privacy':
+        this.mediaServer.setVideoPrivacyStatus(status, userId)
+        break
+      default:
+        break
+    }
   }
 
   /**

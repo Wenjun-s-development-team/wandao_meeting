@@ -14,4 +14,5 @@ func WebRtcInit() {
 
 	websocket.Register("roomAction", websocket.RoomAction)
 	websocket.Register("peerAction", websocket.PeerAction)
+	websocket.Register("peerStatus", websocket.PeerStatus)
 }

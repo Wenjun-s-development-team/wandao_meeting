@@ -27,3 +27,10 @@ type RoomAction struct {
 	UserName string `json:"userName"`
 	Password string `json:"password"`
 }
+
+type RoomStatus struct {
+	Action string `json:"action"`
+	RoomId uint64 `json:"roomId"`
+	UserId uint64 `json:"userId"`
+	Status bool   `json:"status"`
+}
