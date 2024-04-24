@@ -1,3 +1,9 @@
+<script setup>
+const props = defineProps(['video'])
+const { room } = toRefs(props.video)
+console.log(props.video)
+</script>
+
 <template>
   <div class="room-statusbar">
     <button class="unhover">39m 20s</button>
@@ -6,7 +12,7 @@
     <button><i class="i-fa6-solid-images" /></button>
     <button><i class="i-fa6-solid-expand" /></button>
     <button><i class="i-fa6-solid-camera-retro" /></button>
-    <button><i class="i-fa6-solid-circle" /></button>
+    <button @click="room.peerVideoPrivacy = !room.peerVideoPrivacy"><i class="i-fa6-solid-circle" /></button>
     <button><i class="i-fa6-solid-video" /></button>
     <button><i class="i-fa6-solid-microphone" /></button>
   </div>

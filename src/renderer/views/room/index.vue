@@ -2,8 +2,8 @@
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import ScreenSources from '../components/ScreenSources.vue'
-import RoomStatusBar from './components/RoomStatusBar.vue'
-import MicrophoneVolumeBar from './components/MicrophoneVolumeBar.vue'
+import PeerStatusBar from './components/PeerStatusBar.vue'
+import PeerVolumeBar from './components/PeerVolumeBar.vue'
 import { useWebRTCClient } from '@/webrtc'
 import { useWebrtcStore } from '@/store'
 
@@ -11,8 +11,7 @@ const webrtcStore = useWebrtcStore()
 const router = useRouter()
 
 const {
-  useScreen,
-  useMirror,
+  local,
   remoteVideo,
   remoteAudio,
 } = storeToRefs(webrtcStore)
@@ -27,7 +26,6 @@ const client = useWebRTCClient()
 watchOnce(isMounted, () => {
   if (localVideo.value && localAudio.value) {
     client.mediaServer.init(localVideo.value, localAudio.value, localVolume.value)
-    // client.mediaServer.listen()
     client.start()
   }
 })
@@ -60,9 +58,9 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-microphone" />
         </button>
-        <ScreenSources @change="toggleScreenSharing()">
+        <ScreenSources :peer="local" @change="toggleScreenSharing()">
           <button>
-            <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
+            <i v-if="local.useScreen" class="i-fa6-solid-circle-stop" />
             <i v-else class="i-fa6-solid-desktop" />
           </button>
         </ScreenSources>
@@ -120,12 +118,12 @@ function onSignout() {
     <div class="main">
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
         <div key="localVideo" class="camera">
-          <RoomStatusBar />
-          <MicrophoneVolumeBar />
+          <PeerStatusBar />
+          <PeerVolumeBar />
           <video
             ref="localVideo"
             class="video"
-            :class="{ mirror: useMirror }"
+            :class="{ mirror: local.useMirror, privacy: local.privacyStatus }"
             muted
             autoplay
             playsinline="true"
@@ -133,29 +131,29 @@ function onSignout() {
           />
           <div class="name">我</div>
         </div>
-        <template v-for="(video, index) in remoteVideo" :key="`remoteVideo${index}`">
-          <div class="camera">
-            <RoomStatusBar />
-            <MicrophoneVolumeBar />
+        <template v-for="(peer, index) in remoteVideo" :key="`remoteVideo${index}`">
+          <div class="camera" :class="[{ privacy: peer.privacyStatus }]">
+            <PeerStatusBar :peer="peer" />
+            <PeerVolumeBar :peer="peer" />
             <video
               class="video"
-              :srcObject="video.stream"
+              :srcObject="peer.stream"
               muted
               autoplay
               playsinline="true"
               poster="../../assets/images/loader.gif"
             />
-            <div class="name">{{ video.userId }}</div>
+            <div class="name">{{ peer.userId }}</div>
           </div>
         </template>
       </TransitionGroup>
       <div class="audio-container">
         <div class="audio-wrap">
-          <audio ref="localAudio" autoplay muted :volume="0" />
+          <audio ref="localAudio" autoplay muted />
         </div>
-        <template v-for="(audio, index) in remoteAudio" :key="index">
+        <template v-for="(peer, index) in remoteAudio" :key="index">
           <div class="audio-wrap">
-            <audio autoplay muted :volume="0" />
+            <audio :srcObject="peer.stream" autoplay muted />
           </div>
         </template>
       </div>
@@ -229,18 +227,31 @@ function onSignout() {
         background: radial-gradient(#393939, #000000);
         box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
         border-radius: 10px;
+        transition: all 0.5s ease-in-out;
         .video {
           z-index: 0;
           width: 100%;
           height: 100%;
           position: relative;
           border-radius: 10px;
-          object-fit: cover;
+          object-fit: contain;
           transform-origin: center center;
           transform: rotateY(0deg);
           transition: transform 0.3s ease-in-out;
+          &:hover {
+            opacity: 0.9;
+          }
           &.mirror {
             transform: rotateY(180deg);
+          }
+        }
+        &.privacy {
+          width: 120px;
+          height: 120px;
+          flex: unset;
+          border-radius: 50%;
+          .video {
+            object-fit: cover;
           }
         }
         .name {

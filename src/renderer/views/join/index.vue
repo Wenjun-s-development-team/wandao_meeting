@@ -17,10 +17,7 @@ const videoElement = ref(null)
 const audioElement = ref(null)
 
 const {
-  useScreen,
-  useMirror,
-  useVideo,
-  useAudio,
+  local,
   videoInputDeviceId,
   audioInputDeviceId,
   audioOutputDeviceId,
@@ -62,7 +59,7 @@ IPCRequest.windows.openDevTools()
           <video
             ref="videoElement"
             class="page-video"
-            :class="{ mirror: useMirror }"
+            :class="{ mirror: local.useMirror }"
             autoplay
             playsinline="true"
             poster="../../assets/images/loader.gif"
@@ -71,38 +68,38 @@ IPCRequest.windows.openDevTools()
         </div>
         <div class="page-actions">
           <div class="buttons">
-            <button @click="useVideo = !useVideo">
-              <i v-if="useVideo" class="i-fa6-solid-video" />
+            <button @click="local.useVideo = !local.useVideo">
+              <i v-if="local.useVideo" class="i-fa6-solid-video" />
               <i v-else class="i-fa6-solid-video-slash color-red" />
             </button>
-            <button @click="useAudio = !useAudio">
-              <i v-if="useAudio" class="i-fa6-solid-microphone" />
+            <button @click="local.useAudio = !local.useAudio">
+              <i v-if="local.useAudio" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources @change="toggleScreenSharing()">
+            <ScreenSources :peer="local" @change="toggleScreenSharing()">
               <button>
-                <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
+                <i v-if="local.useScreen" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />
               </button>
             </ScreenSources>
-            <button @click="useMirror = !useMirror">
-              <i class="i-fa6-solid-arrow-right-arrow-left" :class="{ 'color-green': useMirror }" />
+            <button @click="local.useMirror = !local.useMirror">
+              <i class="i-fa6-solid-arrow-right-arrow-left" :class="{ 'color-green': local.useMirror }" />
             </button>
           </div>
           <DeviceSelect
             v-model="videoInputDeviceId"
             :devices="videoInputDevices"
-            :disabled="!useVideo"
+            :disabled="!local.useVideo"
           />
           <DeviceSelect
             v-model="audioInputDeviceId"
             :devices="audioInputDevices"
-            :disabled="!useAudio"
+            :disabled="!local.useAudio"
           />
           <DeviceSelect
             v-model="audioOutputDeviceId"
             :devices="audioOutputDevices"
-            :disabled="!useAudio"
+            :disabled="!local.useAudio"
           />
         </div>
       </div>

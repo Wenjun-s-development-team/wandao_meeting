@@ -1,6 +1,13 @@
+import { storeToRefs } from 'pinia'
 import { FilterXSS } from 'xss'
 import type { Client } from './client'
 import { md5, playSound } from '@/utils'
+import { useWebrtcStore } from '@/store'
+
+const webrtcStore = useWebrtcStore()
+const {
+  local,
+} = storeToRefs(webrtcStore)
 
 const filterXSS = new FilterXSS().process
 
@@ -69,7 +76,7 @@ export class ChatServer {
     }
 
     // private message but not for me return
-    if (msgPrivate && msgTo !== this.client.roomName) {
+    if (msgPrivate && msgTo !== local.value.roomName) {
       return
     }
 

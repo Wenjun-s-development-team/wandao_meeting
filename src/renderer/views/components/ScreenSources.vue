@@ -1,4 +1,5 @@
 <script setup>
+import { storeToRefs } from 'pinia'
 import { IPCRequest } from '@/api'
 import { useWebrtcStore } from '@/store'
 
@@ -6,19 +7,21 @@ defineOptions({
   name: 'ScreenSources',
 })
 
+const props = defineProps(['peer'])
 const emit = defineEmits(['change'])
-
 const webrtcStore = useWebrtcStore()
 
-const screenId = ref('')
+const { screenId } = storeToRefs(webrtcStore)
+const { peer } = toRefs(props)
+
 const screenSources = ref([])
 const showList = ref(false)
 const loading = ref(false)
 
 async function onClick() {
-  if (webrtcStore.useScreen) {
-    webrtcStore.screenId = ''
-    webrtcStore.useScreen = false
+  if (peer.value.useScreen) {
+    peer.value.useScreen = false
+    screenId.value = ''
     return emit('change')
   }
 
@@ -34,9 +37,8 @@ async function onClick() {
 
 function onSubmit() {
   console.log('共享屏幕ID:', screenId.value)
-  webrtcStore.useScreen = true
+  peer.value.useScreen = true
   showList.value = false
-  webrtcStore.screenId = screenId.value
   emit('change')
 }
 </script>

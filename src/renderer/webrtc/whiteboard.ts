@@ -1,6 +1,14 @@
+import { storeToRefs } from 'pinia'
 import { fabric } from 'fabric'
 import type { Client } from './client'
 import { playSound } from '@/utils'
+
+import { useWebrtcStore } from '@/store'
+
+const webrtcStore = useWebrtcStore()
+const {
+  local,
+} = storeToRefs(webrtcStore)
 
 /**
  * 白板
@@ -28,7 +36,7 @@ export class WhiteboardServer {
   }
 
   getWhiteboardAction(action: string) {
-    return { action, roomId: this.client.roomId, roomName: this.client.roomName }
+    return { action, roomId: local.value.roomId, roomName: local.value.roomName }
   }
 
   whiteboardAction(config: KeyValue) {
@@ -123,7 +131,7 @@ export class WhiteboardServer {
     }
     if (this.client.peerCount > 0) {
       const config = {
-        roomId: this.client.roomId,
+        roomId: local.value.roomId,
         wbCanvasJson: JSON.stringify(this.wbCanvas?.toJSON()),
       }
       this.client.sendToServer('wbCanvasToJson', config)

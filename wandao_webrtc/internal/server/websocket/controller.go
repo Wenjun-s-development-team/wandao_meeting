@@ -69,22 +69,23 @@ func LoginController(client *Client, seq string, message []byte) (code uint64, m
 	}
 
 	peers := &models.Peers{
-		RoomId:           request.RoomId,
-		UserId:           request.UserId,
-		UserName:         user.Name,
-		UserLock:         false,
-		RoomName:         room.Name,
-		RoomPasswd:       "",
-		RoomLock:         false,
-		PeerVideo:        request.PeerVideo,
-		PeerAudio:        request.PeerAudio,
-		PeerScreen:       request.PeerScreen,
-		VideoStatus:      request.VideoStatus,
-		AudioStatus:      request.AudioStatus,
-		ScreenStatus:     request.ScreenStatus,
-		PeerHandStatus:   request.PeerHandStatus,
-		PeerRecordStatus: request.PeerRecordStatus,
-		PeerVideoPrivacy: request.PeerVideoPrivacy,
+		RoomId:     request.RoomId,
+		RoomName:   room.Name,
+		RoomLock:   false,
+		RoomPasswd: "",
+
+		UserId:   request.UserId,
+		UserName: user.Name,
+		UserLock: false,
+
+		UseVideo:  request.UseVideo,
+		UseAudio:  request.UseAudio,
+		UseMirror: request.UseMirror,
+		UseScreen: request.UseScreen,
+
+		HandStatus:    request.HandStatus,
+		RecordStatus:  request.RecordStatus,
+		PrivacyStatus: request.PrivacyStatus,
 	}
 
 	client.Login(request.RoomId, request.UserId, currentTime)
@@ -241,17 +242,17 @@ func PeerStatus(client *Client, seq string, message []byte) (code uint64, msg st
 		if peer.UserId == request.UserId {
 			switch request.Action {
 			case "video":
-				peer.VideoStatus = request.Status
+				peer.UseVideo = request.Status
 			case "audio":
-				peer.AudioStatus = request.Status
+				peer.UseAudio = request.Status
 			case "screen":
-				peer.ScreenStatus = request.Status
+				peer.UseScreen = request.Status
 			case "hand":
-				peer.PeerHandStatus = request.Status
+				peer.HandStatus = request.Status
 			case "record":
-				peer.PeerRecordStatus = request.Status
+				peer.RecordStatus = request.Status
 			case "privacy":
-				peer.PeerVideoPrivacy = request.Status
+				peer.PrivacyStatus = request.Status
 			}
 		}
 	}

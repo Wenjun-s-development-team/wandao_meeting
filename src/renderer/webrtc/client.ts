@@ -7,16 +7,8 @@ import { useWebrtcStore } from '@/store'
 const router = useRouter()
 const webrtcStore = useWebrtcStore()
 const {
-  userId,
-  userName,
-  useVideo,
-  useAudio,
-  useScreen,
-  handStatus,
-  recordStatus,
-  videoPrivacy,
+  local,
   iceNetwork,
-  lastRoomId,
 } = storeToRefs(webrtcStore)
 
 /**
@@ -27,11 +19,6 @@ export class Client {
   declare mediaServer: MediaServer
   declare fileSharingServer: FileSharingServer
   declare whiteboardServer: WhiteboardServer
-
-  declare roomId: number
-  declare roomName: string
-  declare userId: number
-  declare userName: string
 
   declare socket: WebSocketServer
 
@@ -59,9 +46,6 @@ export class Client {
 
   constructor() {
     console.log('01. 创建服务')
-    this.roomId = lastRoomId.value
-    this.userName = userName.value
-    this.userId = userId.value
     this.chatServer = new ChatServer(this)
     this.mediaServer = new MediaServer(this)
     this.fileSharingServer = new FileSharingServer(this)
@@ -153,18 +137,27 @@ export class Client {
 
   // 进入房间
   async login() {
-    console.log('12. join to room', this.roomId)
+    console.log('12. join to room', local.value.roomId)
     this.sendToServer('login', {
       token: '',
-      roomId: this.roomId,
-      userId: this.userId,
-      userName: this.userName,
-      peerVideo: useVideo.value,
-      peerAudio: useAudio.value,
-      peerScreen: useScreen.value,
-      peerHandStatus: handStatus.value,
-      peerRecordStatus: recordStatus.value,
-      peerVideoPrivacy: videoPrivacy.value,
+
+      roomId: local.value.roomId,
+      roomName: local.value.roomName,
+      roomLock: local.value.roomLock,
+      roomPasswd: local.value.roomPasswd,
+
+      userId: local.value.userId,
+      userName: local.value.userName,
+      userLock: local.value.userLock,
+
+      useVideo: local.value.useVideo,
+      useAudio: local.value.useAudio,
+      useMirror: local.value.useMirror,
+      useScreen: local.value.useScreen,
+
+      handStatus: local.value.handStatus,
+      recordStatus: local.value.recordStatus,
+      privacyStatus: local.value.privacyStatus,
     })
   }
 
@@ -536,8 +529,8 @@ export class Client {
   handleUnlockTheRoom() {
     playSound('alert')
     const args = {
-      roomId: this.roomId,
-      userName: this.userName,
+      roomId: local.value.roomId,
+      userName: local.value.userName,
       action: 'checkPassword',
       password: '',
     }
@@ -554,9 +547,9 @@ export class Client {
     if (emit) {
       const data = {
         action,
-        roomId: this.roomId,
-        userId: this.userId,
-        userName: this.userName,
+        roomId: local.value.roomId,
+        userId: local.value.userId,
+        userName: local.value.userName,
         password: '',
       }
       switch (action) {
@@ -673,7 +666,7 @@ export class Client {
 
   notifyRecording(fromId: string, from: string, action: string) {
     const msg = `🔴 ${action} recording.`
-    const chatMessage = { from, fromId, to: this.userName, msg, privateMsg: false }
+    const chatMessage = { from, fromId, to: local.value.userName, msg, privateMsg: false }
     this.chatServer.onMessage(chatMessage)
   }
 
@@ -765,9 +758,10 @@ export class Client {
     this.sendToServer('peerAction', {
       action,
       userId,
-      roomId: this.roomId,
-      peerVideo: useVideo.value,
+      roomId: local.value.roomId,
       roomName: '',
+
+      useVideo: local.value.useVideo,
       sendToAll: false,
     })
   }

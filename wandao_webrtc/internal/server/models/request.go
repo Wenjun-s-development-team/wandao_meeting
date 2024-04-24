@@ -18,22 +18,23 @@ type LoginRequest struct {
 
 // Peers 房间信息
 type Peers struct {
-	RoomId           uint64 `json:"roomId"`           // 房间ID
-	UserId           uint64 `json:"userId"`           // 用户ID
-	UserName         string `json:"userName"`         // 用户名
-	UserLock         bool   `json:"userLock"`         // 用户锁
-	RoomName         string `json:"roomName"`         // 房间名称
-	RoomPasswd       string `json:"roomPasswd"`       // 房间密码
-	RoomLock         bool   `json:"roomLock"`         // 房间锁
-	PeerVideo        bool   `json:"useVideo"`         // 是否开启视频
-	PeerAudio        bool   `json:"useAudio"`         // 是否开启音频
-	PeerScreen       bool   `json:"useScreen"`        // 是否开启屏幕分享
-	VideoStatus      bool   `json:"videoStatus"`      // 视频状态
-	AudioStatus      bool   `json:"audioStatus"`      // 音频状态
-	ScreenStatus     bool   `json:"screenStatus"`     // 屏幕分享状态
-	PeerHandStatus   bool   `json:"peerHandStatus"`   // 手形
-	PeerRecordStatus bool   `json:"peerRecordStatus"` // 录音状态
-	PeerVideoPrivacy bool   `json:"peerVideoPrivacy"` // 视频
+	RoomId     uint64 `json:"roomId"`     // 房间ID
+	RoomName   string `json:"roomName"`   // 房间名称
+	RoomLock   bool   `json:"roomLock"`   // 房间锁
+	RoomPasswd string `json:"roomPasswd"` // 房间密码
+
+	UserId   uint64 `json:"userId"`   // 用户ID
+	UserName string `json:"userName"` // 用户名
+	UserLock bool   `json:"userLock"` // 用户锁
+
+	UseVideo  bool `json:"useVideo"`  // 是否开启视频
+	UseAudio  bool `json:"useAudio"`  // 是否开启音频
+	UseMirror bool `json:"useMirror"` // 是否翻转屏幕
+	UseScreen bool `json:"useScreen"` // 是否开启屏幕分享
+
+	HandStatus    bool `json:"handStatus"`    // 手状态和图标
+	RecordStatus  bool `json:"recordStatus"`  // 是否录音
+	PrivacyStatus bool `json:"privacyStatus"` // 是否小视图
 }
 
 // HeartBeat 心跳请求数据

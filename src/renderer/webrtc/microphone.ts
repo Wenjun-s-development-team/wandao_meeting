@@ -1,4 +1,12 @@
+import { storeToRefs } from 'pinia'
 import type { Client } from './client'
+
+import { useWebrtcStore } from '@/store'
+
+const webrtcStore = useWebrtcStore()
+const {
+  local,
+} = storeToRefs(webrtcStore)
 
 export class Microphone {
   scriptProcessor: null | ScriptProcessorNode = null
@@ -30,7 +38,7 @@ export class Microphone {
         if (this.client?.mediaServer.audioStatus && finalVolume > 10) {
           const config = {
             type: 'micVolume',
-            userId: this.client.userId,
+            userId: local.value.userId,
             volume: finalVolume,
           }
           this.updateVolume(config)

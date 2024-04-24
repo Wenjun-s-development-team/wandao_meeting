@@ -5,10 +5,6 @@ export const useWebrtcStore = defineStore('webrtcStore', {
   state: () => {
     return {
       lastRoomId: 0, // 最近访问的房号
-      useMirror: false, // 是否翻转视频
-      useAudio: true, // 启用/禁用 音频
-      useVideo: true, // 启用/禁用 视频
-      useScreen: false, // 是否共享屏幕
       screenId: '', // 共享屏幕源ID
       videoInputDeviceId: '', // 视频输出设备ID
       audioInputDeviceId: '', // 音频输出设备ID
@@ -16,10 +12,6 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       videoInputDevices: <MediaDeviceInfo[]>[], // 视频输出设备
       audioInputDevices: <MediaDeviceInfo[]>[], // 音频输出设备
       audioOutputDevices: <MediaDeviceInfo[]>[], // 音频输入设备
-
-      handStatus: false, // 手状态和图标
-      recordStatus: false, // 是否录音
-      videoPrivacy: false,
 
       // 连接状态 '🟢' '🔴'
       iceNetwork: { host: false, stun: false, turn: false },
@@ -30,6 +22,26 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       userName: '',
       userAlias: '',
 
+      // 本地媒体
+      local: {
+        roomId: 101, // 房间ID
+        roomName: '', // 房间名称
+        roomLock: false, // 房间锁
+        roomPasswd: '', // 房间密码
+
+        userId: 0, // 用户ID
+        userName: '', // 用户名
+        userLock: false, // 用户锁
+
+        useAudio: true, // 启用/禁用 音频
+        useVideo: true, // 启用/禁用 视频
+        useMirror: false, // 是否翻转视频
+        useScreen: false, // 是否共享屏幕
+
+        handStatus: false, // 手状态和图标
+        recordStatus: false, // 是否录音
+        privacyStatus: false, // 是否小视图
+      },
       // 远程媒体
       remoteVideo: <KeyValue[]>[],
       remoteAudio: <KeyValue[]>[],
@@ -58,6 +70,9 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       this.userId = data.user.id
       this.userName = data.user.alias || data.user.name
       this.userAlias = data.user.alias
+
+      this.local.userId = data.user.id
+      this.local.userName = data.user.alias || data.user.name
       return data
     },
     async userInfo(): Promise<any> {
@@ -65,6 +80,9 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       this.userId = data.id
       this.userName = data.alias || data.name
       this.userAlias = data.alias
+
+      this.local.userId = data.id
+      this.local.userName = data.alias || data.name
       return data
     },
     userLogout() {
@@ -80,7 +98,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       {
         key: 'webrtc',
         storage: localStorage,
-        paths: ['lastRoomId', 'useAudio', 'useVideo', 'token', 'userId'],
+        paths: ['lastRoomId', 'token', 'local', 'userId'],
       },
     ],
   },
