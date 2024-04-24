@@ -1,13 +1,17 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import { Client } from '@/webrtc'
+import ScreenSources from '../components/ScreenSources.vue'
+import RoomStatusBar from './components/RoomStatusBar.vue'
+import { useWebRTCClient } from '@/webrtc'
 import { useWebrtcStore } from '@/store'
 
 const webrtcStore = useWebrtcStore()
 const router = useRouter()
 
 const {
+  useScreen,
+  screenId,
   remoteVideo,
   remoteAudio,
 } = storeToRefs(webrtcStore)
@@ -18,21 +22,14 @@ const localVolume = ref(null)
 
 const useMirror = ref(false)
 const isMounted = useMounted()
+const client = useWebRTCClient()
 
 watchOnce(isMounted, () => {
   if (localVideo.value && localAudio.value) {
-    const client = new Client()
     client.mediaServer.init(localVideo.value, localAudio.value, localVolume.value)
+    client.mediaServer.listen()
     client.start()
   }
-})
-
-const showToolBar = ref(false)
-const showStatusBar = ref(false)
-
-onMounted(() => {
-  showToolBar.value = true
-  showStatusBar.value = true
 })
 
 function onSignout() {
@@ -42,21 +39,8 @@ function onSignout() {
 
 <template>
   <div class="room-page">
-    <Transition name="fadeTopIn">
-      <div v-if="showStatusBar" class="statusbar">
-        <button class="unhover">39m 20s</button>
-        <button><i class="i-fa6-solid-map-pin" /></button>
-        <button><i class="i-fa6-solid-arrow-right-arrow-left" /></button>
-        <button><i class="i-fa6-solid-images" /></button>
-        <button><i class="i-fa6-solid-expand" /></button>
-        <button><i class="i-fa6-solid-camera-retro" /></button>
-        <button><i class="i-fa6-solid-circle" /></button>
-        <button><i class="i-fa6-solid-video" /></button>
-        <button><i class="i-fa6-solid-microphone" /></button>
-      </div>
-    </Transition>
     <Transition name="fadeLeftIn">
-      <div v-if="showToolBar" class="toolbar">
+      <div v-if="isMounted" class="toolbar">
         <button>
           <i class="i-fa6-solid-share-nodes" />
         </button>
@@ -72,9 +56,12 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-microphone" />
         </button>
-        <button>
-          <i class="i-fa6-solid-desktop" />
-        </button>
+        <ScreenSources v-model="screenId" v-model:useScreen="useScreen">
+          <button>
+            <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
+            <i v-else class="i-fa6-solid-desktop" />
+          </button>
+        </ScreenSources>
         <button>
           <i class="i-fa6-solid-record-vinyl" />
         </button>
@@ -129,6 +116,7 @@ function onSignout() {
     <div class="main">
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
         <div key="localVideo" class="camera">
+          <RoomStatusBar />
           <video
             ref="localVideo"
             class="video"
@@ -138,9 +126,11 @@ function onSignout() {
             playsinline="true"
             poster="../../assets/images/loader.gif"
           />
+          <div class="name">我</div>
         </div>
         <template v-for="(video, index) in remoteVideo" :key="`remoteVideo${index}`">
           <div class="camera">
+            <RoomStatusBar />
             <video
               class="video"
               :srcObject="video.stream"
@@ -175,37 +165,7 @@ function onSignout() {
   flex-direction: column;
   position: relative;
   background: radial-gradient(#393939, #000000);
-  .statusbar {
-    gap: 5px;
-    z-index: 8;
-    top: 38px;
-    left: 5px;
-    right: 5px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding: 0 15px;
-    position: fixed;
-    border-radius: 5px 5px 0 0;
-    background: rgba(0, 0, 0, 0.2);
-    button {
-      display: inline;
-      padding: 5px;
-      font-size: small;
-      text-decoration: none;
-      border-radius: 3px;
-      background: transparent;
-      color: #fff;
-      &:not(.unhover) {
-        width: 26px;
-        height: 26px;
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      }
-    }
-  }
+
   .toolbar {
     z-index: 10;
     display: flex;
@@ -240,12 +200,12 @@ function onSignout() {
     flex: 1;
     position: relative;
     .video-container {
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       height: 100%;
       z-index: 2;
       display: flex;
-      padding: 8px;
+      padding: 10px;
       border-radius: 5px;
       align-content: center;
       flex-wrap: wrap;

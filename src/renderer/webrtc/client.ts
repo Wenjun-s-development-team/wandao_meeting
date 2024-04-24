@@ -8,6 +8,7 @@ const router = useRouter()
 const webrtcStore = useWebrtcStore()
 const {
   userId,
+  userName,
   useVideo,
   useAudio,
   useScreen,
@@ -16,7 +17,6 @@ const {
   videoPrivacy,
   iceNetwork,
   lastRoomId,
-  userPeerName,
 } = storeToRefs(webrtcStore)
 
 /**
@@ -60,7 +60,7 @@ export class Client {
   constructor() {
     console.log('01. 创建服务')
     this.roomId = lastRoomId.value
-    this.userName = userPeerName.value
+    this.userName = userName.value
     this.userId = userId.value
     this.chatServer = new ChatServer(this)
     this.mediaServer = new MediaServer(this)
@@ -250,10 +250,6 @@ export class Client {
     if (shouldCreateOffer) {
       await this.handleCreateRTCOffer(userId)
       console.log('[RTCPeerConnection] - SHOULD CREATE OFFER', { userId, userName })
-    }
-
-    if (!peerVideo) {
-      await this.mediaServer.loadRemoteMediaStream(new MediaStream(), peers, userId, 'video')
     }
 
     await this.whiteboardServer.onUpdate()
@@ -763,4 +759,8 @@ export class Client {
   sendToServer(type: string, args = {}) {
     this.socket.send(type, args)
   }
+}
+
+export function useWebRTCClient() {
+  return new Client()
 }

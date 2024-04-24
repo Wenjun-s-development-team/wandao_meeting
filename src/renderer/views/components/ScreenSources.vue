@@ -34,10 +34,9 @@ function onSubmit() {
 </script>
 
 <template>
-  <button class="source-button" @click.stop="onClick()">
-    <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
-    <i v-else class="i-fa6-solid-desktop" />
-  </button>
+  <span @click.stop="onClick()">
+    <slot />
+  </span>
   <el-dialog v-model="showList" title="选择屏幕" append-to-body draggable>
     <el-tabs v-model="screenId" v-loading="loading">
       <template v-for="(source, index) in screenSources" :key="index">

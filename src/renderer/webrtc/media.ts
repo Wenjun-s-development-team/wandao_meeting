@@ -165,15 +165,6 @@ export class MediaServer {
     const room = peers[userId]
     console.log('REMOTE PEER INFO', room)
 
-    // const peerAudio = peers[userId].peerAudio
-    // const peerVideo = peers[userId].peerVideo
-    // const peerVideoStatus = peers[userId].peerVideoStatus
-    // const peerAudioStatus = peers[userId].peerAudioStatus
-    // const peerScreenStatus = peers[userId].peerScreenStatus
-    // const peerHandStatus = peers[userId].peerHandStatus
-    // const peerRecordStatus = peers[userId].peerRecordStatus
-    // const peerPrivacyStatus = peers[userId].peerPrivacyStatus
-
     if (stream) {
       console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${room.roomName}]`, stream.getTracks())
     }
@@ -181,14 +172,9 @@ export class MediaServer {
     if (kind === 'video') {
       console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
       remoteVideo.value.push({ userId, stream, room, kind })
-
-      // this.attachMediaStream(this.remoteVideoElement, stream)
-      // resize video elements
-      // adaptAspectRatio()
     } else if (kind === 'audio') {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
       remoteAudio.value.push({ userId, stream, room, kind })
-      // this.attachMediaStream(this.remoteAudioElement, stream)
     }
   }
 

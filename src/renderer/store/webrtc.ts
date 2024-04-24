@@ -35,24 +35,19 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       remoteAudio: <KeyValue[]>[],
     }
   },
-  getters: {
-    userPeerName: (state) => {
-      return state.userAlias || state.userName
-    },
-  },
   actions: {
     async userLogin(param: KeyValue): Promise<any> {
       const { data } = await RTCRequest.post('/login', param)
       this.token = data.token
       this.userId = data.user.id
-      this.userName = data.user.name
+      this.userName = data.user.alias || data.user.name
       this.userAlias = data.user.alias
       return data
     },
     async userInfo(): Promise<any> {
       const { data } = await RTCRequest.get('/user/info')
       this.userId = data.id
-      this.userName = data.name
+      this.userName = data.alias || data.name
       this.userAlias = data.alias
       return data
     },

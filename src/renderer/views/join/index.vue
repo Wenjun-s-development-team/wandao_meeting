@@ -1,8 +1,8 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
+import ScreenSources from '../components/ScreenSources.vue'
 import DeviceSelect from './components/DeviceSelect.vue'
-import ScreenSources from './components/ScreenSources.vue'
 import { MediaServer } from '@/webrtc/media'
 import { IPCRequest, RTCRequest } from '@/api'
 
@@ -80,7 +80,12 @@ IPCRequest.windows.openDevTools()
               <i v-if="useAudio" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources v-model="screenId" v-model:useScreen="useScreen" />
+            <ScreenSources v-model="screenId" v-model:useScreen="useScreen">
+              <button>
+                <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
+                <i v-else class="i-fa6-solid-desktop" />
+              </button>
+            </ScreenSources>
             <button @click="useMirror = !useMirror">
               <i class="i-fa6-solid-arrow-right-arrow-left" :class="{ 'color-green': useMirror }" />
             </button>
