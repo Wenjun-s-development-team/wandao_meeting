@@ -45,6 +45,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
         privacyStatus: false, // 是否小视图
 
         fullScreen: false,
+        pinnedId: 0, // 固定住的用户ID
       },
       // 远程媒体
       remoteVideo: <KeyValue[]>[],

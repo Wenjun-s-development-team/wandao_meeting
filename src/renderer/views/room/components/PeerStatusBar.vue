@@ -74,6 +74,15 @@ function onPictureInPicture() {
   }
 }
 
+// 固定住
+function onPinned() {
+  if (peer.value.pinnedId === peer.value.userId) {
+    peer.value.pinnedId = 0
+  } else {
+    peer.value.pinnedId = peer.value.userId
+  }
+}
+
 // 时间
 const sessionTime = ref('')
 const callElapsedTime = ref(0)
@@ -88,7 +97,7 @@ onMounted(() => {
 <template>
   <div ref="peerRef" class="peer-statusbar">
     <button class="unhover">{{ sessionTime }}</button>
-    <button><i class="i-fa6-solid-map-pin" /></button>
+    <button @click.stop="onPinned()"><i class="i-fa6-solid-map-pin" /></button>
     <button @click.stop="peer.useMirror = !peer.useMirror">
       <i class="i-fa6-solid-arrow-right-arrow-left" />
     </button>

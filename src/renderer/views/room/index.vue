@@ -77,7 +77,7 @@ function onSignout() {
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
         <div
           key="localVideo" class="camera"
-          :class="[{ privacy: local.privacyStatus, hidden: local.hidden }]"
+          :class="[{ privacy: local.privacyStatus, hidden: local.hidden, pinned: local.pinnedId === local.userId }]"
         >
           <video
             ref="localVideo"
@@ -93,7 +93,7 @@ function onSignout() {
           <PeerVolumeBar :peer="local" />
         </div>
         <template v-for="(peer, index) in remoteVideo" :key="`remoteVideo${index}`">
-          <div class="camera" :class="[{ privacy: peer.privacyStatus }]">
+          <div class="camera" :class="[{ privacy: peer.privacyStatus, pinned: peer.pinnedId === peer.userId }]">
             <video
               class="video"
               :srcObject="peer.stream"
@@ -212,35 +212,6 @@ function onSignout() {
     flex: 1;
     width: 100%;
     min-height: 0;
-  }
-  .toolbar {
-    gap: 6px;
-    padding: 10px;
-    display: inline-flex;
-    align-items: center;
-    box-shadow: 0px 8px 16px 0px rgb(33 33 33);
-    border: 0.5px solid rgb(255 255 255 / 32%);
-    border-radius: 10px;
-    margin: 10px auto;
-    overflow: hidden;
-    button {
-      color: #666;
-      padding: 5px;
-      font-size: 20px;
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 5px;
-      background: #fff;
-      transition: all 0.3s ease-in-out;
-      &:hover {
-        color: #000;
-        transform: scale(1.2);
-      }
-    }
-  }
-  .main {
-    flex: 1;
     position: relative;
     .video-container {
       gap: 10px;
@@ -257,9 +228,10 @@ function onSignout() {
       vertical-align: middle;
       overflow: hidden;
       .camera {
-        flex: 1;
-        vertical-align: middle;
-        align-self: center;
+        flex: 1 1 140px;
+        min-width: 140px;
+        min-height: 140px;
+        height: 100%;
         overflow: hidden;
         display: inline-block;
         position: relative;
@@ -273,7 +245,7 @@ function onSignout() {
           height: 100%;
           position: relative;
           border-radius: 10px;
-          object-fit: contain;
+          object-fit: cover;
           transform-origin: center center;
           transform: rotateY(0deg);
           transition: transform 0.3s ease-in-out;
@@ -295,6 +267,10 @@ function onSignout() {
           .video {
             object-fit: cover;
           }
+        }
+        &.pinned {
+          order: -1;
+          flex: 0 0 auto;
         }
         .name {
           z-index: 8;
@@ -322,6 +298,33 @@ function onSignout() {
     }
     .audio-container {
       display: none;
+    }
+  }
+
+  .toolbar {
+    gap: 6px;
+    padding: 10px;
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0px 8px 16px 0px rgb(33 33 33);
+    border: 0.5px solid rgb(255 255 255 / 32%);
+    border-radius: 10px;
+    margin: 10px auto;
+    overflow: hidden;
+    button {
+      color: #666;
+      padding: 5px;
+      font-size: 20px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 5px;
+      background: #fff;
+      transition: all 0.3s ease-in-out;
+      &:hover {
+        color: #000;
+        transform: scale(1.2);
+      }
     }
   }
 }
