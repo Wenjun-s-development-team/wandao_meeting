@@ -44,10 +44,12 @@ function setAudioTracks() {
   client.mediaServer.setAudioTracks(local.value.useAudio)
 }
 
+// 举手
 function onHandStatus() {
   client.mediaServer.onHandStatus()
 }
 
+// 全屏事件
 function onFullscreenchange({ target }, peer) {
   console.log('Esc FS isVideoOnFullScreen', peer.fullScreen)
 
@@ -63,6 +65,7 @@ function onFullscreenchange({ target }, peer) {
   console.log('Esc FS isVideoOnFullScreen', peer.fullScreen)
 }
 
+// 退出
 function onSignout() {
   router.push({ path: '/start' })
 }
@@ -160,10 +163,9 @@ function onSignout() {
             muted
             autoplay
             playsinline="true"
-            poster="../../assets/images/loader.gif"
             @fullscreenchange="onFullscreenchange($event, local)"
           />
-          <div class="name">我</div>
+          <div class="name">{{ local.userName }}(我)</div>
           <PeerStatusBar :peer="local" />
           <PeerVolumeBar :peer="local" />
         </div>
@@ -172,13 +174,13 @@ function onSignout() {
             <video
               class="video"
               :srcObject="peer.stream"
+              :class="{ mirror: peer.useMirror }"
               muted
               autoplay
               playsinline="true"
-              poster="../../assets/images/loader.gif"
               @fullscreenchange="onFullscreenchange($event, peer)"
             />
-            <div class="name">{{ peer.userId }}</div>
+            <div class="name">{{ peer.userName }}</div>
             <PeerStatusBar :peer="peer" />
             <PeerVolumeBar :peer="peer" />
           </div>
@@ -307,6 +309,7 @@ function onSignout() {
           width: auto;
           height: 25px;
           min-width: 40px;
+          padding: 0 8px;
           position: absolute;
           border-radius: 5px;
           background: rgba(0, 0, 0, 0.3);

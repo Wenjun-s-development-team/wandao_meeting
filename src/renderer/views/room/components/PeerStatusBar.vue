@@ -18,6 +18,7 @@ function saveDataToFile(dataURL, fileName) {
   }, 100)
 }
 
+// 快照
 function onSnapshot() {
   playSound('snapshot')
   // 直接 DOM API 获取 video 元素
@@ -30,6 +31,7 @@ function onSnapshot() {
   saveDataToFile(canvas.toDataURL('image/png'), `${Date.now()}-SNAPSHOT.png`)
 }
 
+// 全屏
 function onFullScreen() {
   const video = peerRef.value.parentNode.querySelector('video')
   if (video.controls) {
@@ -49,14 +51,38 @@ function onFullScreen() {
     video.style.pointerEvents = 'auto'
   }
 }
+
+// PIP 画中画
+function onPictureInPicture() {
+  const video = peerRef.value.parentNode.querySelector('video')
+  if (video.pictureInPictureElement) {
+    video.exitPictureInPicture()
+  } else if (document.pictureInPictureEnabled) {
+    if (!peer.value.useVideo) {
+      return ElMessage.warning({
+        grouping: true,
+        message: '视频未启用，禁此画中画(PIP)',
+      })
+    }
+    video.requestPictureInPicture().catch((error) => {
+      console.error('Failed to enter Picture-in-Picture mode:', error)
+      return ElMessage.warning({
+        grouping: true,
+        message: error.message,
+      })
+    })
+  }
+}
 </script>
 
 <template>
   <div ref="peerRef" class="peer-statusbar">
     <button class="unhover">39m 20s</button>
     <button><i class="i-fa6-solid-map-pin" /></button>
-    <button><i class="i-fa6-solid-arrow-right-arrow-left" /></button>
-    <button><i class="i-fa6-solid-images" /></button>
+    <button @click.stop="peer.useMirror = !peer.useMirror">
+      <i class="i-fa6-solid-arrow-right-arrow-left" />
+    </button>
+    <button @click.stop="onPictureInPicture()"><i class="i-fa6-solid-images" /></button>
     <button @click.stop="onFullScreen()"><i class="i-fa6-solid-expand" /></button>
     <button @click.stop="onSnapshot()"><i class="i-fa6-solid-camera-retro" /></button>
     <button @click.stop="peer.privacyStatus = !peer.privacyStatus"><i class="i-fa6-solid-circle" /></button>
