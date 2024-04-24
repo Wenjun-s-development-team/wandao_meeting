@@ -32,15 +32,19 @@ export const useWebrtcStore = defineStore('webrtcStore', {
         userId: 0, // 用户ID
         userName: '', // 用户名
         userLock: false, // 用户锁
+        hidden: false, // 是否隐藏
 
         useAudio: true, // 启用/禁用 音频
         useVideo: true, // 启用/禁用 视频
         useMirror: false, // 是否翻转视频
         useScreen: false, // 是否共享屏幕
 
+        videoStatus: false, // 视频状态
         handStatus: false, // 手状态和图标
         recordStatus: false, // 是否录音
         privacyStatus: false, // 是否小视图
+
+        objectFit: 'contain',
       },
       // 远程媒体
       remoteVideo: <KeyValue[]>[],
@@ -98,7 +102,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       {
         key: 'webrtc',
         storage: localStorage,
-        paths: ['lastRoomId', 'token', 'local', 'userId'],
+        paths: ['lastRoomId', 'token', 'local', 'userId', 'videoStatus'],
       },
     ],
   },

@@ -1,7 +1,8 @@
 <script setup>
-const props = defineProps(['video'])
-const { room } = toRefs(props.video)
-console.log(props.video)
+const props = defineProps(['peer'])
+const { peer } = toRefs(props)
+
+console.log(peer.value)
 </script>
 
 <template>
@@ -12,9 +13,12 @@ console.log(props.video)
     <button><i class="i-fa6-solid-images" /></button>
     <button><i class="i-fa6-solid-expand" /></button>
     <button><i class="i-fa6-solid-camera-retro" /></button>
-    <button @click="room.peerVideoPrivacy = !room.peerVideoPrivacy"><i class="i-fa6-solid-circle" /></button>
+    <button @click="peer.privacyStatus = !peer.privacyStatus"><i class="i-fa6-solid-circle" /></button>
     <button><i class="i-fa6-solid-video" /></button>
     <button><i class="i-fa6-solid-microphone" /></button>
+    <button v-if="peer.handStatus">
+      <i class="i-fa6-solid-hand color-green" />
+    </button>
   </div>
 </template>
 

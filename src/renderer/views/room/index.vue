@@ -31,7 +31,21 @@ watchOnce(isMounted, () => {
 })
 
 function toggleScreenSharing() {
-  client.mediaServer.toggleScreenSharing(true)
+  client.mediaServer.toggleScreenSharing()
+}
+
+function setVideoTracks() {
+  local.value.useVideo = !local.value.useVideo
+  client.mediaServer.setVideoTracks(local.value.useVideo)
+}
+
+function setAudioTracks() {
+  local.value.useAudio = !local.value.useAudio
+  client.mediaServer.setAudioTracks(local.value.useAudio)
+}
+
+function onHandStatus() {
+  client.mediaServer.onHandStatus()
 }
 
 function onSignout() {
@@ -46,17 +60,20 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-share-nodes" />
         </button>
-        <button>
-          <i class="i-fa6-solid-user" />
+        <button @click="local.hidden = !local.hidden">
+          <i v-if="local.hidden" class="i-fa6-solid-user-slash color-red" />
+          <i v-else class="i-fa6-solid-user" />
         </button>
         <button>
           <i class="i-fa6-solid-camera-rotate" />
         </button>
-        <button>
-          <i class="i-fa6-solid-video" />
+        <button @click="setVideoTracks()">
+          <i v-if="local.useVideo" class="i-fa6-solid-video" />
+          <i v-else class="i-fa6-solid-video-slash color-red" />
         </button>
-        <button>
-          <i class="i-fa6-solid-microphone" />
+        <button @click="setAudioTracks()">
+          <i v-if="local.useAudio" class="i-fa6-solid-microphone" />
+          <i v-else class="i-fa6-solid-microphone-slash color-red" />
         </button>
         <ScreenSources :peer="local" @change="toggleScreenSharing()">
           <button>
@@ -80,8 +97,8 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-face-smile" />
         </button>
-        <button>
-          <i class="i-fa6-solid-hand" />
+        <button @click="onHandStatus()">
+          <i class="i-fa6-solid-hand" :class="{ 'color-green': local.handStatus }" />
         </button>
         <button>
           <i class="i-fa6-solid-chalkboard-user" />
@@ -117,13 +134,16 @@ function onSignout() {
     </div>
     <div class="main">
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
-        <div key="localVideo" class="camera">
-          <PeerStatusBar />
-          <PeerVolumeBar />
+        <div
+          key="localVideo" class="camera"
+          :class="[{ privacy: local.privacyStatus, hidden: local.hidden }]"
+        >
+          <PeerStatusBar :peer="local" />
+          <PeerVolumeBar :peer="local" />
           <video
             ref="localVideo"
             class="video"
-            :class="{ mirror: local.useMirror, privacy: local.privacyStatus }"
+            :class="{ mirror: local.useMirror }"
             muted
             autoplay
             playsinline="true"
@@ -244,6 +264,9 @@ function onSignout() {
           &.mirror {
             transform: rotateY(180deg);
           }
+        }
+        &.hidden {
+          display: none;
         }
         &.privacy {
           width: 120px;

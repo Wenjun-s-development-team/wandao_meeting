@@ -502,46 +502,28 @@ export class MediaServer {
     playSound(status ? 'on' : 'off')
   }
 
-  setPeerVideoStatus(userId: number, status: boolean) {
-    console.log('更新UI', userId)
-    if (status) {
-      if (this.videoStatus) {
-        playSound('on')
-      }
-    } else {
-      if (this.videoStatus) {
-        playSound('off')
-      }
+  setPeerStatus(type: string, userId: number, status: boolean) {
+    if (!['useVideo', 'useAudio', 'handStatus', 'recordStatus', 'privacyStatus'].includes(type)) {
+      return
     }
-  }
-
-  setPeerAudioStatus(userId: number, status: boolean) {
-    console.log('更新UI', userId)
-    if (this.audioStatus) {
+    console.log('setStatus:', { type, userId, status })
+    if (['useVideo', 'useAudio'].includes(type)) {
       status ? playSound('on') : playSound('off')
-    }
-    if (this.audioVolume) {
-      // audioVolume
-    }
-  }
-
-  setPeerHandStatus(userId: number, status: boolean) {
-    console.log('更新UI', userId)
-    if (status) {
+    } else if (type === 'handStatus' && status) {
       playSound('raiseHand')
-    } else {
-      // elemDisplay(peerHandStatus, false);
     }
-  }
 
-  setVideoPrivacyStatus(status: boolean, userId?: number) {
-    console.log(userId)
-    // const peer = remoteVideo.value.find(v => v.userId === userId)
-    if (status) {
-      this.videoElement.style.objectFit = 'cover'
-    } else {
-      this.videoElement.style.objectFit = 'cover'
+    if (local.value.userId === userId) {
+      local.value[type] = status
+      return
     }
+    remoteVideo.value.find((peer) => {
+      if (peer.userId === userId) {
+        peer[type] = status
+        return true
+      }
+      return false
+    })
   }
 
   async setLocalVideoStatusTrue() {
@@ -563,6 +545,17 @@ export class MediaServer {
         localVideoTrack.stop()
       }
     }
+  }
+
+  async stopVideoTracks(stream: MediaStream) {
+    if (!stream) {
+      return
+    }
+    stream.getTracks().forEach((track) => {
+      if (track.kind === 'video') {
+        track.stop()
+      }
+    })
   }
 
   async refreshLocalStream(stream: MediaStream, localAudioTrackChange = false) {
@@ -612,7 +605,7 @@ export class MediaServer {
     if (local.value.useScreen) {
       // refresh video privacy mode on screen sharing
       local.value.privacyStatus = false
-      this.setVideoPrivacyStatus(local.value.privacyStatus)
+      this.setPeerStatus('privacyStatus', local.value.userId, local.value.privacyStatus)
 
       // on toggleScreenSharing video stop from popup bar
       stream.getVideoTracks()[0].onended = () => {
@@ -712,6 +705,80 @@ export class MediaServer {
         }
       }
     }
+  }
+
+  async handleVideo(force = null) {
+    if (!local.value.useVideo) {
+      return
+    }
+    const videoStatus = force !== null ? force : !local.value.videoStatus
+    local.value.videoStatus = videoStatus
+    this.localVideoStream.getVideoTracks()[0].enabled = videoStatus
+
+    if (!videoStatus) {
+      if (!local.value.useScreen) {
+        await this.stopVideoTracks(this.localVideoStream)
+      }
+    } else {
+      await this.changeInitCamera(videoInputDeviceId.value)
+    }
+
+    this.setLocalVideoStatus(videoStatus)
+  }
+
+  async changeInitCamera(deviceId) {
+    if (this.localVideoStream) {
+      await this.stopVideoTracks(this.localVideoStream)
+    }
+
+    // Get video constraints
+    const videoConstraints = await this.getVideoConstraints('default')
+    videoConstraints.deviceId = { exact: deviceId }
+
+    /**
+     * Update Init/Local Video Stream
+     * @param {MediaStream} camStream
+     */
+    const updateInitLocalVideoMediaStream = (camStream) => {
+      if (camStream) {
+        // We going to update init video stream
+        this.videoElement.srcObject = camStream
+        this.localVideoStream = camStream
+        console.log('Success attached init video stream', this.localVideoStream.getVideoTracks()[0].getSettings())
+      }
+    }
+
+    /**
+     * Something going wrong
+     * @param {object} err
+     */
+    const reloadBrowser = (err) => {
+      console.error('[Error] changeInitCamera', err)
+
+      setTimeout(() => {
+        location.reload()
+      }, 3000)
+    }
+
+    await navigator.mediaDevices.getUserMedia({ video: videoConstraints }).then((camStream) => {
+      updateInitLocalVideoMediaStream(camStream)
+    }).catch(async (err) => {
+      console.error('Error accessing init video device', err)
+      console.warn('Fallback to default constraints')
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: {
+              exact: deviceId, // Specify the exact device ID you want to access
+            },
+          },
+        }) // Fallback to default constraints
+        updateInitLocalVideoMediaStream(camStream)
+      } catch (fallbackErr) {
+        console.error('Error accessing init video device with default constraints', fallbackErr)
+        reloadBrowser(err)
+      }
+    })
   }
 
   async getAudioVideoConstraints(): Promise<MediaStreamConstraints> {
@@ -827,6 +894,70 @@ export class MediaServer {
     }
     console.log('Audio constraints', audio)
     return audio
+  }
+
+  async onScreenSharing() {
+    if (local.value.useScreen && screenId.value) {
+      // 切换到屏幕共享
+      await this.setupLocalVideo({
+        mandatory: {
+          chromeMediaSource: 'desktop',
+          chromeMediaSourceId: screenId.value,
+        },
+      })
+    } else {
+      // 切换到视频输入设备
+      await this.setupLocalVideo({
+        deviceId: videoInputDeviceId.value,
+        ...this.getVideoConstraints('default'),
+      })
+    }
+    // 切换到音频输入设备
+    await this.setupLocalAudio({
+      deviceId: audioInputDeviceId.value,
+      ...this.getAudioConstraints(),
+    })
+  }
+
+  onHandStatus() {
+    local.value.handStatus = !local.value.handStatus
+    this.emitPeerStatus('hand', local.value.handStatus)
+    if (local.value.handStatus) {
+      playSound('raiseHand')
+    }
+  }
+
+  // 监听
+  listen_back() {
+    // 屏幕共享、设备切换 - 需重新创建 stream
+    watch([local.value.useScreen, videoInputDeviceId, audioInputDeviceId], async () => {
+      if (local.value.useScreen && screenId.value) {
+        // 切换到屏幕共享
+        await this.setupLocalVideo({
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: screenId.value,
+          },
+        })
+      } else {
+        // 切换到视频输入设备
+        await this.setupLocalVideo({
+          deviceId: videoInputDeviceId.value,
+          ...this.getVideoConstraints('default'),
+        })
+      }
+      // 切换到音频输入设备
+      await this.setupLocalAudio({
+        deviceId: audioInputDeviceId.value,
+        ...this.getAudioConstraints(),
+      })
+    })
+
+    // 监听 音频视频 启用/禁用 - 不需重新创建 stream
+    watch([local.value.useVideo, local.value.useAudio], () => {
+      this.setVideoTracks(local.value.useVideo)
+      this.setAudioTracks(local.value.useAudio)
+    })
   }
 }
 

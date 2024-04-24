@@ -444,16 +444,16 @@ export class Client {
 
     switch (action) {
       case 'video':
-        this.mediaServer.setPeerVideoStatus(userId, status)
+        this.mediaServer.setPeerStatus('useVideo', userId, status)
         break
       case 'audio':
-        this.mediaServer.setPeerAudioStatus(userId, status)
+        this.mediaServer.setPeerStatus('useAudio', userId, status)
         break
       case 'hand':
-        this.mediaServer.setPeerHandStatus(userId, status)
+        this.mediaServer.setPeerStatus('handStatus', userId, status)
         break
       case 'privacy':
-        this.mediaServer.setVideoPrivacyStatus(status, userId)
+        this.mediaServer.setPeerStatus('privacyStatus', userId, status)
         break
       default:
         break
