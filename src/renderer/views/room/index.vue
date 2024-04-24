@@ -73,6 +73,65 @@ function onSignout() {
 
 <template>
   <div class="room-page">
+    <div class="main">
+      <TransitionGroup name="cameraIn" tag="div" class="video-container">
+        <div
+          key="localVideo" class="camera"
+          :class="[{ privacy: local.privacyStatus, hidden: local.hidden }]"
+        >
+          <video
+            ref="localVideo"
+            class="video"
+            :class="{ mirror: local.useMirror }"
+            muted
+            autoplay
+            playsinline="true"
+            @fullscreenchange="onFullscreenchange($event, local)"
+          />
+          <div class="name">{{ local.userName }}(我)</div>
+          <PeerStatusBar :peer="local" />
+          <PeerVolumeBar :peer="local" />
+        </div>
+        <template v-for="(peer, index) in remoteVideo" :key="`remoteVideo${index}`">
+          <div class="camera" :class="[{ privacy: peer.privacyStatus }]">
+            <video
+              class="video"
+              :srcObject="peer.stream"
+              :class="{ mirror: peer.useMirror }"
+              muted
+              autoplay
+              playsinline="true"
+              @fullscreenchange="onFullscreenchange($event, peer)"
+            />
+            <div class="name">{{ peer.userName }}</div>
+            <PeerStatusBar :peer="peer" />
+            <PeerVolumeBar :peer="peer" />
+          </div>
+        </template>
+      </TransitionGroup>
+      <div class="audio-container">
+        <div class="audio-wrap">
+          <audio ref="localAudio" autoplay muted />
+        </div>
+        <template v-for="(peer, index) in remoteAudio" :key="index">
+          <div class="audio-wrap">
+            <audio :srcObject="peer.stream" autoplay muted />
+          </div>
+        </template>
+      </div>
+    </div>
+    <div id="localVolume" ref="localVolume" class="volume-container">
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+      <div class="volume-bar" />
+    </div>
     <Transition name="fadeLeftIn">
       <div v-if="isMounted" class="toolbar">
         <button>
@@ -138,65 +197,6 @@ function onSignout() {
         </button>
       </div>
     </Transition>
-    <div id="localVolume" ref="localVolume" class="volume-container">
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-      <div class="volume-bar" />
-    </div>
-    <div class="main">
-      <TransitionGroup name="cameraIn" tag="div" class="video-container">
-        <div
-          key="localVideo" class="camera"
-          :class="[{ privacy: local.privacyStatus, hidden: local.hidden }]"
-        >
-          <video
-            ref="localVideo"
-            class="video"
-            :class="{ mirror: local.useMirror }"
-            muted
-            autoplay
-            playsinline="true"
-            @fullscreenchange="onFullscreenchange($event, local)"
-          />
-          <div class="name">{{ local.userName }}(我)</div>
-          <PeerStatusBar :peer="local" />
-          <PeerVolumeBar :peer="local" />
-        </div>
-        <template v-for="(peer, index) in remoteVideo" :key="`remoteVideo${index}`">
-          <div class="camera" :class="[{ privacy: peer.privacyStatus }]">
-            <video
-              class="video"
-              :srcObject="peer.stream"
-              :class="{ mirror: peer.useMirror }"
-              muted
-              autoplay
-              playsinline="true"
-              @fullscreenchange="onFullscreenchange($event, peer)"
-            />
-            <div class="name">{{ peer.userName }}</div>
-            <PeerStatusBar :peer="peer" />
-            <PeerVolumeBar :peer="peer" />
-          </div>
-        </template>
-      </TransitionGroup>
-      <div class="audio-container">
-        <div class="audio-wrap">
-          <audio ref="localAudio" autoplay muted />
-        </div>
-        <template v-for="(peer, index) in remoteAudio" :key="index">
-          <div class="audio-wrap">
-            <audio :srcObject="peer.stream" autoplay muted />
-          </div>
-        </template>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -208,20 +208,20 @@ function onSignout() {
   flex-direction: column;
   position: relative;
   background: radial-gradient(#393939, #000000);
-
+  .main {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
   .toolbar {
-    z-index: 10;
-    display: flex;
-    position: fixed;
-    padding: 10px;
-    bottom: 20px;
-    left: 15px;
-    flex-direction: column;
-    justify-content: center;
     gap: 6px;
+    padding: 10px;
+    display: inline-flex;
+    align-items: center;
     box-shadow: 0px 8px 16px 0px rgb(33 33 33);
     border: 0.5px solid rgb(255 255 255 / 32%);
     border-radius: 10px;
+    margin: 10px auto;
     overflow: hidden;
     button {
       color: #666;
