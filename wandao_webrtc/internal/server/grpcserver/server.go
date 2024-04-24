@@ -4,8 +4,9 @@ package grpcserver
 import (
 	"context"
 	"fmt"
-	"io.wandao.meeting/internal/server/models"
 	"net"
+
+	"io.wandao.meeting/internal/server/models"
 
 	"io.wandao.meeting/internal/conf"
 
@@ -66,7 +67,7 @@ func (s *server) SendMsg(c context.Context, req *protobuf.SendMsgReq) (rsp *prot
 		setErr(rsp, common.ParameterIllegal, "")
 		return
 	}
-	data := models.GetMsgData(req.GetUserId(), req.GetSeq(), req.GetCmd(), req.GetMsg())
+	data := models.GetTextMsgData("message", req.GetMsg(), req.GetUserId())
 	sendResults, err := websocket.SendUserMessageLocal(req.GetRoomId(), req.GetUserId(), data)
 	if err != nil {
 		fmt.Println("[GRPC] 系统错误", err)
@@ -87,7 +88,7 @@ func (s *server) SendMsg(c context.Context, req *protobuf.SendMsgReq) (rsp *prot
 func (s *server) SendMsgAll(c context.Context, req *protobuf.SendMsgAllReq) (rsp *protobuf.SendMsgAllRsp, err error) {
 	fmt.Println("grpc_request 给本机全体用户发消息", req.String())
 	rsp = &protobuf.SendMsgAllRsp{}
-	data := models.GetMsgData(req.GetUserId(), req.GetSeq(), req.GetCmd(), req.GetMsg())
+	data := models.GetTextMsgData(models.MessageCmdMessage, req.GetMsg(), req.GetUserId())
 	websocket.AllSendMessages(req.GetRoomId(), req.GetUserId(), data)
 	setErr(rsp, common.OK, "")
 	fmt.Println("grpc_response 给本机全体用户发消息:", rsp.String())

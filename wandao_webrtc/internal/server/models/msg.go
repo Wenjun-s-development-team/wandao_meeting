@@ -1,60 +1,46 @@
 // Package models 数据模型
 package models
 
-import "io.wandao.meeting/internal/common"
+import (
+	"encoding/json"
+
+	"io.wandao.meeting/internal/helper"
+)
 
 const (
-	// MessageTypeText 文本类型消息
-	MessageTypeText = "text"
-	// MessageCmdMsg 文本类型消息
-	MessageCmdMsg = "msg"
-	// MessageCmdEnter 用户进入类型消息
-	MessageCmdEnter = "enter"
-	// MessageCmdExit 用户退出类型消息
-	MessageCmdExit = "exit"
+	MessageCmdMessage    = "message"
+	MessageCmdConnect    = "connect"
+	MessageCmdDisconnect = "disconnect"
 )
 
 // Message 消息的定义
 type Message struct {
-	Target string `json:"target"` // 目标
-	Type   string `json:"type"`   // 消息类型 text ｜ img
-	Msg    string `json:"msg"`    // 消息内容
-	From   uint64 `json:"from"`   // 发送者userId
+	Seq  string      `json:"seq"`            // 消息的唯一ID
+	Cmd  string      `json:"cmd"`            // 请求命令
+	From uint64      `json:"from,omitempty"` // 发送者userId
+	Data interface{} `json:"data,omitempty"` // 数据 json
 }
 
 // NewMsg 创建新的消息
-func NewMsg(from uint64, Msg string) (message *Message) {
+func NewMsg(cmd string, data string, from uint64) (message *Message) {
+	msgId := helper.GetOrderIDTime()
 	message = &Message{
-		Type: MessageTypeText,
+		Seq:  msgId,
 		From: from,
-		Msg:  Msg,
+		Cmd:  cmd,
+		Data: data,
 	}
 	return
 }
 
-func getTextMsgData(cmd string, uuID uint64, msgID string, message string) string {
-	textMsg := NewMsg(uuID, message)
-	head := NewResponseHead(msgID, cmd, common.OK, "Ok", textMsg)
-
-	return head.String()
+func (m *Message) String() (messageStr string) {
+	bytes, _ := json.Marshal(m)
+	messageStr = string(bytes)
+	return
 }
 
-// GetMsgData 文本消息
-func GetMsgData(uuID uint64, msgID string, cmd string, message string) string {
-	return getTextMsgData(cmd, uuID, msgID, message)
-}
-
-// GetTextMsgData 文本消息
-func GetTextMsgData(uuID uint64, msgID string, message string) string {
-	return getTextMsgData("msg", uuID, msgID, message)
-}
-
-// GetTextMsgDataEnter 用户进入消息
-func GetTextMsgDataEnter(uuID uint64, msgID string, message string) string {
-	return getTextMsgData("enter", uuID, msgID, message)
-}
-
-// GetTextMsgDataExit 用户退出消息
-func GetTextMsgDataExit(uuID uint64, msgID string, message string) string {
-	return getTextMsgData("exit", uuID, msgID, message)
+// GetTextMsgData 创建信息
+func GetTextMsgData(cmd string, data string, formId uint64) string {
+	msg := NewMsg(cmd, data, formId)
+	return msg.String()
 }

@@ -82,11 +82,11 @@ func usersGetByID(t *testing.T, ctx context.Context, db *users) {
 	alice, err := db.Create(ctx, "alice", "alice@exmaple.com", CreateUserOptions{})
 	require.NoError(t, err)
 
-	user, err := db.GetByID(ctx, alice.Id)
+	user, err := db.Get(alice.Id)
 	require.NoError(t, err)
 	assert.Equal(t, alice.Name, user.Name)
 
-	_, err = db.GetByID(ctx, 404)
+	_, err = db.Get(404)
 	wantErr := ErrUserNotExist{args: errutil.Args{"userId": int64(404)}}
 	assert.Equal(t, wantErr, err)
 }

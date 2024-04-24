@@ -167,9 +167,10 @@ func (c *Client) SendMessage(cmd string, data interface{}) {
 		}
 	}()
 
-	msg, err := jsoniter.Marshal(models.SendRequest{
+	msg, err := jsoniter.Marshal(models.Message{
 		Seq:  helper.GetOrderIDTime(),
 		Cmd:  cmd,
+		From: c.UserId,
 		Data: data,
 	})
 

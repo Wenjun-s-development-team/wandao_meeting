@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import ScreenSources from '../components/ScreenSources.vue'
 import RoomStatusBar from './components/RoomStatusBar.vue'
+import MicrophoneVolumeBar from './components/MicrophoneVolumeBar.vue'
 import { useWebRTCClient } from '@/webrtc'
 import { useWebrtcStore } from '@/store'
 
@@ -11,7 +12,6 @@ const router = useRouter()
 
 const {
   useScreen,
-  screenId,
   remoteVideo,
   remoteAudio,
 } = storeToRefs(webrtcStore)
@@ -19,6 +19,8 @@ const {
 const localVideo = ref(null)
 const localAudio = ref(null)
 const localVolume = ref(null)
+
+provide('localVolumeRef', localVolume)
 
 const useMirror = ref(false)
 const isMounted = useMounted()
@@ -31,6 +33,10 @@ watchOnce(isMounted, () => {
     client.start()
   }
 })
+
+function onScreenShare() {
+  client.mediaServer.onScreenShare(true)
+}
 
 function onSignout() {
   router.push({ path: '/start' })
@@ -56,7 +62,7 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-microphone" />
         </button>
-        <ScreenSources v-model="screenId" v-model:useScreen="useScreen">
+        <ScreenSources @change="onScreenShare()">
           <button>
             <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
             <i v-else class="i-fa6-solid-desktop" />
@@ -117,6 +123,7 @@ function onSignout() {
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
         <div key="localVideo" class="camera">
           <RoomStatusBar />
+          <MicrophoneVolumeBar />
           <video
             ref="localVideo"
             class="video"
@@ -131,6 +138,7 @@ function onSignout() {
         <template v-for="(video, index) in remoteVideo" :key="`remoteVideo${index}`">
           <div class="camera">
             <RoomStatusBar />
+            <MicrophoneVolumeBar />
             <video
               class="video"
               :srcObject="video.stream"

@@ -21,7 +21,7 @@ export class WhiteboardServer {
    * 如果白板打开，则将画布更新到所有P2P连接中
    */
   async onUpdate() {
-    if (this.isOpened && this.client.peerConnectCount > 0) {
+    if (this.isOpened && this.client.peerCount > 0) {
       this.wbCanvasToJson()
       this.whiteboardAction(this.getWhiteboardAction(this.isLocked ? 'lock' : 'unlock'))
     }
@@ -32,7 +32,7 @@ export class WhiteboardServer {
   }
 
   whiteboardAction(config: KeyValue) {
-    if (this.client.peerConnectCount > 0) {
+    if (this.client.peerCount > 0) {
       this.client.sendToServer('whiteboardAction', config)
     }
     this.handleWhiteboardAction(config, false)
@@ -121,7 +121,7 @@ export class WhiteboardServer {
     if (!this.client.isOwner && this.isLocked) {
       return
     }
-    if (this.client.peerConnectCount > 0) {
+    if (this.client.peerCount > 0) {
       const config = {
         roomId: this.client.roomId,
         wbCanvasJson: JSON.stringify(this.wbCanvas?.toJSON()),

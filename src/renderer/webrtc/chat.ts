@@ -36,6 +36,16 @@ export class ChatServer {
     this.chatDataChannels = {}
   }
 
+  async sendToDataChannel(config) {
+    if (this.client.peerCount && typeof config === 'object' && config !== null) {
+      for (const userId in this.chatDataChannels) {
+        if (this.chatDataChannels[userId].readyState === 'open') {
+          await this.chatDataChannels[userId].send(JSON.stringify(config))
+        }
+      }
+    }
+  }
+
   /**
    * 处理聊天消息
    * @param {KeyValue} dataMessage chat messages

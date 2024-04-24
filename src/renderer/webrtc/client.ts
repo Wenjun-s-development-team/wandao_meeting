@@ -53,7 +53,7 @@ export class Client {
   }
 
   // peer 连接数
-  get peerConnectCount() {
+  get peerCount() {
     return Object.keys(this.peerConnections).length
   }
 
@@ -742,7 +742,7 @@ export class Client {
   }
 
   emitPeerAction(userId: number, action: string) {
-    if (!this.peerConnectCount) {
+    if (!this.peerCount) {
       return
     }
 

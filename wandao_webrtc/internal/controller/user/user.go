@@ -96,7 +96,7 @@ func SendMessage(c *context.APIContext) {
 		c.Set("data", gin.H{})
 		return
 	}
-	sendResults, err := websocket.SendUserMessage(in.RoomId, in.UserId, in.MsgId, in.Message)
+	sendResults, err := websocket.SendUserMessage(models.MessageCmdMessage, in.RoomId, in.UserId, in.Message)
 
 	if err != nil {
 		c.ResultError(err.Error())
@@ -123,7 +123,7 @@ func SendMessageAll(c *context.APIContext) {
 		c.Set("data", gin.H{})
 		return
 	}
-	sendResults, err := websocket.SendUserMessageAll(in.RoomId, in.UserId, in.MsgId, models.MessageCmdMsg, in.Message)
+	sendResults, err := websocket.SendUserMessageAll(models.MessageCmdMessage, in.Message, in.RoomId, in.UserId)
 
 	if err != nil {
 		c.ResultError(err.Error())

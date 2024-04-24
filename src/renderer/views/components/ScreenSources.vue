@@ -1,20 +1,23 @@
 <script setup>
 import { IPCRequest } from '@/api'
+import { useWebrtcStore } from '@/store'
 
 defineOptions({
   name: 'ScreenSources',
 })
 
-const screenId = defineModel()
-const useScreen = defineModel('useScreen')
+const emit = defineEmits('change')
 
+const webrtcStore = useWebrtcStore()
+
+const screenId = ref('')
 const screenSources = ref([])
 const showList = ref(false)
 const loading = ref(false)
 
 async function onClick() {
-  if (useScreen.value) {
-    return useScreen.value = false
+  if (webrtcStore.useScreen) {
+    return webrtcStore.useScreen = false
   }
   showList.value = true
   loading.value = true
@@ -28,8 +31,9 @@ async function onClick() {
 
 function onSubmit() {
   console.log('共享屏幕ID:', screenId.value)
-  useScreen.value = true
+  webrtcStore.useScreen = true
   showList.value = false
+  emit('change', screenId.value)
 }
 </script>
 

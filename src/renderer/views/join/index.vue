@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import ScreenSources from '../components/ScreenSources.vue'
 import DeviceSelect from './components/DeviceSelect.vue'
-import { MediaServer } from '@/webrtc/media'
+import { useMediaServer } from '@/webrtc/media'
 import { IPCRequest, RTCRequest } from '@/api'
 
 import { useWebrtcStore } from '@/store'
@@ -21,7 +21,6 @@ const {
   useMirror,
   useVideo,
   useAudio,
-  screenId,
   videoInputDeviceId,
   audioInputDeviceId,
   audioOutputDeviceId,
@@ -30,22 +29,22 @@ const {
   audioOutputDevices,
 } = storeToRefs(webrtcStore)
 
-function useMediaServer() {
-  const isMounted = useMounted()
-  watchOnce(isMounted, async () => {
-    if (videoElement.value && audioElement.value) {
-      const mediaServer = new MediaServer()
-      await mediaServer.init(videoElement.value, audioElement.value).start()
-      mediaServer.listen()
-    }
-  })
-}
-
-useMediaServer()
+const isMounted = useMounted()
+const mediaServer = useMediaServer()
+watchOnce(isMounted, async () => {
+  if (videoElement.value && audioElement.value) {
+    await mediaServer.init(videoElement.value, audioElement.value).start()
+    mediaServer.listen()
+  }
+})
 
 async function userLogin(name) {
   await webrtcStore.userLogin({ name, passwd: '123456' })
   router.push({ path: '/room', query: { roomId: query.roomId } })
+}
+
+function onScreenShare() {
+  mediaServer.onScreenShare(false)
 }
 
 IPCRequest.windows.openDevTools()
@@ -80,7 +79,7 @@ IPCRequest.windows.openDevTools()
               <i v-if="useAudio" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources v-model="screenId" v-model:useScreen="useScreen">
+            <ScreenSources @change="onScreenShare()">
               <button>
                 <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />

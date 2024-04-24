@@ -4,8 +4,9 @@ package websocket
 import (
 	"errors"
 	"fmt"
-	models "io.wandao.meeting/internal/server/models"
 	"time"
+
+	models "io.wandao.meeting/internal/server/models"
 
 	"io.wandao.meeting/internal/libs/cache"
 	"io.wandao.meeting/internal/server/grpcclient"
@@ -69,8 +70,8 @@ func checkUserOnline(roomId uint64, userId uint64) (online bool, err error) {
 }
 
 // SendUserMessage 给用户发送消息
-func SendUserMessage(roomId uint64, userId uint64, msgID, message string) (sendResults bool, err error) {
-	data := models.GetTextMsgData(userId, msgID, message)
+func SendUserMessage(cmd string, roomId uint64, userId uint64, message string) (sendResults bool, err error) {
+	data := models.GetTextMsgData(models.MessageCmdMessage, message, userId)
 	client := GetUserClient(roomId, userId)
 	if client != nil {
 		// 在本机发送
@@ -91,7 +92,7 @@ func SendUserMessage(roomId uint64, userId uint64, msgID, message string) (sendR
 		return false, nil
 	}
 	server := models.NewServer(info.AppIp, info.AppPort)
-	msg, err := grpcclient.SendMsg(server, msgID, roomId, userId, models.MessageCmdMsg, models.MessageCmdMsg, message)
+	msg, err := grpcclient.SendMsg(server, roomId, userId, cmd, "text", message)
 	if err != nil {
 		fmt.Println("给用户发送消息失败", key, err)
 		return false, err
@@ -116,7 +117,7 @@ func SendUserMessageLocal(roomId uint64, userId uint64, data string) (sendResult
 }
 
 // SendUserMessageAll 给全体用户发消息
-func SendUserMessageAll(roomId uint64, userId uint64, msgID, cmd, message string) (sendResults bool, err error) {
+func SendUserMessageAll(cmd string, message string, roomId uint64, userId uint64) (sendResults bool, err error) {
 	sendResults = true
 	currentTime := uint64(time.Now().Unix())
 	servers, err := cache.GetServerAll(currentTime)
@@ -126,10 +127,10 @@ func SendUserMessageAll(roomId uint64, userId uint64, msgID, cmd, message string
 	}
 	for _, server := range servers {
 		if IsLocal(server) {
-			data := models.GetMsgData(userId, msgID, cmd, message)
+			data := models.GetTextMsgData(cmd, message, userId)
 			AllSendMessages(roomId, userId, data)
 		} else {
-			_, _ = grpcclient.SendMsgAll(server, msgID, roomId, userId, cmd, message)
+			_, _ = grpcclient.SendMsgAll(server, roomId, userId, cmd, message)
 		}
 	}
 	return

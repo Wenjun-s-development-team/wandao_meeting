@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io.wandao.meeting/internal/helper"
 	"io.wandao.meeting/internal/server/models"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 
 // SendMsgAll 给全体用户发送消息
 // link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
-func SendMsgAll(server *models.Server, seq string, roomId uint64, userId uint64, cmd string, message string) (sendMsgId string, err error) {
+func SendMsgAll(server *models.Server, roomId uint64, userId uint64, cmd string, message string) (sendMsgId string, err error) {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(server.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -29,6 +30,7 @@ func SendMsgAll(server *models.Server, seq string, roomId uint64, userId uint64,
 	c := protobuf.NewWebRTCClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+	seq := helper.GetOrderIDTime()
 	req := protobuf.SendMsgAllReq{
 		Seq:    seq,
 		RoomId: roomId,
@@ -86,7 +88,7 @@ func GetUserList(server *models.Server, roomId uint64) (userIds []uint64, err er
 
 // SendMsg 发送消息
 // link::https://github.com/grpc/grpc-go/blob/master/examples/helloworld/greeter_client/main.go
-func SendMsg(server *models.Server, seq string, roomId uint64, userId uint64, cmd string, msgType string,
+func SendMsg(server *models.Server, roomId uint64, userId uint64, cmd string, msgType string,
 	message string) (sendMsgId string, err error) {
 	// Set up a connection to the server.
 	conn, err := grpc.Dial(server.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -98,6 +100,7 @@ func SendMsg(server *models.Server, seq string, roomId uint64, userId uint64, cm
 	c := protobuf.NewWebRTCClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+	seq := helper.GetOrderIDTime()
 	req := protobuf.SendMsgReq{
 		Seq:     seq,
 		RoomId:  roomId,

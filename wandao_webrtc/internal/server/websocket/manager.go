@@ -9,7 +9,6 @@ import (
 
 	log "unknwon.dev/clog/v2"
 
-	"io.wandao.meeting/internal/helper"
 	"io.wandao.meeting/internal/libs/cache"
 )
 
@@ -245,8 +244,7 @@ func (manager *ClientManager) EventLogin(login *login) {
 		manager.AddUsers(userKey, login.Client)
 	}
 	log.Info("EventLogin 用户登录: %s|%d|%d", client.Addr, login.RoomId, login.UserId)
-	orderID := helper.GetOrderIDTime()
-	_, _ = SendUserMessageAll(login.RoomId, login.UserId, orderID, models.MessageCmdEnter, "哈喽~")
+	_, _ = SendUserMessageAll(models.MessageCmdConnect, "哈喽~", login.RoomId, login.UserId)
 }
 
 // EventUnregister 用户断开连接
@@ -271,8 +269,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 	// close(client.Send)
 	log.Info("EventUnregister 用户断开连接: %s|%d|%d", client.Addr, client.RoomId, client.UserId)
 	if client.UserId > 0 {
-		orderID := helper.GetOrderIDTime()
-		_, _ = SendUserMessageAll(client.RoomId, client.UserId, orderID, models.MessageCmdExit, "用户已经离开~")
+		_, _ = SendUserMessageAll(models.MessageCmdDisconnect, "用户已经离开", client.RoomId, client.UserId)
 	}
 }
 

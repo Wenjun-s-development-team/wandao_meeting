@@ -1,5 +1,6 @@
 import { storeToRefs } from 'pinia'
 import type { Client } from './client'
+import { Microphone } from './microphone'
 import { playSound } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
@@ -24,6 +25,7 @@ const {
  */
 export class MediaServer {
   client: Client | undefined
+  microphone: Microphone
   // videoFps = reactive([5, 15, 30, 60]) // 每秒帧数
   declare videoElement: HTMLVideoElement
   declare audioElement: HTMLAudioElement
@@ -36,8 +38,36 @@ export class MediaServer {
   declare remoteVideoElement: HTMLVideoElement
   declare remoteAudioElement: HTMLAudioElement
 
+  declare screenFpsSelect: string
+  declare isScreenStreaming: boolean
+  declare isVideoPrivacyActive: boolean
+
+  declare videoStatus: boolean
+  declare audioStatus: boolean
+  declare screenStatus: boolean
+  localVideoStatusBefore: boolean = false
+  isVideoPinned: boolean = false // 是否固定
+  initStream: MediaStream | null = null
+  isRulesActive: boolean = false
+  isPresenter: boolean = false
+
+  videoQuality: string = 'default'
+  videoMaxFrameRate: number = 30
+  screenMaxFrameRate: number = 30
+  forceCamMaxResolutionAndFps: boolean = false
+
+  autoGainControl: boolean = true // 自动增益
+  echoCancellation: boolean = true // 消除回声
+  noiseSuppression: boolean = true // 噪声抑制
+  sampleRate: number = 48000 // 采样率 48000 | 44100
+  sampleSize: number = 32 // 采样大小 16 ｜ 32
+  channelCount: number = 2 // 通道数 1(mono = 单声道) ｜ 2(stereo = 立体声)
+  latency: number = 50 // 延迟ms min="10" max="1000" value="50" step="10"
+  volume: number = 100 / 100 // 音量 min="0" max="100" value="100" step="10"
+
   constructor(client?: Client) {
     this.client = client
+    this.microphone = new Microphone(this.client)
   }
 
   init(videoElement: HTMLVideoElement, audioElement: HTMLAudioElement, volumeElement?: HTMLDivElement) {
@@ -82,7 +112,7 @@ export class MediaServer {
     console.log('📹 请求访问视频输入设备')
 
     const videoConstraints = toValue(useVideo) || toValue(useScreen)
-      ? constraints || this.getVideoConstraints('default')
+      ? constraints || await this.getVideoConstraints('default')
       : false
 
     /**
@@ -120,7 +150,7 @@ export class MediaServer {
 
     console.log('🎤 请求访问音频输入设备')
 
-    const audioConstraints = toValue(useAudio) ? constraints || this.getAudioConstraints() : false
+    const audioConstraints = toValue(useAudio) ? constraints || await this.getAudioConstraints() : false
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints })
@@ -333,113 +363,482 @@ export class MediaServer {
     }
   }
 
-  hasAudioTrack(mediaStream: MediaStream) {
-    if (!mediaStream) {
+  hasAudioTrack(stream: MediaStream) {
+    if (!stream) {
       return false
     }
-    const audioTracks = mediaStream.getAudioTracks()
+    const audioTracks = stream.getAudioTracks()
     return audioTracks.length > 0
   }
 
-  hasVideoTrack(mediaStream: MediaStream) {
-    if (!mediaStream) {
+  hasVideoTrack(stream: MediaStream) {
+    if (!stream) {
       return false
     }
-    const videoTracks = mediaStream.getVideoTracks()
+    const videoTracks = stream.getVideoTracks()
     return videoTracks.length > 0
   }
 
-  getVideoConstraints(
-    quality:
-      | 'default'
-      | 'qvgaVideo'
-      | 'vgaVideo'
-      | 'hdVideo'
-      | 'fhdVideo'
-      | '2kVideo'
-      | '4kVideo' = 'default',
-    frameRate: FrameRate = { ideal: 30 },
-    forceFps: boolean = false,
-  ) {
-    let constraints = {}
+  async stopTracks(stream: MediaStream) {
+    stream.getTracks().forEach((track) => {
+      track.stop()
+    })
+  }
 
-    switch (quality) {
+  async onScreenShare(init: boolean = false) {
+    console.log(init)
+
+    try {
+      // Set screen frame rate
+      const screenMaxFrameRate = Number.parseInt(this.screenFpsSelect, 10)
+
+      // Screen share constraints
+      const constraints = {
+        audio: !useAudio.value,
+        video: { frameRate: screenMaxFrameRate },
+      }
+
+      this.localVideoStatusBefore = false
+
+      // Store webcam video status before screen sharing
+      if (!this.isScreenStreaming) {
+        this.localVideoStatusBefore = useVideo.value
+        console.log(`My video status before screen sharing: ${this.localVideoStatusBefore}`)
+      } else {
+        if (!useVideo && !useAudio) {
+          return this.handleToggleScreenException('Audio and Video are disabled', init)
+        }
+      }
+
+      // Get screen or webcam media stream based on current state
+      const screenMediaPromise = this.isScreenStreaming
+        ? await navigator.mediaDevices.getUserMedia(await this.getAudioVideoConstraints())
+        : await navigator.mediaDevices.getDisplayMedia(constraints)
+
+      if (screenMediaPromise) {
+        this.isVideoPrivacyActive = false
+        this.emitPeerStatus('privacy', this.isVideoPrivacyActive)
+
+        this.isScreenStreaming = !this.isScreenStreaming
+        this.screenStatus = this.isScreenStreaming
+
+        if (this.isScreenStreaming) {
+          this.setLocalVideoStatusTrue()
+          this.emitPeersAction('screenStart')
+        } else {
+          this.emitPeersAction('screenStop')
+        }
+
+        await this.emitPeerStatus('screen', this.screenStatus)
+
+        await this.stopLocalVideoTrack()
+        await this.refreshLocalStream(screenMediaPromise, !useAudio)
+        await this.refreshStreamToPeers(screenMediaPromise, !useAudio)
+
+        if (init) {
+          // Handle init media stream
+          if (this.initStream) {
+            await this.stopTracks(this.initStream)
+          }
+          this.initStream = screenMediaPromise
+          if (this.hasVideoTrack(this.initStream)) {
+            const newInitStream = new MediaStream([this.initStream.getVideoTracks()[0]])
+            this.videoElement.classList.toggle('mirror')
+            this.videoElement.srcObject = newInitStream
+          } else {
+            //
+          }
+        }
+
+        // Disable cam video when screen sharing stops
+        if (!init && !this.isScreenStreaming && !this.localVideoStatusBefore) {
+          this.setLocalVideoOff()
+        }
+        // Enable cam video when screen sharing stops
+        if (!init && !this.isScreenStreaming && this.localVideoStatusBefore) {
+          this.setLocalVideoStatusTrue()
+        }
+
+        if (this.isScreenStreaming || this.isVideoPinned) {
+          // myVideoPinBtn.click()
+        }
+      }
+    } catch (err) {
+      if ((err as { name: string }).name === 'NotAllowedError') {
+        console.error('Screen sharing permission was denied by the user.')
+      } else {
+        await this.handleToggleScreenException(`[Warning] Unable to share the screen: ${err}`, init)
+      }
+    }
+  }
+
+  async handleToggleScreenException(reason: string, init: boolean) {
+    try {
+      console.warn('handleToggleScreenException', reason)
+
+      // Update video privacy status
+      this.isVideoPrivacyActive = false
+      this.emitPeerStatus('privacy', this.isVideoPrivacyActive)
+
+      // Inform peers about screen sharing stop
+      this.emitPeersAction('screenStop')
+
+      // Turn off your video
+      this.setLocalVideoOff()
+
+      // Toggle screen streaming status
+      this.isScreenStreaming = !this.isScreenStreaming
+      this.screenStatus = this.isScreenStreaming
+
+      // Update screen sharing status 更新UI
+
+      // Emit screen status to peers
+      this.emitPeerStatus('screen', this.screenStatus)
+
+      // Stop the local video track
+      await this.stopLocalVideoTrack()
+
+      // Handle video status based on conditions
+      if (!init && !this.isScreenStreaming && !this.localVideoStatusBefore) {
+        this.setLocalVideoOff()
+      } else if (!init && !this.isScreenStreaming && this.localVideoStatusBefore) {
+        this.setLocalVideoStatusTrue()
+      }
+
+      // Automatically pin the video if screen sharing or video is pinned
+      if (this.isScreenStreaming || this.isVideoPinned) {
+        // myVideoPinBtn.click()
+      }
+    } catch (error) {
+      console.error('[Error] An unexpected error occurred', error)
+    }
+  }
+
+  async emitPeerStatus(cmd: string, status: boolean) {
+    this.client?.sendToServer(cmd, {
+      roomId: this.client.roomId,
+      userId: this.client.userId,
+      status,
+    })
+  }
+
+  emitPeersAction(cmd: string) {
+    if (!this.client?.peerCount) {
+      return
+    }
+
+    this.client?.sendToServer(cmd, {
+      roomId: this.client.roomId,
+      userId: this.client.userId,
+      peerVideo: useVideo.value,
+      sendToAll: true,
+    })
+  }
+
+  setLocalVideoOff() {
+    if (!useVideo.value) {
+      return
+    }
+    // if (this.videoStatus === false || !useVideo) return;
+    this.videoStatus = false
+    this.localVideoStream.getVideoTracks()[0].enabled = this.videoStatus
+
+    this.setLocalVideoStatus(this.videoStatus)
+    playSound('off')
+  }
+
+  setLocalVideoStatus(status: boolean) {
+    console.log('local video status', status)
+    // send my video status to all peers in the room
+    this.emitPeerStatus('video', status)
+    playSound(status ? 'on' : 'off')
+  }
+
+  async setLocalVideoStatusTrue() {
+    if (this.videoStatus || !useVideo.value) {
+      return
+    }
+    // Put video status already ON
+    this.videoStatus = true
+    this.localVideoStream.getVideoTracks()[0].enabled = this.videoStatus
+
+    this.emitPeerStatus('video', this.videoStatus)
+  }
+
+  async stopLocalVideoTrack() {
+    if (useVideo.value || !this.isScreenStreaming) {
+      const localVideoTrack = this.localVideoStream.getVideoTracks()[0]
+      if (localVideoTrack) {
+        console.log('stopLocalVideoTrack', localVideoTrack)
+        localVideoTrack.stop()
+      }
+    }
+  }
+
+  async refreshLocalStream(stream: MediaStream, localAudioTrackChange = false) {
+    let { isScreenStreaming, videoElement, audioElement, localVideoStream, localAudioStream } = this
+    // enable video
+    if (useVideo.value || isScreenStreaming) {
+      stream.getVideoTracks()[0].enabled = true
+    }
+
+    const tracksToInclude: MediaStreamTrack[] = []
+
+    const videoTrack = this.hasVideoTrack(stream)
+      ? stream.getVideoTracks()[0]
+      : this.hasVideoTrack(localVideoStream) && localVideoStream.getVideoTracks()[0]
+
+    const audioTrack
+        = this.hasAudioTrack(stream) && localAudioTrackChange
+          ? stream.getAudioTracks()[0]
+          : this.hasAudioTrack(localAudioStream) && localAudioStream.getAudioTracks()[0]
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream
+    if (useVideo.value || isScreenStreaming) {
+      console.log('Refresh my local media stream VIDEO - AUDIO', { isScreenStreaming })
+      if (videoTrack) {
+        tracksToInclude.push(videoTrack)
+        localVideoStream = new MediaStream([videoTrack])
+        this.attachMediaStream(videoElement, localVideoStream)
+        this.logStreamInfo('refreshMyLocalStream-localVideoMediaStream', localVideoStream)
+      }
+      if (audioTrack) {
+        tracksToInclude.push(audioTrack)
+        localAudioStream = new MediaStream([audioTrack])
+        this.attachMediaStream(audioElement, localAudioStream)
+        this.microphone.getMicrophoneVolumeIndicator(localAudioStream)
+        this.logStreamInfo('refreshMyLocalStream-localAudioMediaStream', localAudioStream)
+      }
+    } else {
+      console.log('Refresh my local media stream AUDIO')
+      if (useAudio.value && audioTrack) {
+        tracksToInclude.push(audioTrack)
+        localAudioStream = new MediaStream([audioTrack])
+        this.microphone.getMicrophoneVolumeIndicator(localAudioStream)
+        this.logStreamInfo('refreshMyLocalStream-localAudioMediaStream', localAudioStream)
+      }
+    }
+
+    if (isScreenStreaming) {
+      // refresh video privacy mode on screen sharing
+      this.isVideoPrivacyActive = false
+      this.setVideoPrivacyStatus()
+
+      // on toggleScreenSharing video stop from popup bar
+      stream.getVideoTracks()[0].onended = () => {
+        this.onScreenShare()
+      }
+    }
+
+    // adapt video object fit on screen streaming
+    videoElement.style.objectFit = isScreenStreaming ? 'contain' : 'cover'
+  }
+
+  async refreshStreamToPeers(stream: MediaStream, localAudioTrackChange = false) {
+    if (!this.client?.peerCount) {
+      return
+    }
+
+    const { localVideoStream, localAudioStream, isScreenStreaming } = this
+
+    if (useAudio.value && localAudioTrackChange) {
+      localAudioStream.getAudioTracks()[0].enabled = this.audioStatus
+    }
+
+    // Log peer connections and all peers
+    console.log('PEER-CONNECTIONS', this.client.peerConnections)
+    console.log('ALL-PEERS', this.client.allPeers)
+
+    // Check if the passed stream has an audio track
+    const streamHasAudioTrack = this.hasAudioTrack(stream)
+
+    // Check if the passed stream has an video track
+    const streamHasVideoTrack = this.hasVideoTrack(stream)
+
+    // Check if the local stream has an audio track
+    const localStreamHasAudioTrack = this.hasAudioTrack(localAudioStream)
+
+    // Check if the local stream has an video track
+    const localStreamHasVideoTrack = this.hasVideoTrack(localVideoStream)
+
+    // Determine the audio stream to add to peers
+    const audioStream = streamHasAudioTrack ? stream : localStreamHasAudioTrack && localAudioStream
+
+    // Determine the audio track to replace to peers
+    const audioTrack
+        = streamHasAudioTrack && (localAudioTrackChange || isScreenStreaming)
+          ? stream.getAudioTracks()[0]
+          : localStreamHasAudioTrack && localAudioStream.getAudioTracks()[0]
+
+    // Determine the video stream to add to peers
+    const videoStream = streamHasVideoTrack ? stream : localStreamHasVideoTrack && localVideoStream
+
+    // Determine the video track to replace to peers
+    const videoTracks = streamHasVideoTrack
+      ? stream.getVideoTracks()[0]
+      : localStreamHasVideoTrack && localVideoStream.getVideoTracks()[0]
+
+    // Refresh my stream to connected peers except myself
+    if (videoTracks) {
+      for (const userId in this.client.peerConnections) {
+        const roomName = this.client.allPeers[userId].roomName
+
+        // Replace video track
+        const videoSender = this.client.peerConnections[userId].getSenders().find(s => s.track && s.track.kind === 'video')
+
+        if (useVideo.value && videoSender) {
+          videoSender.replaceTrack(videoTracks)
+          console.log('REPLACE VIDEO TRACK TO', { userId, roomName, video: videoTracks })
+        } else {
+          if (videoStream) {
+            // Add video track if sender does not exist
+            videoStream.getTracks().forEach(async (track) => {
+              if (track.kind === 'video') {
+                this.client?.peerConnections[userId].addTrack(track)
+                await this.client?.handleCreateRTCOffer(Number(userId)) // https://groups.google.com/g/discuss-webrtc/c/Ky3wf_hg1l8?pli=1
+                console.log('ADD VIDEO TRACK TO', { userId, roomName, video: track })
+              }
+            })
+          }
+        }
+
+        // Replace audio track
+        const audioSender = this.client.peerConnections[userId].getSenders().find(s => s.track && s.track.kind === 'audio')
+
+        if (audioSender && audioTrack) {
+          audioSender.replaceTrack(audioTrack)
+          console.log('REPLACE AUDIO TRACK TO', { userId, roomName, audio: audioTrack })
+        } else {
+          if (audioStream) {
+            // Add audio track if sender does not exist
+            audioStream.getTracks().forEach(async (track) => {
+              if (track.kind === 'audio') {
+                this.client?.peerConnections[userId].addTrack(track)
+                await this.client?.handleCreateRTCOffer(Number(userId))
+                console.log('ADD AUDIO TRACK TO', { userId, roomName, audio: track })
+              }
+            })
+          }
+        }
+      }
+    }
+  }
+
+  setVideoPrivacyStatus() {
+    if (this.isVideoPrivacyActive) {
+      this.videoElement.style.objectFit = 'cover'
+    } else {
+      this.videoElement.style.objectFit = 'cover'
+    }
+  }
+
+  async getAudioVideoConstraints(): Promise<MediaStreamConstraints> {
+    // videoQualitySelect
+    const audioSource = audioInputDeviceId.value
+    const videoSource = videoInputDeviceId.value
+    let videoConstraints: MediaTrackConstraints = {}
+    if (useVideo.value) {
+      videoConstraints = await this.getVideoConstraints(this.videoQuality || 'default')
+      videoConstraints.deviceId = videoSource ? { exact: videoSource } : undefined
+    }
+    let audioConstraints: MediaTrackConstraints = {}
+    if (useAudio.value) {
+      audioConstraints = await this.getAudioConstraints()
+      audioConstraints.deviceId = audioSource ? { exact: audioSource } : undefined
+    }
+    return {
+      audio: audioConstraints,
+      video: videoConstraints,
+    }
+  }
+
+  async getVideoConstraints(videoQuality: string = 'default'): Promise<MediaTrackConstraints> {
+    const frameRate = this.videoMaxFrameRate
+    let video: MediaTrackConstraints = {}
+
+    switch (videoQuality) {
       case 'default':
-        if (forceFps) {
-          constraints = {
+        if (this.forceCamMaxResolutionAndFps) {
+          // This will make the browser use the maximum resolution available as default, `up to 4K and 60fps`.
+          video = {
             width: { ideal: 3840 },
             height: { ideal: 2160 },
             frameRate: { ideal: 60 },
-          }
+          } // video cam constraints default
         } else {
-          constraints = {
+          // This will make the browser use as ideal hdVideo and 30fps.
+          video = {
             width: { ideal: 1280 },
             height: { ideal: 720 },
             frameRate: { ideal: 30 },
-          }
+          } // on default as hdVideo
         }
         break
       case 'qvgaVideo':
-        constraints = {
+        video = {
           width: { exact: 320 },
           height: { exact: 240 },
           frameRate,
-        }
+        } // video cam constraints low bandwidth
         break
       case 'vgaVideo':
-        constraints = {
+        video = {
           width: { exact: 640 },
           height: { exact: 480 },
           frameRate,
-        }
+        } // video cam constraints medium bandwidth
         break
       case 'hdVideo':
-        constraints = {
+        video = {
           width: { exact: 1280 },
           height: { exact: 720 },
           frameRate,
-        }
+        } // video cam constraints high bandwidth
         break
       case 'fhdVideo':
-        constraints = {
+        video = {
           width: { exact: 1920 },
           height: { exact: 1080 },
           frameRate,
-        }
+        } // video cam constraints very high bandwidth
         break
       case '2kVideo':
-        constraints = {
+        video = {
           width: { exact: 2560 },
           height: { exact: 1440 },
           frameRate,
-        }
+        } // video cam constraints ultra high bandwidth
         break
       case '4kVideo':
-        constraints = {
+        video = {
           width: { exact: 3840 },
           height: { exact: 2160 },
           frameRate,
-        }
+        } // video cam constraints ultra high bandwidth
         break
       default:
         break
     }
-    console.log('Video constraints', constraints)
-    return constraints
+    console.log('Video constraints', video)
+    return video
   }
 
-  getAudioConstraints() {
-    const constraints = {
-      autoGainControl: true, // 自动增益
-      echoCancellation: true, // 消除回声
-      noiseSuppression: true, // 噪声抑制
-      sampleRate: 48000, // 采样率 48000 | 44100
-      sampleSize: 32, // 采样大小 16 ｜ 32
-      channelCount: 2, // 通道数 1(mono = 单声道) ｜ 2(stereo = 立体声)
-      latency: 50, // 延迟ms min="10" max="1000" value="50" step="10"
-      volume: 100 / 100, // 音量 min="0" max="100" value="100" step="10"
+  async getAudioConstraints(): Promise<MediaTrackConstraints> {
+    let audio: MediaTrackConstraints = {
+      echoCancellation: true,
+      noiseSuppression: true,
     }
-    console.log('Audio constraints', constraints)
-    return constraints
+    if (this.isRulesActive && this.isPresenter) {
+      const { autoGainControl, echoCancellation, noiseSuppression, sampleRate, sampleSize, channelCount, latency, volume } = this
+      // eslint-disable-next-line ts/ban-ts-comment
+      // @ts-expect-error
+      audio = { autoGainControl, echoCancellation, noiseSuppression, sampleRate, sampleSize, channelCount, latency, volume }
+    }
+    console.log('Audio constraints', audio)
+    return audio
   }
+}
+
+export function useMediaServer() {
+  return new MediaServer()
 }
