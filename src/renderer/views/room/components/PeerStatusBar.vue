@@ -1,5 +1,5 @@
 <script setup>
-import { playSound } from '@/utils'
+import { playSound, secondsToHms } from '@/utils'
 
 const props = defineProps(['peer'])
 const { peer } = toRefs(props)
@@ -73,11 +73,21 @@ function onPictureInPicture() {
     })
   }
 }
+
+// 时间
+const sessionTime = ref('')
+const callElapsedTime = ref(0)
+onMounted(() => {
+  setInterval(() => {
+    callElapsedTime.value++
+    sessionTime.value = secondsToHms(callElapsedTime.value)
+  }, 1000)
+})
 </script>
 
 <template>
   <div ref="peerRef" class="peer-statusbar">
-    <button class="unhover">39m 20s</button>
+    <button class="unhover">{{ sessionTime }}</button>
     <button><i class="i-fa6-solid-map-pin" /></button>
     <button @click.stop="peer.useMirror = !peer.useMirror">
       <i class="i-fa6-solid-arrow-right-arrow-left" />
