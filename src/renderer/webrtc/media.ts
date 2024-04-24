@@ -39,8 +39,6 @@ export class MediaServer {
   declare remoteVideoElement: HTMLVideoElement
   declare remoteAudioElement: HTMLAudioElement
 
-  declare screenFpsSelect: string
-
   declare videoStatus: boolean
   declare audioStatus: boolean
   declare audioVolume: boolean
@@ -53,7 +51,7 @@ export class MediaServer {
 
   videoQuality: string = 'default'
   videoMaxFrameRate: number = 30
-  screenMaxFrameRate: number = 30
+  screenFpsSelect: number = 30
   forceCamMaxResolutionAndFps: boolean = false
 
   autoGainControl: boolean = true // 自动增益
@@ -201,10 +199,10 @@ export class MediaServer {
 
     if (kind === 'video') {
       console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
-      remoteVideo.value.push({ userId, stream, room, kind })
+      webrtcStore.setRemoteVideo({ userId, stream, room, kind })
     } else if (kind === 'audio') {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
-      remoteAudio.value.push({ userId, stream, room, kind })
+      webrtcStore.setRemoteAudio({ userId, stream, room, kind })
     }
   }
 
@@ -385,27 +383,17 @@ export class MediaServer {
     })
   }
 
-  async onScreenShare(init: boolean = false) {
+  async toggleScreenSharing(init: boolean = false) {
     try {
-      // 设置屏幕帧速率
-      const screenMaxFrameRate = Number.parseInt(this.screenFpsSelect, 10)
-
-      // Screen share constraints
       const constraints = {
         audio: !useAudio.value,
-        video: { frameRate: screenMaxFrameRate },
+        video: { frameRate: this.screenFpsSelect },
       }
 
-      this.localVideoStatusBefore = false
-
-      // Store webcam video status before screen sharing
-      if (!useScreen.value) {
-        this.localVideoStatusBefore = useVideo.value
-        console.log(`My video status before screen sharing: ${this.localVideoStatusBefore}`)
+      if (useScreen.value && !useVideo.value && !useAudio.value) {
+        return this.handleToggleScreenException('音频和视频被禁用, 不能共享屏幕', init)
       } else {
-        if (!useVideo.value && !useAudio.value) {
-          return this.handleToggleScreenException('Audio and Video are disabled', init)
-        }
+        console.log('Video AND Audio constraints', constraints)
       }
 
       // Get screen or webcam media stream based on current state
@@ -417,7 +405,6 @@ export class MediaServer {
         videoPrivacy.value = false
         this.emitPeerStatus('privacy', videoPrivacy.value)
 
-        useScreen.value = !useScreen.value
         this.screenStatus = useScreen.value
 
         if (useScreen.value) {
@@ -441,10 +428,7 @@ export class MediaServer {
           this.initStream = screenMediaPromise
           if (this.hasVideoTrack(this.initStream)) {
             const newInitStream = new MediaStream([this.initStream.getVideoTracks()[0]])
-            this.videoElement.classList.toggle('mirror')
             this.videoElement.srcObject = newInitStream
-          } else {
-            //
           }
         }
 
@@ -668,7 +652,7 @@ export class MediaServer {
 
       // on toggleScreenSharing video stop from popup bar
       stream.getVideoTracks()[0].onended = () => {
-        this.onScreenShare()
+        this.toggleScreenSharing()
       }
     }
 

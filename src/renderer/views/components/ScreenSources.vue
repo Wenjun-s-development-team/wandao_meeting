@@ -17,8 +17,11 @@ const loading = ref(false)
 
 async function onClick() {
   if (webrtcStore.useScreen) {
-    return webrtcStore.useScreen = false
+    webrtcStore.screenId = ''
+    webrtcStore.useScreen = false
+    return emit('change')
   }
+
   showList.value = true
   loading.value = true
   const { sources } = await IPCRequest.system.getSources()
@@ -34,7 +37,7 @@ function onSubmit() {
   webrtcStore.useScreen = true
   showList.value = false
   webrtcStore.screenId = screenId.value
-  emit('change', screenId.value)
+  emit('change')
 }
 </script>
 

@@ -121,7 +121,6 @@ func (manager *ClientManager) AddUsers(key string, client *Client) {
 	manager.UserLock.Lock()
 	defer manager.UserLock.Unlock()
 	manager.Users[key] = client
-
 }
 
 // AddPeers 添加房间信息

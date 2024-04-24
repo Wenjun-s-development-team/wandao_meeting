@@ -43,8 +43,8 @@ async function userLogin(name) {
   router.push({ path: '/room', query: { roomId: query.roomId } })
 }
 
-function onScreenShare() {
-  mediaServer.onScreenShare(false)
+function toggleScreenSharing() {
+  mediaServer.toggleScreenSharing(false)
 }
 
 IPCRequest.windows.openDevTools()
@@ -79,7 +79,7 @@ IPCRequest.windows.openDevTools()
               <i v-if="useAudio" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources @change="onScreenShare()">
+            <ScreenSources @change="toggleScreenSharing()">
               <button>
                 <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />

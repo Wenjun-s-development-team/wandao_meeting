@@ -152,7 +152,7 @@ func (c *Client) IsHeartbeatTimeout(currentTime uint64) (timeout bool) {
 // IsLogin 是否登录了
 func (c *Client) IsLogin() (isLogin bool) {
 	// 用户登录了
-	if c.UserId > 0 {
+	if c.LoginTime > 0 {
 		isLogin = true
 		return
 	}

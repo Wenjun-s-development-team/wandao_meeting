@@ -12,6 +12,7 @@ const router = useRouter()
 
 const {
   useScreen,
+  useMirror,
   remoteVideo,
   remoteAudio,
 } = storeToRefs(webrtcStore)
@@ -20,7 +21,6 @@ const localVideo = ref(null)
 const localAudio = ref(null)
 const localVolume = ref(null)
 
-const useMirror = ref(false)
 const isMounted = useMounted()
 const client = useWebRTCClient()
 
@@ -32,8 +32,8 @@ watchOnce(isMounted, () => {
   }
 })
 
-function onScreenShare() {
-  client.mediaServer.onScreenShare(true)
+function toggleScreenSharing() {
+  client.mediaServer.toggleScreenSharing(true)
 }
 
 function onSignout() {
@@ -60,7 +60,7 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-microphone" />
         </button>
-        <ScreenSources @change="onScreenShare()">
+        <ScreenSources @change="toggleScreenSharing()">
           <button>
             <i v-if="useScreen" class="i-fa6-solid-circle-stop" />
             <i v-else class="i-fa6-solid-desktop" />
