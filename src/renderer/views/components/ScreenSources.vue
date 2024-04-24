@@ -6,7 +6,7 @@ defineOptions({
   name: 'ScreenSources',
 })
 
-const emit = defineEmits('change')
+const emit = defineEmits(['change'])
 
 const webrtcStore = useWebrtcStore()
 
@@ -33,6 +33,7 @@ function onSubmit() {
   console.log('共享屏幕ID:', screenId.value)
   webrtcStore.useScreen = true
   showList.value = false
+  webrtcStore.screenId = screenId.value
   emit('change', screenId.value)
 }
 </script>

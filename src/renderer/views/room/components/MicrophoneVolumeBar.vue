@@ -1,6 +1,6 @@
 <template>
   <div class="speech-bar">
-    <div class="pitch" />
+    <div id="" class="pitch" />
   </div>
 </template>
 

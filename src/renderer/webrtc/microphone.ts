@@ -3,11 +3,12 @@ import type { Client } from './client'
 export class Microphone {
   scriptProcessor: null | ScriptProcessorNode = null
   client: Client | undefined
-  localVolume: HTMLDivElement | undefined
+  // pitchBar: HTMLElement | null
+  localVolume: HTMLElement | null
 
   constructor(client?: Client) {
     this.client = client
-    this.localVolume = toValue(inject('localVolumeRef'))
+    this.localVolume = document.getElementById('localVolume')
   }
 
   getMicrophoneVolumeIndicator(stream: MediaStream) {

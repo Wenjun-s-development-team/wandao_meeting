@@ -20,8 +20,6 @@ const localVideo = ref(null)
 const localAudio = ref(null)
 const localVolume = ref(null)
 
-provide('localVolumeRef', localVolume)
-
 const useMirror = ref(false)
 const isMounted = useMounted()
 const client = useWebRTCClient()
@@ -29,7 +27,7 @@ const client = useWebRTCClient()
 watchOnce(isMounted, () => {
   if (localVideo.value && localAudio.value) {
     client.mediaServer.init(localVideo.value, localAudio.value, localVolume.value)
-    client.mediaServer.listen()
+    // client.mediaServer.listen()
     client.start()
   }
 })
@@ -107,7 +105,7 @@ function onSignout() {
         </button>
       </div>
     </Transition>
-    <div ref="localVolume" class="volume-container">
+    <div id="localVolume" ref="localVolume" class="volume-container">
       <div class="volume-bar" />
       <div class="volume-bar" />
       <div class="volume-bar" />
