@@ -44,7 +44,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
         recordStatus: false, // 是否录音
         privacyStatus: false, // 是否小视图
 
-        objectFit: 'contain',
+        fullScreen: false,
       },
       // 远程媒体
       remoteVideo: <KeyValue[]>[],

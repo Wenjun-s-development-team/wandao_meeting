@@ -48,6 +48,21 @@ function onHandStatus() {
   client.mediaServer.onHandStatus()
 }
 
+function onFullscreenchange({ target }, peer) {
+  console.log('Esc FS isVideoOnFullScreen', peer.fullScreen)
+
+  if (target.controls) {
+    return
+  }
+  const fullscreenElement = document.fullscreenElement
+  if (!fullscreenElement) {
+    target.style.pointerEvents = 'auto'
+    peer.fullScreen = false
+  }
+
+  console.log('Esc FS isVideoOnFullScreen', peer.fullScreen)
+}
+
 function onSignout() {
   router.push({ path: '/start' })
 }
@@ -138,8 +153,6 @@ function onSignout() {
           key="localVideo" class="camera"
           :class="[{ privacy: local.privacyStatus, hidden: local.hidden }]"
         >
-          <PeerStatusBar :peer="local" />
-          <PeerVolumeBar :peer="local" />
           <video
             ref="localVideo"
             class="video"
@@ -148,13 +161,14 @@ function onSignout() {
             autoplay
             playsinline="true"
             poster="../../assets/images/loader.gif"
+            @fullscreenchange="onFullscreenchange($event, local)"
           />
           <div class="name">我</div>
+          <PeerStatusBar :peer="local" />
+          <PeerVolumeBar :peer="local" />
         </div>
         <template v-for="(peer, index) in remoteVideo" :key="`remoteVideo${index}`">
           <div class="camera" :class="[{ privacy: peer.privacyStatus }]">
-            <PeerStatusBar :peer="peer" />
-            <PeerVolumeBar :peer="peer" />
             <video
               class="video"
               :srcObject="peer.stream"
@@ -162,8 +176,11 @@ function onSignout() {
               autoplay
               playsinline="true"
               poster="../../assets/images/loader.gif"
+              @fullscreenchange="onFullscreenchange($event, peer)"
             />
             <div class="name">{{ peer.userId }}</div>
+            <PeerStatusBar :peer="peer" />
+            <PeerVolumeBar :peer="peer" />
           </div>
         </template>
       </TransitionGroup>

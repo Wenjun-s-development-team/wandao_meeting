@@ -1,21 +1,73 @@
 <script setup>
+import { playSound } from '@/utils'
+
 const props = defineProps(['peer'])
 const { peer } = toRefs(props)
 
-console.log(peer.value)
+const peerRef = ref()
+
+function saveDataToFile(dataURL, fileName) {
+  const a = document.createElement('a')
+  a.href = dataURL
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  setTimeout(() => {
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(dataURL)
+  }, 100)
+}
+
+function onSnapshot() {
+  playSound('snapshot')
+  // 直接 DOM API 获取 video 元素
+  const video = peerRef.value.parentNode.querySelector('video')
+  const canvas = document.createElement('canvas')
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+  saveDataToFile(canvas.toDataURL('image/png'), `${Date.now()}-SNAPSHOT.png`)
+}
+
+function onFullScreen() {
+  const video = peerRef.value.parentNode.querySelector('video')
+  if (video.controls) {
+    return false
+  }
+  if (!peer.value.fullScreen) {
+    if (video.requestFullscreen) {
+      video.requestFullscreen()
+      peer.value.fullScreen = true
+      video.style.pointerEvents = 'none'
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen()
+    }
+    peer.value.fullScreen = false
+    video.style.pointerEvents = 'auto'
+  }
+}
 </script>
 
 <template>
-  <div class="room-statusbar">
+  <div ref="peerRef" class="peer-statusbar">
     <button class="unhover">39m 20s</button>
     <button><i class="i-fa6-solid-map-pin" /></button>
     <button><i class="i-fa6-solid-arrow-right-arrow-left" /></button>
     <button><i class="i-fa6-solid-images" /></button>
-    <button><i class="i-fa6-solid-expand" /></button>
-    <button><i class="i-fa6-solid-camera-retro" /></button>
-    <button @click="peer.privacyStatus = !peer.privacyStatus"><i class="i-fa6-solid-circle" /></button>
-    <button><i class="i-fa6-solid-video" /></button>
-    <button><i class="i-fa6-solid-microphone" /></button>
+    <button @click.stop="onFullScreen()"><i class="i-fa6-solid-expand" /></button>
+    <button @click.stop="onSnapshot()"><i class="i-fa6-solid-camera-retro" /></button>
+    <button @click.stop="peer.privacyStatus = !peer.privacyStatus"><i class="i-fa6-solid-circle" /></button>
+    <button>
+      <i v-if="peer.useVideo" class="i-fa6-solid-video" />
+      <i v-else class="i-fa6-solid-video-slash color-red" />
+    </button>
+    <button>
+      <i v-if="peer.useAudio" class="i-fa6-solid-microphone" />
+      <i v-else class="i-fa6-solid-microphone-slash color-red" />
+    </button>
     <button v-if="peer.handStatus">
       <i class="i-fa6-solid-hand color-green" />
     </button>
@@ -23,7 +75,7 @@ console.log(peer.value)
 </template>
 
 <style lang="scss" scoped>
-.room-statusbar {
+.peer-statusbar {
   gap: 5px;
   z-index: 8;
   top: 0;
