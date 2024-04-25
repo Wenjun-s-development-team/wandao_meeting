@@ -508,24 +508,43 @@ export class MediaServer {
     if (!['videoStatus', 'audioStatus', 'handStatus', 'recordStatus', 'privacyStatus'].includes(type)) {
       return
     }
-    console.log('setStatus:', { type, userId, status })
-    if (['videoStatus', 'audioStatus'].includes(type)) {
-      status ? playSound('on') : playSound('off')
-    } else if (type === 'handStatus' && status) {
-      playSound('raiseHand')
-    }
 
-    if (local.value.userId === userId) {
-      local.value[type] = status
-      return
-    }
-    remoteVideo.value.find((peer) => {
-      if (peer.userId === userId) {
-        peer[type] = status
-        return true
+    console.log('setStatus:', { type, userId, status })
+
+    if (type === 'videoStatus') {
+      if (local.value.userId === userId) {
+        local.value.videoStatus = status
+      } else {
+        remoteVideo.value.find((peer) => {
+          if (peer.userId === userId) {
+            peer.videoStatus = status
+            return true
+          }
+          return false
+        })
       }
-      return false
-    })
+      status ? playSound('on') : playSound('off')
+    } else if (type === 'audioStatus') {
+      if (local.value.userId === userId) {
+        local.value.audioStatus = status
+      } else {
+        remoteAudio.value.find((peer) => {
+          if (peer.userId === userId) {
+            peer.audioStatus = status
+            return true
+          }
+          return false
+        })
+      }
+      status ? playSound('on') : playSound('off')
+    } else if (type === 'handStatus') {
+      local.value.handStatus = status
+      if (status) {
+        playSound('raiseHand')
+      }
+    } else {
+      local.value[type] = status
+    }
   }
 
   async setLocalVideoStatusTrue() {
