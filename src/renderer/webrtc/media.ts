@@ -356,6 +356,8 @@ export class MediaServer {
         video: { frameRate: this.screenFpsSelect },
       }
 
+      local.value.screenStatus = !local.value.screenStatus
+
       if (!local.value.screenStatus) {
         this.localVideoStatusBefore = local.value.videoStatus
         console.log(`屏幕共享前的视频状态: ${this.localVideoStatusBefore}`)
@@ -368,12 +370,8 @@ export class MediaServer {
       }
 
       // Get screen or webcam media stream based on current state
-      const screenMediaPromise = local.value.screenStatus
-        ? await navigator.mediaDevices.getUserMedia(await this.getAudioVideoConstraints())
-        : await navigator.mediaDevices.getUserMedia(constraints)
-
+      const screenMediaPromise = await navigator.mediaDevices.getUserMedia(await this.getAudioVideoConstraints())
       if (screenMediaPromise) {
-        local.value.screenStatus = !local.value.screenStatus
         local.value.privacyStatus = false
         this.emitPeerStatus('privacy', local.value.privacyStatus)
 
@@ -711,15 +709,15 @@ export class MediaServer {
     }
   }
 
-  async handleVideo(force = null) {
+  async handleVideo() {
     if (!local.value.useVideo) {
       return
     }
-    const videoStatus = force !== null ? force : !local.value.videoStatus
-    local.value.videoStatus = videoStatus
-    this.localVideoStream.getVideoTracks()[0].enabled = videoStatus
 
-    if (!videoStatus) {
+    local.value.videoStatus = !local.value.videoStatus
+    this.localVideoStream.getVideoTracks()[0].enabled = local.value.videoStatus
+
+    if (!local.value.videoStatus) {
       if (!local.value.screenStatus) {
         await this.stopVideoTracks(this.localVideoStream)
       }
@@ -727,7 +725,7 @@ export class MediaServer {
       await this.changeInitCamera(videoInputDeviceId.value)
     }
 
-    this.setLocalVideoStatus(videoStatus)
+    this.setLocalVideoStatus(local.value.videoStatus)
   }
 
   async changeInitCamera(deviceId) {
@@ -790,6 +788,7 @@ export class MediaServer {
     const audioSource = audioInputDeviceId.value
     const videoSource = videoInputDeviceId.value
     let videoConstraints: MediaTrackConstraints = {}
+
     if (local.value.screenStatus && screenId.value) {
       videoConstraints = {
         // eslint-disable-next-line ts/ban-ts-comment
@@ -809,7 +808,7 @@ export class MediaServer {
       audioConstraints.deviceId = audioSource ? { exact: audioSource } : undefined
     }
     return {
-      audio: local.value.videoStatus ? false : audioConstraints,
+      audio: local.value.audioStatus ? false : audioConstraints,
       video: videoConstraints,
     }
   }

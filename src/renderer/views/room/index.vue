@@ -35,12 +35,10 @@ function toggleScreenSharing() {
 }
 
 function setVideoTracks() {
-  local.value.videoStatus = !local.value.videoStatus
-  client.mediaServer.handleVideo(null)
+  client.mediaServer.handleVideo()
 }
 
 function setAudioTracks() {
-  local.value.audioStatus = !local.value.audioStatus
   client.mediaServer.setAudioTracks(local.value.audioStatus)
 }
 
