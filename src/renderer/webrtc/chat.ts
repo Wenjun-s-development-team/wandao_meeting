@@ -7,6 +7,7 @@ import { useWebrtcStore } from '@/store'
 const webrtcStore = useWebrtcStore()
 const {
   local,
+  remotePeers,
 } = storeToRefs(webrtcStore)
 
 const filterXSS = new FilterXSS().process
@@ -119,6 +120,16 @@ export class ChatServer {
   }
 
   /**
+   * 音量
+   * @param {KeyValue} data peer audio
+   */
+  onVolume(data: KeyValue) {
+    if (remotePeers.value[data.userId]) {
+      console.log('onVolume')
+    }
+  }
+
+  /**
    * 语音消息
    * https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesisUtterance
    *
@@ -209,13 +220,5 @@ export class ChatServer {
   isValidEmail(email: string) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
-  }
-
-  /**
-   * 音量
-   * @param {KeyValue} data peer audio
-   */
-  onVolume(data: KeyValue) {
-    console.log(data)
   }
 }

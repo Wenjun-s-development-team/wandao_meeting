@@ -1,7 +1,15 @@
 <script setup>
+import { storeToRefs } from 'pinia'
 import { playSound, saveDataToFile, secondsToHms } from '@/utils'
+import { useWebrtcStore } from '@/store'
 
 const props = defineProps(['peer'])
+const webrtcStore = useWebrtcStore()
+
+const {
+  pinnedId,
+} = storeToRefs(webrtcStore)
+
 const { peer } = toRefs(props)
 
 const peerRef = ref()
@@ -64,10 +72,10 @@ function onPictureInPicture() {
 
 // 固定住
 function onPinned() {
-  if (peer.value.pinnedId === peer.value.userId) {
-    peer.value.pinnedId = 0
+  if (pinnedId.value === peer.value.userId) {
+    pinnedId.value = 0
   } else {
-    peer.value.pinnedId = peer.value.userId
+    pinnedId.value = peer.value.userId
   }
 }
 
@@ -85,7 +93,9 @@ onMounted(() => {
 <template>
   <div ref="peerRef" class="peer-statusbar">
     <button class="unhover">{{ sessionTime }}</button>
-    <button @click.stop="onPinned()"><i class="i-fa6-solid-map-pin" /></button>
+    <button @click.stop="onPinned()">
+      <i class="i-fa6-solid-map-pin" :class="{ 'color-green': pinnedId === peer.userId }" />
+    </button>
     <button @click.stop="peer.mirrorStatus = !peer.mirrorStatus">
       <i class="i-fa6-solid-arrow-right-arrow-left" />
     </button>

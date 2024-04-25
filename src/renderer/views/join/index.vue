@@ -31,7 +31,6 @@ const mediaServer = useMediaServer()
 watchOnce(isMounted, async () => {
   if (videoElement.value && audioElement.value) {
     await mediaServer.init(videoElement.value, audioElement.value).start()
-    // mediaServer.listen()
   }
 })
 
@@ -40,8 +39,8 @@ async function userLogin(name) {
   router.push({ path: '/room', query: { roomId: query.roomId } })
 }
 
-function toggleScreenSharing() {
-  mediaServer.toggleScreenSharing(false)
+function switchScreenSharing() {
+  mediaServer.switchScreenSharing(true)
 }
 
 IPCRequest.windows.openDevTools()
@@ -76,7 +75,7 @@ IPCRequest.windows.openDevTools()
               <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources :peer="local" @change="toggleScreenSharing()">
+            <ScreenSources :peer="local" @change="switchScreenSharing()">
               <button>
                 <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />

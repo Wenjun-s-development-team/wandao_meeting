@@ -5,6 +5,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
   state: () => {
     return {
       screenId: '', // 共享屏幕源ID
+      pinnedId: 0, // 固定住的用户ID
       lastRoomId: 0, // 最近访问的房号
       videoInputDeviceId: '', // 视频输入设备ID
       audioInputDeviceId: '', // 音频输入设备ID
@@ -12,6 +13,8 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       videoInputDevices: <MediaDeviceInfo[]>[], // 视频输入设备
       audioInputDevices: <MediaDeviceInfo[]>[], // 音频输入设备
       audioOutputDevices: <MediaDeviceInfo[]>[], // 音频输出设备
+
+      isEnumerateDevices: false, // 是否已获取了设备
 
       // 连接状态 '🟢' '🔴'
       iceNetwork: { host: false, stun: false, turn: false },
@@ -46,7 +49,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
 
         hidden: false, // 是否隐藏
         fullScreen: false, // 是否全屏
-        pinnedId: 0, // 固定住的用户ID
+        volume: 0, // 音量
       },
 
       // 远程媒体

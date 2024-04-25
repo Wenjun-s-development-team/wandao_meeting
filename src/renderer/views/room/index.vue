@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import ScreenSources from '../components/ScreenSources.vue'
 import PeerStatusBar from './components/PeerStatusBar.vue'
 import PeerVolumeBar from './components/PeerVolumeBar.vue'
+import PeerAudioOutput from './components/PeerAudioOutput.vue'
 import { useWebRTCClient } from '@/webrtc'
 import { useWebrtcStore } from '@/store'
 
@@ -12,6 +13,7 @@ const router = useRouter()
 
 const {
   local,
+  pinnedId,
   remotePeers,
 } = storeToRefs(webrtcStore)
 
@@ -29,8 +31,8 @@ watchOnce(isMounted, () => {
   }
 })
 
-function toggleScreenSharing() {
-  client.mediaServer.toggleScreenSharing()
+function switchScreenSharing() {
+  client.mediaServer.switchScreenSharing()
 }
 
 function setVideoTracks() {
@@ -38,12 +40,12 @@ function setVideoTracks() {
 }
 
 function setAudioTracks() {
-  client.mediaServer.setAudioTracks(local.value.audioStatus)
+  client.mediaServer.handleAudio()
 }
 
 // 举手
-function onHandStatus() {
-  client.mediaServer.onHandStatus()
+function switchHandStatus() {
+  client.mediaServer.switchHandStatus()
 }
 
 // 全屏事件
@@ -74,7 +76,7 @@ function onSignout() {
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
         <div
           key="localVideo" class="camera"
-          :class="[{ privacy: local.privacyStatus, hidden: local.hidden, pinned: local.pinnedId === local.userId }]"
+          :class="[{ privacy: local.privacyStatus, hidden: local.hidden, pinned: pinnedId === local.userId }]"
         >
           <video
             ref="localVideo"
@@ -91,7 +93,7 @@ function onSignout() {
           <PeerVolumeBar :peer="local" />
         </div>
         <template v-for="(peer, userId) in remotePeers" :key="`remoteVideo${userId}`">
-          <div class="camera" :class="[{ privacy: peer.privacyStatus, pinned: peer.pinnedId === peer.userId }]">
+          <div class="camera" :class="[{ privacy: peer.privacyStatus, pinned: pinnedId === peer.userId }]">
             <video
               class="video"
               :srcObject="peer.videoStream"
@@ -110,11 +112,11 @@ function onSignout() {
       </TransitionGroup>
       <div class="audio-container">
         <div class="audio-wrap">
-          <audio ref="localAudio" :srcObject="local.stream" autoplay muted />
+          <audio ref="localAudio" autoplay muted />
         </div>
         <template v-for="(peer, userId) in remotePeers" :key="`remoteAudio${userId}`">
           <div class="audio-wrap">
-            <audio :srcObject="peer.audioStream" autoplay muted />
+            <PeerAudioOutput :peer="peer" />
           </div>
         </template>
       </div>
@@ -151,7 +153,7 @@ function onSignout() {
           <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
           <i v-else class="i-fa6-solid-microphone-slash color-red" />
         </button>
-        <ScreenSources :peer="local" @change="toggleScreenSharing()">
+        <ScreenSources :peer="local" @change="switchScreenSharing()">
           <button>
             <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
             <i v-else class="i-fa6-solid-desktop" />
@@ -173,7 +175,7 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-face-smile" />
         </button>
-        <button @click="onHandStatus()">
+        <button @click="switchHandStatus()">
           <i class="i-fa6-solid-hand" :class="{ 'color-green': local.handStatus }" />
         </button>
         <button>
@@ -269,7 +271,7 @@ function onSignout() {
         }
         &.pinned {
           order: -1;
-          flex: 0 0 auto;
+          flex: 1 0 auto;
         }
         .name {
           z-index: 8;

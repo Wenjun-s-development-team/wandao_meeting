@@ -1,6 +1,33 @@
+<script setup>
+const props = defineProps(['peer'])
+const { peer } = toRefs(props)
+
+const pitchRef = ref()
+
+function useVolume() {
+  const styles = ref({})
+  watchEffect(() => {
+    const volume = peer?.value.volume || 0
+    styles.value = {
+      height: `${volume}%`,
+      backgroundColor: volume > 50 ? 'orange' : '#19bb5c',
+    }
+
+    setTimeout(() => {
+      styles.value.backgroundColor = '#19bb5c'
+      styles.value.height = '0%'
+    }, 100)
+  })
+
+  return { styles }
+}
+
+const { styles } = useVolume()
+</script>
+
 <template>
   <div class="speech-bar">
-    <div id="" class="pitch" />
+    <div ref="pitchRef" class="pitch" :style="styles" />
   </div>
 </template>
 
@@ -21,8 +48,7 @@
     width: 6px;
     border-radius: 6px;
     background: rgba(#19bb5c, 0.65);
-    transition-property: height background-color;
-    transition-duration: 0.25s;
+    transition: height background-color 0.25s;
   }
 }
 </style>
