@@ -1,25 +1,17 @@
-// Package main 实现一个 webrtc 服务端。
-package main
+package server
 
 import (
-	"io.wandao.meeting/internal/db"
-	"io.wandao.meeting/internal/server/websocket"
-	"net/http"
-
 	"io.wandao.meeting/internal/conf"
-
-	log "unknwon.dev/clog/v2"
-
+	"io.wandao.meeting/internal/db"
 	"io.wandao.meeting/internal/libs/redislib"
 	"io.wandao.meeting/internal/router"
 	"io.wandao.meeting/internal/server/task"
+	"io.wandao.meeting/internal/server/websocket"
+	"net/http"
+	log "unknwon.dev/clog/v2"
 )
 
-func init() {
-	conf.App.Version = "0.0.1"
-}
-
-func main() {
+func Start() {
 	err := conf.Init()
 	if err != nil {
 		log.Fatal("Failed to initialize application: %v", err)

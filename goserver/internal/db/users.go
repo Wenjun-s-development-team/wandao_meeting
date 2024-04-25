@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"io.wandao.meeting/internal/utils/cryptoutil"
 	"io.wandao.meeting/internal/utils/errutil"
 	"io.wandao.meeting/internal/utils/userutil"
 	"strings"
@@ -143,52 +142,50 @@ type UsersStore interface {
 	Get(id uint64) (*User, error)
 	GetListById(uuids []uint64) ([]*User, error)
 	Authenticate(ctx context.Context, name, passwd string) (*User, error)
-	Create(ctx context.Context, username, email string, opts CreateUserOptions) (*User, error)
+	DeleteById(id uint64) error
+	DeleteByName(name string) error
+	CreateOrUpdate(user *User) error
 }
 
-// Create 创建用户
-func (db *users) Create(ctx context.Context, username, email string, opts CreateUserOptions) (*User, error) {
-	err := isUsernameAllowed(username)
+func (db *users) DeleteById(userId uint64) error {
+	err := db.Where("id = ?", userId).Delete(&User{}).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
 
-	if db.IsUsernameUsed(ctx, username, 0) {
-		return nil, ErrUserAlreadyExist{
-			args: errutil.Args{
-				"name": username,
-			},
-		}
-	}
-
-	email = strings.ToLower(strings.TrimSpace(email))
-	_, err = db.GetByEmail(ctx, email)
-	if err == nil {
-		return nil, ErrEmailAlreadyUsed{
-			args: errutil.Args{
-				"email": email,
-			},
-		}
-	} else if !IsErrUserNotExist(err) {
-		return nil, err
-	}
-
-	user := &User{
-		Name:     username,
-		Email:    email,
-		Passwd:   opts.Passwd,
-		IsActive: opts.Activated,
-		IsAdmin:  opts.Admin,
-		Avatar:   cryptoutil.MD5(email),
-	}
-
-	user.Salt, err = userutil.RandomSalt()
+func (db *users) DeleteByName(name string) error {
+	err := db.Where("name = ?", name).Delete(&User{}).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
+	return nil
+}
+
+func (db *users) CreateOrUpdate(user *User) error {
+	if len(user.Name) == 0 {
+		return errors.New("用户名不能为空")
+	}
+	if len(user.Passwd) == 0 {
+		return errors.New("密码不能为空")
+	}
+
+	salt, err := userutil.RandomSalt()
+	if err != nil {
+		return err
+	}
+	user.Salt = salt
 	user.Passwd = userutil.EncodePassword(user.Passwd, user.Salt)
 
-	return user, db.WithContext(ctx).Create(user).Error
+	err = db.Create(user).Error
+	if err != nil {
+		err = db.Updates(user).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Authenticate 用户登录验证

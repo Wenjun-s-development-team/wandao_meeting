@@ -9,7 +9,6 @@ import (
 	models "io.wandao.meeting/internal/server/models"
 
 	"io.wandao.meeting/internal/libs/cache"
-	"io.wandao.meeting/internal/server/grpcclient"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -23,15 +22,11 @@ func UserList(roomId uint64) (userList []uint64) {
 		fmt.Println("给全体用户发消息", err)
 		return
 	}
-	for _, server := range servers {
+	for _, _ = range servers {
 		var (
 			list []uint64
 		)
-		if IsLocal(server) {
-			list = GetUserList(roomId)
-		} else {
-			list, _ = grpcclient.GetUserList(server, roomId)
-		}
+		list = GetUserList(roomId)
 		userList = append(userList, list...)
 	}
 	return
@@ -81,24 +76,6 @@ func SendUserMessage(cmd string, roomId uint64, userId uint64, message string) (
 		}
 		return
 	}
-	key := GetUserKey(roomId, userId)
-	info, err := cache.GetUserOnlineInfo(key)
-	if err != nil {
-		fmt.Println("给用户发送消息失败", key, err)
-		return false, nil
-	}
-	if !info.IsOnline() {
-		fmt.Println("用户不在线", key)
-		return false, nil
-	}
-	server := models.NewServer(info.AppIp, info.AppPort)
-	msg, err := grpcclient.SendMsg(server, roomId, userId, cmd, "text", message)
-	if err != nil {
-		fmt.Println("给用户发送消息失败", key, err)
-		return false, err
-	}
-	fmt.Println("给用户发送消息成功-rpc", msg)
-	sendResults = true
 	return
 }
 
@@ -125,13 +102,9 @@ func SendUserMessageAll(cmd string, message string, roomId uint64, userId uint64
 		fmt.Println("给全体用户发消息", err)
 		return
 	}
-	for _, server := range servers {
-		if IsLocal(server) {
-			data := models.GetTextMsgData(cmd, message, userId)
-			AllSendMessages(roomId, userId, data)
-		} else {
-			_, _ = grpcclient.SendMsgAll(server, roomId, userId, cmd, message)
-		}
+	for _, _ = range servers {
+		data := models.GetTextMsgData(cmd, message, userId)
+		AllSendMessages(roomId, userId, data)
 	}
 	return
 }

@@ -126,7 +126,7 @@ func (manager *ClientManager) AddUsers(key string, client *Client) {
 }
 
 // AddPeers 添加房间信息
-func (manager *ClientManager) AddPeers(key string, client *Client, roomInfo *models.Peers) {
+func (manager *ClientManager) AddPeers(client *Client, roomInfo *models.Peers) {
 	manager.PeersLock.Lock()
 	defer manager.PeersLock.Unlock()
 	if _, ok := manager.Peers[client.RoomId]; !ok {
@@ -240,7 +240,7 @@ func (manager *ClientManager) EventLogin(login *login) {
 	// 连接存在，在添加
 	if manager.InClient(client) {
 		userKey := login.GetKey()
-		manager.AddPeers(userKey, login.Client, login.Peers)
+		manager.AddPeers(login.Client, login.Peers)
 		CreateRoomRTCPeerConnection(client)
 		manager.AddUsers(userKey, login.Client)
 	}

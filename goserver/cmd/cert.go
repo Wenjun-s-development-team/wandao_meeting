@@ -20,7 +20,7 @@ import (
 
 var Cert = cli.Command{
 	Name:  "cert",
-	Usage: "Generate self-signed certificate",
+	Usage: "生成自签名证书",
 	Description: `Generate a self-signed X.509 certificate for a TLS server.
 Outputs to 'cert.pem' and 'key.pem' and will overwrite existing files.`,
 	Action: runCert,

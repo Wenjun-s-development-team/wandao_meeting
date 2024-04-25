@@ -3,7 +3,7 @@ package websocket
 
 import (
 	"encoding/json"
-	models "io.wandao.meeting/internal/server/models"
+	"io.wandao.meeting/internal/server/models"
 	"sync"
 	log "unknwon.dev/clog/v2"
 

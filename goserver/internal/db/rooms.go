@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
 
@@ -18,6 +19,7 @@ type CreateRoom struct {
 
 type RoomsStore interface {
 	Get(id uint64) (*Room, error)
+	CreateOrUpdate(user *Room) error
 }
 
 type rooms struct {
@@ -36,6 +38,21 @@ func (db *rooms) Get(id uint64) (*Room, error) {
 	return room, nil
 }
 
+func (db *rooms) CreateOrUpdate(room *Room) error {
+	if len(room.Name) == 0 {
+		return errors.New("名称不能为空")
+	}
+
+	err := db.Create(room).Error
+	if err != nil {
+		err = db.Updates(room).Error
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (db *rooms) List(ctx context.Context, page, limit int) ([]*Room, error) {
 	rooms := make([]*Room, 0, limit)
 	return rooms, db.WithContext(ctx).
@@ -43,14 +60,6 @@ func (db *rooms) List(ctx context.Context, page, limit int) ([]*Room, error) {
 		Order("id ASC").
 		Find(&rooms).
 		Error
-}
-
-func (db *rooms) Create(ctx context.Context, userId uint64, name string) (*Room, error) {
-	room := &Room{
-		UserId: userId,
-		Name:   name,
-	}
-	return room, db.WithContext(ctx).Create(room).Error
 }
 
 func (db *rooms) Save(ctx context.Context, data Room) (*Room, error) {
