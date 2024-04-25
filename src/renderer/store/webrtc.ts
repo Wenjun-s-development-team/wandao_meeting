@@ -51,25 +51,12 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       // 远程媒体
       remoteVideo: <KeyValue[]>[],
       remoteAudio: <KeyValue[]>[],
+
+      // 远程 peer 信息
+      removePeers: {},
     }
   },
   actions: {
-    setRemoteVideo(data: KeyValue) {
-      const index = this.remoteVideo.findIndex(item => item.userId === data.userId)
-      if (index >= 0) {
-        this.remoteVideo[index] = data
-      } else {
-        this.remoteVideo.push(data)
-      }
-    },
-    setRemoteAudio(data: KeyValue) {
-      const index = this.remoteAudio.findIndex(item => item.userId === data.userId)
-      if (index >= 0) {
-        this.remoteAudio[index] = data
-      } else {
-        this.remoteAudio.push(data)
-      }
-    },
     async userLogin(param: KeyValue): Promise<any> {
       const { data } = await RTCRequest.post('/login', param)
       this.token = data.token

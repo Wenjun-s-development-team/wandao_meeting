@@ -274,14 +274,16 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 			Seq: helper.GetOrderIDTime(),
 			Cmd: models.MessageCmdExit,
 			Data: map[string]interface{}{
-				"roomId": client.RoomId,
-				"userId": client.UserId,
+				"roomId":  client.RoomId,
+				"userId":  client.UserId,
+				"message": "用户已经离开",
 			},
 		})
 		if err != nil {
 			return
 		}
-		client.SendMsg(msg)
+		manager.sendRoomIdAll(msg, client.RoomId, client)
+		// _, _ = SendUserMessageAll(models.MessageCmdExit, "用户已经离开", client.RoomId, client.UserId)
 	}
 }
 

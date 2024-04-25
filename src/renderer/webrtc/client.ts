@@ -8,6 +8,7 @@ const router = useRouter()
 const webrtcStore = useWebrtcStore()
 const {
   local,
+  removePeers,
   iceNetwork,
 } = storeToRefs(webrtcStore)
 
@@ -169,13 +170,14 @@ export class Client {
     // 录音相关的UI
     // checkRecording()
 
+    removePeers.value = {}
+
     for (const userId in this.peerConnections) {
       this.peerConnections[userId].close()
     }
 
     this.chatServer.cleanDataChannel()
     this.fileSharingServer.cleanDataChannel()
-    this.mediaServer.cleanRemoteMedia()
     this.peerConnections = {}
 
     this.isPeerReconnected = true
@@ -192,6 +194,7 @@ export class Client {
 
     delete this.allPeers[userId]
     delete this.peerConnections[userId]
+    delete removePeers.value[userId]
 
     this.chatServer.removeDataChannel(userId)
     this.fileSharingServer.removeDataChannel(userId)

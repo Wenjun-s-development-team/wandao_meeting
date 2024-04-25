@@ -12,8 +12,7 @@ const router = useRouter()
 
 const {
   local,
-  remoteVideo,
-  remoteAudio,
+  remotePeers,
 } = storeToRefs(webrtcStore)
 
 const localVideo = ref(null)
@@ -90,11 +89,11 @@ function onSignout() {
           <PeerStatusBar :peer="local" />
           <PeerVolumeBar :peer="local" />
         </div>
-        <template v-for="(peer, index) in remoteVideo" :key="`remoteVideo${index}`">
+        <template v-for="(userId, peer) in remotePeers" :key="`remoteVideo${userId}`">
           <div class="camera" :class="[{ privacy: peer.privacyStatus, pinned: peer.pinnedId === peer.userId }]">
             <video
               class="video"
-              :srcObject="peer.stream"
+              :srcObject="peer.videoStream"
               :class="{ mirror: peer.mirrorStatus }"
               muted
               autoplay
@@ -111,9 +110,9 @@ function onSignout() {
         <div class="audio-wrap">
           <audio ref="localAudio" :srcObject="local.stream" autoplay muted />
         </div>
-        <template v-for="(peer, index) in remoteAudio" :key="index">
+        <template v-for="(userId, peer) in remotePeers" :key="`remoteAudio${userId}`">
           <div class="audio-wrap">
-            <audio :srcObject="peer.stream" autoplay muted />
+            <audio :srcObject="peer.audioStream" autoplay muted />
           </div>
         </template>
       </div>

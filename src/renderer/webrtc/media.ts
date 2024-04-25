@@ -8,8 +8,7 @@ const webrtcStore = useWebrtcStore()
 const {
   local,
   screenId,
-  remoteVideo,
-  remoteAudio,
+  removePeers,
   videoInputDeviceId,
   audioInputDeviceId,
   audioOutputDeviceId,
@@ -65,8 +64,7 @@ export class MediaServer {
     this.videoElement = videoElement
     this.audioElement = audioElement
     this.volumeElement = volumeElement
-    remoteVideo.value = []
-    remoteAudio.value = []
+    removePeers.value = {}
     return this
   }
 
@@ -214,18 +212,14 @@ export class MediaServer {
       console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${peer.roomName}]`, stream.getTracks())
     }
 
+    removePeers.value[userId] = { userId, kind, ...peer }
     if (kind === 'video') {
       console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
-      webrtcStore.setRemoteVideo({ userId, stream, kind, ...peer })
+      removePeers.value[userId].videoStream = stream
     } else if (kind === 'audio') {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
-      webrtcStore.setRemoteAudio({ userId, stream, kind, ...peer })
+      removePeers.value[userId].audioStream = stream
     }
-  }
-
-  cleanRemoteMedia() {
-    remoteVideo.value = []
-    remoteAudio.value = []
   }
 
   /**
@@ -496,39 +490,18 @@ export class MediaServer {
 
     console.log('setStatus:', { type, userId, status })
 
-    if (type === 'videoStatus') {
-      if (local.value.userId === userId) {
-        local.value.videoStatus = status
-      } else {
-        remoteVideo.value.find((peer) => {
-          if (peer.userId === userId) {
-            peer.videoStatus = status
-            return true
-          }
-          return false
-        })
-      }
-      status ? playSound('on') : playSound('off')
-    } else if (type === 'audioStatus') {
-      if (local.value.userId === userId) {
-        local.value.audioStatus = status
-      } else {
-        remoteAudio.value.find((peer) => {
-          if (peer.userId === userId) {
-            peer.audioStatus = status
-            return true
-          }
-          return false
-        })
-      }
+    if (local.value.userId === userId) {
+      local.value[type] = status
+    } else {
+      removePeers.value[userId][type] = status
+    }
+
+    if (['videoStatus', 'audioStatus'].includes(type)) {
       status ? playSound('on') : playSound('off')
     } else if (type === 'handStatus') {
-      local.value.handStatus = status
       if (status) {
         playSound('raiseHand')
       }
-    } else {
-      local.value[type] = status
     }
   }
 
