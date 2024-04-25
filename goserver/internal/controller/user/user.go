@@ -40,7 +40,7 @@ func Login(c *context.APIContext) {
 		return
 	}
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"token": token,
 		"user":  user,
 	})
@@ -56,7 +56,7 @@ func List(c *context.APIContext) {
 	fmt.Println("http_request 查看全部在线用户", in.RoomId)
 	userList := websocket.UserList(in.RoomId)
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"userList":  userList,
 		"userCount": len(userList),
 	})
@@ -73,7 +73,7 @@ func Online(c *context.APIContext) {
 	fmt.Println("http_request 查看用户是否在线", in.UserId, in.RoomId)
 	online := websocket.CheckUserOnline(in.RoomId, in.UserId)
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"userId": in.UserId,
 		"online": online,
 	})
@@ -101,8 +101,7 @@ func SendMessage(c *context.APIContext) {
 	if err != nil {
 		c.ResultError(err.Error())
 	}
-
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"sendResults": sendResults,
 	})
 }
@@ -129,7 +128,7 @@ func SendMessageAll(c *context.APIContext) {
 		c.ResultError(err.Error())
 	}
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"sendResults": sendResults,
 	})
 }

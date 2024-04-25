@@ -47,7 +47,7 @@ func SaveUser(c *context.APIContext) {
 		}
 	}
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"message": "操作成功",
 	})
 }
@@ -70,7 +70,7 @@ func SaveRoom(c *context.APIContext) {
 		return
 	}
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"message": "操作成功",
 	})
 }

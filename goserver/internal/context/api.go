@@ -53,13 +53,13 @@ func (c *APIContext) ResultError(message string) {
 }
 
 // ResultSuccess 响应成功
-func (c *APIContext) ResultSuccess(data interface{}, message string) {
+func (c *APIContext) ResultSuccess(data interface{}) {
 	if data == nil {
 		data = gin.H{}
 	}
 	c.JSON(http.StatusOK, ResponseData{
 		Code:    SuccessCode,
-		Message: message,
+		Message: "success",
 		Data:    data,
 	})
 }

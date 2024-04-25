@@ -18,7 +18,7 @@ func Status(c *context.APIContext) {
 	numGoroutine := runtime.NumGoroutine()
 	numCPU := runtime.NumCPU()
 
-	c.Set("data", gin.H{
+	c.ResultSuccess(gin.H{
 		"numGoroutine": numGoroutine, // goroutine 的数量
 		"numCPU":       numCPU,
 		"managerInfo":  websocket.GetManagerInfo(isDebug), // ClientManager 信息

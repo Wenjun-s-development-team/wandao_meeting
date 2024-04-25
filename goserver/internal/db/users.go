@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"io.wandao.meeting/internal/utils/cryptoutil"
 	"io.wandao.meeting/internal/utils/errutil"
 	"io.wandao.meeting/internal/utils/userutil"
 	"strings"
@@ -145,6 +146,52 @@ type UsersStore interface {
 	DeleteById(id uint64) error
 	DeleteByName(name string) error
 	CreateOrUpdate(user *User) error
+	CreateAuthUser(ctx context.Context, username, email string, opts CreateUserOptions) (*User, error)
+}
+
+// Create 创建用户
+func (db *users) CreateAuthUser(ctx context.Context, username, email string, opts CreateUserOptions) (*User, error) {
+	err := isUsernameAllowed(username)
+	if err != nil {
+		return nil, err
+	}
+
+	if db.IsUsernameUsed(ctx, username, 0) {
+		return nil, ErrUserAlreadyExist{
+			args: errutil.Args{
+				"name": username,
+			},
+		}
+	}
+
+	email = strings.ToLower(strings.TrimSpace(email))
+	_, err = db.GetByEmail(ctx, email)
+	if err == nil {
+		return nil, ErrEmailAlreadyUsed{
+			args: errutil.Args{
+				"email": email,
+			},
+		}
+	} else if !IsErrUserNotExist(err) {
+		return nil, err
+	}
+
+	user := &User{
+		Name:     username,
+		Email:    email,
+		Passwd:   opts.Passwd,
+		IsActive: opts.Activated,
+		IsAdmin:  opts.Admin,
+		Avatar:   cryptoutil.MD5(email),
+	}
+
+	user.Salt, err = userutil.RandomSalt()
+	if err != nil {
+		return nil, err
+	}
+	user.Passwd = userutil.EncodePassword(user.Passwd, user.Salt)
+
+	return user, db.WithContext(ctx).Create(user).Error
 }
 
 func (db *users) DeleteById(userId uint64) error {

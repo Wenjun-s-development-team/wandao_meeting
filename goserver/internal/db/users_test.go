@@ -47,7 +47,7 @@ func TestUsers(t *testing.T) {
 
 func usersAuthenticate(t *testing.T, ctx context.Context, db *users) {
 	passwd := "pa$$word"
-	alice, err := db.Create(ctx, "alice", "alice@example.com",
+	alice, err := db.CreateAuthUser(ctx, "alice", "alice@example.com",
 		CreateUserOptions{
 			Passwd: passwd,
 		},
@@ -79,7 +79,7 @@ func usersAuthenticate(t *testing.T, ctx context.Context, db *users) {
 }
 
 func usersGetByID(t *testing.T, ctx context.Context, db *users) {
-	alice, err := db.Create(ctx, "alice", "alice@exmaple.com", CreateUserOptions{})
+	alice, err := db.CreateAuthUser(ctx, "alice", "alice@exmaple.com", CreateUserOptions{})
 	require.NoError(t, err)
 
 	user, err := db.Get(alice.Id)

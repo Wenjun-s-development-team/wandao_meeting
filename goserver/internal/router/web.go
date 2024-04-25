@@ -17,7 +17,6 @@ func WebInit() *gin.Engine {
 
 	r.Use(context.RecoveryMiddleware)
 	r.Use(context.CorsMiddleware)
-	r.Use(context.JSONResponseMiddleware)
 
 	r.POST("/login", context.Handle(user.Login))
 

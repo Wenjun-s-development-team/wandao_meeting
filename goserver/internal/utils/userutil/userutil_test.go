@@ -91,8 +91,8 @@ func TestEncodePassword(t *testing.T) {
 			wantEqual: true,
 		},
 		{
-			name:      "wrong password",
-			password:  "111333",
+			name:      "elkon",
+			password:  "123456",
 			salt:      "rands",
 			wantEqual: false,
 		},
@@ -100,7 +100,7 @@ func TestEncodePassword(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := EncodePassword(test.password, test.salt)
-			fmt.Printf("input: %v | output: %v\n", test.password, got)
+			fmt.Printf("name: %v | input: %v | output: %v\n", test.name, test.password, got)
 			if test.wantEqual {
 				assert.Equal(t, want, got)
 			} else {
