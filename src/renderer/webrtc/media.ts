@@ -61,10 +61,10 @@ export class MediaServer {
   }
 
   init(videoElement: HTMLVideoElement, audioElement: HTMLAudioElement, volumeElement?: HTMLDivElement) {
+    remotePeers.value = {}
     this.videoElement = videoElement
     this.audioElement = audioElement
     this.volumeElement = volumeElement
-    remotePeers.value = {}
     return this
   }
 
@@ -212,7 +212,12 @@ export class MediaServer {
       console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${peer.roomName}]`, stream.getTracks())
     }
 
-    remotePeers.value[userId] = { userId, kind, ...peer }
+    if (!remotePeers.value[userId]) {
+      remotePeers.value[userId] = { kind, userId, ...peer }
+    } else {
+      remotePeers.value[userId] = Object.assign({}, remotePeers.value[userId], { kind, userId, ...peer })
+    }
+
     if (kind === 'video') {
       console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
       remotePeers.value[userId].videoStream = stream
@@ -220,6 +225,8 @@ export class MediaServer {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
       remotePeers.value[userId].audioStream = stream
     }
+
+    console.log('loadRemoteMediaStream', peer, remotePeers.value)
   }
 
   /**
@@ -233,11 +240,10 @@ export class MediaServer {
       console.log('[ON TRACK] - userId', { userId })
 
       this.client.peerConnections[userId].ontrack = (event) => {
-        const { remoteVideoElement, remoteAudioElement } = this
-        // remoteAvatarImage
+        const { remoteVideoElement } = this
 
-        const peerInfo = peers[userId]
-        const { roomName } = peerInfo
+        const peer = peers[userId]
+        const { roomName } = peer
         const { kind } = event.track
 
         console.log('[ON TRACK] - info', { userId, roomName, kind })
@@ -247,14 +253,10 @@ export class MediaServer {
 
           switch (kind) {
             case 'video':
-              remoteVideoElement
-                ? this.attachMediaStream(remoteVideoElement, event.streams[0])
-                : this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
+              this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
               break
             case 'audio':
-              remoteAudioElement
-                ? this.attachMediaStream(remoteAudioElement, event.streams[0])
-                : this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
+              this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
               break
             default:
               break

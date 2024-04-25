@@ -89,7 +89,7 @@ function onSignout() {
           <PeerStatusBar :peer="local" />
           <PeerVolumeBar :peer="local" />
         </div>
-        <template v-for="(userId, peer) in remotePeers" :key="`remoteVideo${userId}`">
+        <template v-for="(peer, userId) in remotePeers" :key="`remoteVideo${userId}`">
           <div class="camera" :class="[{ privacy: peer.privacyStatus, pinned: peer.pinnedId === peer.userId }]">
             <video
               class="video"
@@ -110,7 +110,7 @@ function onSignout() {
         <div class="audio-wrap">
           <audio ref="localAudio" :srcObject="local.stream" autoplay muted />
         </div>
-        <template v-for="(userId, peer) in remotePeers" :key="`remoteAudio${userId}`">
+        <template v-for="(peer, userId) in remotePeers" :key="`remoteAudio${userId}`">
           <div class="audio-wrap">
             <audio :srcObject="peer.audioStream" autoplay muted />
           </div>
