@@ -48,10 +48,8 @@ export const useWebrtcStore = defineStore('webrtcStore', {
         fullScreen: false, // 是否全屏
         pinnedId: 0, // 固定住的用户ID
       },
-      // 远程媒体
-      remoteVideo: <KeyValue[]>[],
-      remoteAudio: <KeyValue[]>[],
 
+      // 远程媒体
       remotePeers: <KeyValue>{},
     }
   },

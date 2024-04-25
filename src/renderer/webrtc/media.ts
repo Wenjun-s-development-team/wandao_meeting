@@ -96,7 +96,7 @@ export class MediaServer {
     local.value.useAudio = audioInputDevices.value.length > 0
   }
 
-  async setupLocalVideo() {
+  async setupLocalVideo(toPeers?: boolean) {
     if (this.localVideoStream) {
       await this.stopVideoTracks(this.localVideoStream)
     }
@@ -116,11 +116,17 @@ export class MediaServer {
     try {
       this.localVideoStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints })
       await this.loadLocalMedia(this.localVideoStream, 'video')
+      if (toPeers) {
+        this.refreshStreamToPeers(this.localVideoStream)
+      }
     } catch (err) {
       console.error('访问视频设备时出错, 加载默认媒体流', err)
       try {
         this.localVideoStream = await navigator.mediaDevices.getUserMedia({ video: true })
         await this.loadLocalMedia(this.localVideoStream, 'video')
+        if (toPeers) {
+          this.refreshStreamToPeers(this.localVideoStream)
+        }
       } catch (fallbackErr) {
         console.error('访问默认约束的视频设备时出错', fallbackErr)
         playSound('alert')
@@ -225,8 +231,6 @@ export class MediaServer {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
       remotePeers.value[userId].audioStream = stream
     }
-
-    console.log('loadRemoteMediaStream', peer, remotePeers.value)
   }
 
   /**
@@ -698,7 +702,7 @@ export class MediaServer {
     if (!local.value.videoStatus) {
       await this.stopVideoTracks(this.localVideoStream)
     } else {
-      await this.setupLocalVideo()
+      await this.setupLocalVideo(true)
     }
 
     this.localVideoStream.getVideoTracks()[0].enabled = local.value.videoStatus

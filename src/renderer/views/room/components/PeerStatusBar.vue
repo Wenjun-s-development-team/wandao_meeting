@@ -6,8 +6,6 @@ const { peer } = toRefs(props)
 
 const peerRef = ref()
 
-console.log(peer.value)
-
 // 快照
 function onSnapshot() {
   playSound('snapshot')
