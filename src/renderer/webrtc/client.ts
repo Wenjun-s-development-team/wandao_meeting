@@ -472,10 +472,10 @@ export class Client {
     console.log({ userId, userName, peerVideo, peerAction })
     switch (peerAction) {
       case 'muteAudio':
-        this.mediaServer.setAudioTracks(false)
+        this.mediaServer.setLocalAudioOff()
         break
       case 'hideVideo':
-        this.mediaServer.setVideoTracks(false)
+        this.mediaServer.setLocalVideoOff()
         break
       case 'recStart':
         this.notifyRecording(userId, userName, 'Start')
