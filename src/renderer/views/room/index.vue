@@ -80,6 +80,7 @@ function onSignout() {
             ref="localVideo"
             class="video"
             :class="{ mirror: local.mirrorStatus }"
+            :style="{ display: local.videoStatus ? 'block' : 'node' }"
             muted
             autoplay
             playsinline="true"
@@ -95,6 +96,7 @@ function onSignout() {
               class="video"
               :srcObject="peer.videoStream"
               :class="{ mirror: peer.mirrorStatus }"
+              :style="{ display: peer.videoStatus ? 'block' : 'node' }"
               muted
               autoplay
               playsinline="true"
