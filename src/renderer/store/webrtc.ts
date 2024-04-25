@@ -53,7 +53,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       remoteAudio: <KeyValue[]>[],
 
       // 远程 peer 信息
-      removePeers: {},
+      remotePeers: {},
     }
   },
   actions: {

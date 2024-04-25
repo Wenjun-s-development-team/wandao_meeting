@@ -8,7 +8,7 @@ const webrtcStore = useWebrtcStore()
 const {
   local,
   screenId,
-  removePeers,
+  remotePeers,
   videoInputDeviceId,
   audioInputDeviceId,
   audioOutputDeviceId,
@@ -64,7 +64,7 @@ export class MediaServer {
     this.videoElement = videoElement
     this.audioElement = audioElement
     this.volumeElement = volumeElement
-    removePeers.value = {}
+    remotePeers.value = {}
     return this
   }
 
@@ -212,13 +212,13 @@ export class MediaServer {
       console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${peer.roomName}]`, stream.getTracks())
     }
 
-    removePeers.value[userId] = { userId, kind, ...peer }
+    remotePeers.value[userId] = { userId, kind, ...peer }
     if (kind === 'video') {
       console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
-      removePeers.value[userId].videoStream = stream
+      remotePeers.value[userId].videoStream = stream
     } else if (kind === 'audio') {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
-      removePeers.value[userId].audioStream = stream
+      remotePeers.value[userId].audioStream = stream
     }
   }
 
@@ -493,7 +493,7 @@ export class MediaServer {
     if (local.value.userId === userId) {
       local.value[type] = status
     } else {
-      removePeers.value[userId][type] = status
+      remotePeers.value[userId][type] = status
     }
 
     if (['videoStatus', 'audioStatus'].includes(type)) {
