@@ -1,22 +1,10 @@
 <script setup>
-import { playSound, secondsToHms } from '@/utils'
+import { playSound, saveDataToFile, secondsToHms } from '@/utils'
 
 const props = defineProps(['peer'])
 const { peer } = toRefs(props)
 
 const peerRef = ref()
-
-function saveDataToFile(dataURL, fileName) {
-  const a = document.createElement('a')
-  a.href = dataURL
-  a.download = fileName
-  document.body.appendChild(a)
-  a.click()
-  setTimeout(() => {
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(dataURL)
-  }, 100)
-}
 
 // 快照
 function onSnapshot() {
@@ -58,7 +46,7 @@ function onPictureInPicture() {
   if (video.pictureInPictureElement) {
     video.exitPictureInPicture()
   } else if (document.pictureInPictureEnabled) {
-    if (!peer.value.useVideo) {
+    if (!peer.value.videoStatus) {
       return ElMessage.warning({
         grouping: true,
         message: '视频未启用，禁此画中画(PIP)',
@@ -98,7 +86,7 @@ onMounted(() => {
   <div ref="peerRef" class="peer-statusbar">
     <button class="unhover">{{ sessionTime }}</button>
     <button @click.stop="onPinned()"><i class="i-fa6-solid-map-pin" /></button>
-    <button @click.stop="peer.useMirror = !peer.useMirror">
+    <button @click.stop="peer.mirrorStatus = !peer.mirrorStatus">
       <i class="i-fa6-solid-arrow-right-arrow-left" />
     </button>
     <button @click.stop="onPictureInPicture()"><i class="i-fa6-solid-images" /></button>
@@ -106,11 +94,11 @@ onMounted(() => {
     <button @click.stop="onSnapshot()"><i class="i-fa6-solid-camera-retro" /></button>
     <button @click.stop="peer.privacyStatus = !peer.privacyStatus"><i class="i-fa6-solid-circle" /></button>
     <button>
-      <i v-if="peer.useVideo" class="i-fa6-solid-video" />
+      <i v-if="peer.videoStatus" class="i-fa6-solid-video" />
       <i v-else class="i-fa6-solid-video-slash color-red" />
     </button>
     <button>
-      <i v-if="peer.useAudio" class="i-fa6-solid-microphone" />
+      <i v-if="peer.audioStatus" class="i-fa6-solid-microphone" />
       <i v-else class="i-fa6-solid-microphone-slash color-red" />
     </button>
     <button v-if="peer.handStatus">

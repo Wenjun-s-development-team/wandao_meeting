@@ -27,12 +27,14 @@ type Peers struct {
 	UserName string `json:"userName"` // 用户名
 	UserLock bool   `json:"userLock"` // 用户锁
 
-	UseVideo  bool `json:"useVideo"`  // 是否开启视频
-	UseAudio  bool `json:"useAudio"`  // 是否开启音频
-	UseMirror bool `json:"useMirror"` // 是否翻转屏幕
-	UseScreen bool `json:"useScreen"` // 是否开启屏幕分享
+	UseVideo bool `json:"useVideo"` // 是否有音频设备
+	UseAudio bool `json:"useAudio"` // 是否有视频设备
 
-	HandStatus    bool `json:"handStatus"`    // 手状态和图标
+	AudioStatus  bool `json:"audioStatus"`  // 音频播放状态
+	VideoStatus  bool `json:"videoStatus"`  // 视频显示状态
+	ScreenStatus bool `json:"screenStatus"` // 屏幕共享状态
+
+	HandStatus    bool `json:"handStatus"`    // 是否举手
 	RecordStatus  bool `json:"recordStatus"`  // 是否录音
 	PrivacyStatus bool `json:"privacyStatus"` // 是否小视图
 }

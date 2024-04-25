@@ -46,3 +46,15 @@ export function getRandomNumber(length: number = 5): string {
 export function md5(input: string) {
   return CryptoJS.MD5(input).toString()
 }
+
+export function saveDataToFile(dataURL: string, fileName: string) {
+  const a = document.createElement('a')
+  a.href = dataURL
+  a.download = fileName
+  document.body.appendChild(a)
+  a.click()
+  setTimeout(() => {
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(dataURL)
+  }, 100)
+}

@@ -4,14 +4,14 @@ import { RTCRequest } from '@/api'
 export const useWebrtcStore = defineStore('webrtcStore', {
   state: () => {
     return {
-      lastRoomId: 0, // 最近访问的房号
       screenId: '', // 共享屏幕源ID
-      videoInputDeviceId: '', // 视频输出设备ID
-      audioInputDeviceId: '', // 音频输出设备ID
-      audioOutputDeviceId: '', // 音频输入设备ID
-      videoInputDevices: <MediaDeviceInfo[]>[], // 视频输出设备
-      audioInputDevices: <MediaDeviceInfo[]>[], // 音频输出设备
-      audioOutputDevices: <MediaDeviceInfo[]>[], // 音频输入设备
+      lastRoomId: 0, // 最近访问的房号
+      videoInputDeviceId: '', // 视频输入设备ID
+      audioInputDeviceId: '', // 音频输入设备ID
+      audioOutputDeviceId: '', // 音频输出设备ID
+      videoInputDevices: <MediaDeviceInfo[]>[], // 视频输入设备
+      audioInputDevices: <MediaDeviceInfo[]>[], // 音频输入设备
+      audioOutputDevices: <MediaDeviceInfo[]>[], // 音频输出设备
 
       // 连接状态 '🟢' '🔴'
       iceNetwork: { host: false, stun: false, turn: false },
@@ -32,19 +32,20 @@ export const useWebrtcStore = defineStore('webrtcStore', {
         userId: 0, // 用户ID
         userName: '', // 用户名
         userLock: false, // 用户锁
-        hidden: false, // 是否隐藏
 
-        useAudio: true, // 启用/禁用 音频
-        useVideo: true, // 启用/禁用 视频
-        useMirror: false, // 是否翻转视频
-        useScreen: false, // 是否共享屏幕
+        useAudio: false, // 是否有音频设备
+        useVideo: false, // 是否有视频设备
 
-        videoStatus: false, // 视频状态
-        handStatus: false, // 手状态和图标
+        audioStatus: true, // 音频播放状态
+        videoStatus: true, // 视频显示状态
+        screenStatus: false, // 屏幕共享状态
+        mirrorStatus: false, // 是否翻转视频
+        handStatus: false, // 是否举手
         recordStatus: false, // 是否录音
         privacyStatus: false, // 是否小视图
 
-        fullScreen: false,
+        hidden: false, // 是否隐藏
+        fullScreen: false, // 是否全屏
         pinnedId: 0, // 固定住的用户ID
       },
       // 远程媒体
@@ -103,7 +104,7 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       {
         key: 'webrtc',
         storage: localStorage,
-        paths: ['lastRoomId', 'token', 'local', 'userId', 'videoStatus'],
+        paths: ['lastRoomId', 'token', 'local', 'userId'],
       },
     ],
   },

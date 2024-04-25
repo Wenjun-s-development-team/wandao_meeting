@@ -25,23 +25,3 @@ interface DataResponse extends KeyValue {
   msg: string
   data: any
 }
-
-type FrameRate =
-  | number
-  | {
-    exact?: number | undefined
-    ideal?: number | undefined
-    max?: number | undefined
-    min?: number | undefined
-  }
-
-interface UseMediaOptions {
-  enabled?: MaybeRef<boolean>
-  autoSwitch?: MaybeRef<boolean>
-  useScreen?: boolean
-  useVideo?: boolean
-  useAudio?: boolean
-  screenId?: string
-  videoInputDeviceId?: string
-  audioInputDeviceId?: string
-}

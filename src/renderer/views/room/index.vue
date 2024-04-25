@@ -35,13 +35,13 @@ function toggleScreenSharing() {
 }
 
 function setVideoTracks() {
-  local.value.useVideo = !local.value.useVideo
-  client.mediaServer.setVideoTracks(local.value.useVideo)
+  local.value.videoStatus = !local.value.videoStatus
+  client.mediaServer.handleVideo(null)
 }
 
 function setAudioTracks() {
-  local.value.useAudio = !local.value.useAudio
-  client.mediaServer.setAudioTracks(local.value.useAudio)
+  local.value.audioStatus = !local.value.audioStatus
+  client.mediaServer.setAudioTracks(local.value.audioStatus)
 }
 
 // 举手
@@ -82,7 +82,7 @@ function onSignout() {
           <video
             ref="localVideo"
             class="video"
-            :class="{ mirror: local.useMirror }"
+            :class="{ mirror: local.mirrorStatus }"
             muted
             autoplay
             playsinline="true"
@@ -97,7 +97,7 @@ function onSignout() {
             <video
               class="video"
               :srcObject="peer.stream"
-              :class="{ mirror: peer.useMirror }"
+              :class="{ mirror: peer.mirrorStatus }"
               muted
               autoplay
               playsinline="true"
@@ -145,16 +145,16 @@ function onSignout() {
           <i class="i-fa6-solid-camera-rotate" />
         </button>
         <button @click="setVideoTracks()">
-          <i v-if="local.useVideo" class="i-fa6-solid-video" />
+          <i v-if="local.videoStatus" class="i-fa6-solid-video" />
           <i v-else class="i-fa6-solid-video-slash color-red" />
         </button>
         <button @click="setAudioTracks()">
-          <i v-if="local.useAudio" class="i-fa6-solid-microphone" />
+          <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
           <i v-else class="i-fa6-solid-microphone-slash color-red" />
         </button>
         <ScreenSources :peer="local" @change="toggleScreenSharing()">
           <button>
-            <i v-if="local.useScreen" class="i-fa6-solid-circle-stop" />
+            <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
             <i v-else class="i-fa6-solid-desktop" />
           </button>
         </ScreenSources>

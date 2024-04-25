@@ -78,10 +78,12 @@ func LoginController(client *Client, seq string, message []byte) (code uint64, m
 		UserName: user.Name,
 		UserLock: false,
 
-		UseVideo:  request.UseVideo,
-		UseAudio:  request.UseAudio,
-		UseMirror: request.UseMirror,
-		UseScreen: request.UseScreen,
+		UseVideo: request.UseVideo,
+		UseAudio: request.UseAudio,
+
+		AudioStatus:  request.AudioStatus,
+		VideoStatus:  request.VideoStatus,
+		ScreenStatus: request.ScreenStatus,
 
 		HandStatus:    request.HandStatus,
 		RecordStatus:  request.RecordStatus,
@@ -242,11 +244,11 @@ func PeerStatus(client *Client, seq string, message []byte) (code uint64, msg st
 		if peer.UserId == request.UserId {
 			switch request.Action {
 			case "video":
-				peer.UseVideo = request.Status
+				peer.VideoStatus = request.Status
 			case "audio":
-				peer.UseAudio = request.Status
+				peer.AudioStatus = request.Status
 			case "screen":
-				peer.UseScreen = request.Status
+				peer.ScreenStatus = request.Status
 			case "hand":
 				peer.HandStatus = request.Status
 			case "record":

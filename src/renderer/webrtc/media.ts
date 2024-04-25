@@ -36,10 +36,8 @@ export class MediaServer {
   declare remoteVideoElement: HTMLVideoElement
   declare remoteAudioElement: HTMLAudioElement
 
-  declare videoStatus: boolean
-  declare audioStatus: boolean
   declare audioVolume: boolean
-  declare screenStatus: boolean
+
   localVideoStatusBefore: boolean = false
   isVideoPinned: boolean = false // 是否固定
   initStream: MediaStream | null = null
@@ -97,18 +95,17 @@ export class MediaServer {
     videoInputDeviceId.value = videoInputDevices.value[0].deviceId
     audioInputDeviceId.value = audioInputDevices.value[0].deviceId
     audioOutputDeviceId.value = audioOutputDevices.value[0].deviceId
+
+    local.value.useVideo = videoInputDevices.value.length > 0
+    local.value.useAudio = audioInputDevices.value.length > 0
   }
 
   async setupLocalVideo(constraints?: KeyValue) {
-    if (!local.value.useVideo && !local.value.useScreen) {
+    if (!local.value.useVideo || this.localVideoStream) {
       return
     }
 
     console.log('📹 请求访问视频输入设备')
-
-    const videoConstraints = local.value.useVideo || local.value.useScreen
-      ? constraints || await this.getVideoConstraints('default')
-      : false
 
     /**
      * 更新本地媒体流
@@ -121,6 +118,10 @@ export class MediaServer {
         console.log('9. 📹 授予对视频设备的访问权限')
       }
     }
+
+    const videoConstraints = local.value.useVideo || local.value.screenStatus
+      ? constraints || await this.getVideoConstraints('default')
+      : false
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints })
@@ -139,7 +140,7 @@ export class MediaServer {
   }
 
   async setupLocalAudio(constraints?: KeyValue) {
-    if (!local.value.useAudio) {
+    if (!local.value.useAudio || this.localAudioStream) {
       return
     }
 
@@ -180,36 +181,8 @@ export class MediaServer {
     }
   }
 
-  /**
-   * 加载远程媒体流
-   * @param {MediaStream} stream audio ｜ video媒体流
-   * @param {object} peers 同一房间所有 RTCPeer 信息
-   * @param {string} userId socket.id
-   */
-  async loadRemoteMediaStream(stream: MediaStream, peers: KeyValue, userId: string, kind: string) {
-    const peer = peers[userId]
-    console.log('REMOTE PEER INFO', peer)
-
-    if (stream) {
-      console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${peer.roomName}]`, stream.getTracks())
-    }
-
-    if (kind === 'video') {
-      console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
-      webrtcStore.setRemoteVideo({ userId, stream, kind, ...peer })
-    } else if (kind === 'audio') {
-      console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
-      webrtcStore.setRemoteAudio({ userId, stream, kind, ...peer })
-    }
-  }
-
-  cleanRemoteMedia() {
-    remoteVideo.value = []
-    remoteAudio.value = []
-  }
-
   logStreamInfo(name: string, stream: MediaStream) {
-    if ((local.value.useVideo || local.value.useScreen) && this.hasVideoTrack(stream)) {
+    if ((local.value.useVideo || local.value.screenStatus) && this.hasVideoTrack(stream)) {
       console.log(name, {
         video: {
           label: stream.getVideoTracks()[0].label,
@@ -233,6 +206,35 @@ export class MediaServer {
     }
     element.srcObject = stream
     console.log('成功加载媒体流', stream.getTracks())
+  }
+
+  /**
+   * 加载远程媒体流
+   * @param {MediaStream} stream audio ｜ video 媒体流
+   * @param {object} peers 同一房间所有 RTCPeer 相关信息
+   * @param {string} userId
+   * @param {string} kind 媒体类型 video | audio
+   */
+  async loadRemoteMediaStream(stream: MediaStream, peers: KeyValue, userId: string, kind: string) {
+    const peer = peers[userId]
+    console.log('REMOTE PEER INFO', peer)
+
+    if (stream) {
+      console.log(`LOAD REMOTE MEDIA STREAM TRACKS - roomName:[${peer.roomName}]`, stream.getTracks())
+    }
+
+    if (kind === 'video') {
+      console.log('📹 SETUP REMOTE VIDEO STREAM', stream.id)
+      webrtcStore.setRemoteVideo({ userId, stream, kind, ...peer })
+    } else if (kind === 'audio') {
+      console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
+      webrtcStore.setRemoteAudio({ userId, stream, kind, ...peer })
+    }
+  }
+
+  cleanRemoteMedia() {
+    remoteVideo.value = []
+    remoteAudio.value = []
   }
 
   // 设备本地视频开/关
@@ -350,35 +352,39 @@ export class MediaServer {
   async toggleScreenSharing(init: boolean = false) {
     try {
       const constraints = {
-        audio: !local.value.useAudio,
+        audio: !local.value.audioStatus,
         video: { frameRate: this.screenFpsSelect },
       }
 
-      if (local.value.useScreen && !local.value.useVideo && !local.value.useAudio) {
-        return this.handleToggleScreenException('音频和视频被禁用, 不能共享屏幕', init)
+      if (!local.value.screenStatus) {
+        this.localVideoStatusBefore = local.value.videoStatus
+        console.log(`屏幕共享前的视频状态: ${this.localVideoStatusBefore}`)
       } else {
-        console.log('Video AND Audio constraints', constraints)
+        if (!local.value.useAudio && !local.value.useVideo) {
+          return this.handleToggleScreenException('没有音频和视频设备, 不能共享屏幕', init)
+        } else {
+          console.log('Video AND Audio constraints', constraints)
+        }
       }
 
       // Get screen or webcam media stream based on current state
-      const screenMediaPromise = local.value.useScreen
+      const screenMediaPromise = local.value.screenStatus
         ? await navigator.mediaDevices.getUserMedia(await this.getAudioVideoConstraints())
         : await navigator.mediaDevices.getUserMedia(constraints)
 
       if (screenMediaPromise) {
+        local.value.screenStatus = !local.value.screenStatus
         local.value.privacyStatus = false
         this.emitPeerStatus('privacy', local.value.privacyStatus)
 
-        this.screenStatus = local.value.useScreen
-
-        if (local.value.useScreen) {
+        if (local.value.screenStatus) {
           this.setLocalVideoStatusTrue()
           this.emitPeerAction('screenStart')
         } else {
           this.emitPeerAction('screenStop')
         }
 
-        await this.emitPeerStatus('screen', this.screenStatus)
+        await this.emitPeerStatus('screen', local.value.screenStatus)
 
         await this.stopLocalVideoTrack()
         await this.refreshLocalStream(screenMediaPromise, !local.value.useAudio)
@@ -397,15 +403,15 @@ export class MediaServer {
         }
 
         // Disable cam video when screen sharing stops
-        if (!init && !local.value.useScreen && !this.localVideoStatusBefore) {
+        if (!init && !local.value.screenStatus && !this.localVideoStatusBefore) {
           this.setLocalVideoOff()
         }
         // Enable cam video when screen sharing stops
-        if (!init && !local.value.useScreen && this.localVideoStatusBefore) {
+        if (!init && !local.value.screenStatus && this.localVideoStatusBefore) {
           this.setLocalVideoStatusTrue()
         }
 
-        if (local.value.useScreen || this.isVideoPinned) {
+        if (local.value.screenStatus || this.isVideoPinned) {
           // myVideoPinBtn.click()
         }
       }
@@ -433,26 +439,25 @@ export class MediaServer {
       this.setLocalVideoOff()
 
       // Toggle screen streaming status
-      local.value.useScreen = !local.value.useScreen
-      this.screenStatus = local.value.useScreen
+      local.value.screenStatus = !local.value.screenStatus
 
       // Update screen sharing status 更新UI
 
       // Emit screen status to peers
-      this.emitPeerStatus('screen', this.screenStatus)
+      this.emitPeerStatus('screen', local.value.screenStatus)
 
       // Stop the local video track
       await this.stopLocalVideoTrack()
 
       // Handle video status based on conditions
-      if (!init && !local.value.useScreen && !this.localVideoStatusBefore) {
+      if (!init && !local.value.screenStatus && !this.localVideoStatusBefore) {
         this.setLocalVideoOff()
-      } else if (!init && !local.value.useScreen && this.localVideoStatusBefore) {
+      } else if (!init && !local.value.screenStatus && this.localVideoStatusBefore) {
         this.setLocalVideoStatusTrue()
       }
 
       // Automatically pin the video if screen sharing or video is pinned
-      if (local.value.useScreen || this.isVideoPinned) {
+      if (local.value.screenStatus || this.isVideoPinned) {
         // myVideoPinBtn.click()
       }
     } catch (error) {
@@ -488,26 +493,25 @@ export class MediaServer {
       return
     }
     // if (this.videoStatus === false || !useVideo) return;
-    this.videoStatus = false
-    this.localVideoStream.getVideoTracks()[0].enabled = this.videoStatus
+    local.value.videoStatus = false
+    this.localVideoStream.getVideoTracks()[0].enabled = local.value.videoStatus
 
-    this.setLocalVideoStatus(this.videoStatus)
+    this.setLocalVideoStatus(local.value.videoStatus)
     playSound('off')
   }
 
   setLocalVideoStatus(status: boolean) {
     console.log('local video status', status)
-    // send my video status to all peers in the room
     this.emitPeerStatus('video', status)
     playSound(status ? 'on' : 'off')
   }
 
   setPeerStatus(type: string, userId: number, status: boolean) {
-    if (!['useVideo', 'useAudio', 'handStatus', 'recordStatus', 'privacyStatus'].includes(type)) {
+    if (!['videoStatus', 'audioStatus', 'handStatus', 'recordStatus', 'privacyStatus'].includes(type)) {
       return
     }
     console.log('setStatus:', { type, userId, status })
-    if (['useVideo', 'useAudio'].includes(type)) {
+    if (['videoStatus', 'audioStatus'].includes(type)) {
       status ? playSound('on') : playSound('off')
     } else if (type === 'handStatus' && status) {
       playSound('raiseHand')
@@ -527,18 +531,18 @@ export class MediaServer {
   }
 
   async setLocalVideoStatusTrue() {
-    if (this.videoStatus || !local.value.useVideo) {
+    if (local.value.videoStatus || !local.value.useVideo) {
       return
     }
     // Put video status already ON
-    this.videoStatus = true
-    this.localVideoStream.getVideoTracks()[0].enabled = this.videoStatus
+    local.value.videoStatus = true
+    this.localVideoStream.getVideoTracks()[0].enabled = local.value.videoStatus
 
-    this.emitPeerStatus('video', this.videoStatus)
+    this.emitPeerStatus('video', local.value.videoStatus)
   }
 
   async stopLocalVideoTrack() {
-    if (local.value.useVideo || !local.value.useScreen) {
+    if (local.value.useVideo || !local.value.screenStatus) {
       const localVideoTrack = this.localVideoStream.getVideoTracks()[0]
       if (localVideoTrack) {
         console.log('stopLocalVideoTrack', localVideoTrack)
@@ -561,7 +565,7 @@ export class MediaServer {
   async refreshLocalStream(stream: MediaStream, localAudioTrackChange = false) {
     let { videoElement, audioElement, localVideoStream, localAudioStream } = this
     // enable video
-    if (local.value.useVideo || local.value.useScreen) {
+    if (local.value.useVideo || local.value.screenStatus) {
       stream.getVideoTracks()[0].enabled = true
     }
 
@@ -577,20 +581,20 @@ export class MediaServer {
           : this.hasAudioTrack(localAudioStream) && localAudioStream.getAudioTracks()[0]
 
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaStream
-    if (local.value.useVideo || local.value.useScreen) {
-      console.log('刷新本地媒体流视频-音频:', local.value.useScreen)
+    if (local.value.useVideo || local.value.screenStatus) {
+      console.log('刷新本地媒体流 VIDEO - AUDIO:', local.value.screenStatus)
       if (videoTrack) {
         tracksToInclude.push(videoTrack)
         localVideoStream = new MediaStream([videoTrack])
         this.attachMediaStream(videoElement, localVideoStream)
-        this.logStreamInfo('refreshMyLocalStream-localVideoMediaStream', localVideoStream)
+        this.logStreamInfo('refreshLocalStream-localVideoMediaStream', localVideoStream)
       }
       if (audioTrack) {
         tracksToInclude.push(audioTrack)
         localAudioStream = new MediaStream([audioTrack])
         this.attachMediaStream(audioElement, localAudioStream)
         // this.microphone.getMicrophoneVolumeIndicator(localAudioStream)
-        this.logStreamInfo('refreshMyLocalStream-localAudioMediaStream', localAudioStream)
+        this.logStreamInfo('refreshLocalStream-localAudioMediaStream', localAudioStream)
       }
     } else {
       console.log('Refresh my local media stream AUDIO')
@@ -598,11 +602,11 @@ export class MediaServer {
         tracksToInclude.push(audioTrack)
         localAudioStream = new MediaStream([audioTrack])
         // this.microphone.getMicrophoneVolumeIndicator(localAudioStream)
-        this.logStreamInfo('refreshMyLocalStream-localAudioMediaStream', localAudioStream)
+        this.logStreamInfo('refreshLocalStream-localAudioMediaStream', localAudioStream)
       }
     }
 
-    if (local.value.useScreen) {
+    if (local.value.screenStatus) {
       // refresh video privacy mode on screen sharing
       local.value.privacyStatus = false
       this.setPeerStatus('privacyStatus', local.value.userId, local.value.privacyStatus)
@@ -614,7 +618,7 @@ export class MediaServer {
     }
 
     // adapt video object fit on screen streaming
-    videoElement.style.objectFit = local.value.useScreen ? 'contain' : 'cover'
+    videoElement.style.objectFit = local.value.screenStatus ? 'contain' : 'cover'
   }
 
   async refreshStreamToPeers(stream: MediaStream, localAudioTrackChange = false) {
@@ -625,7 +629,7 @@ export class MediaServer {
     const { localVideoStream, localAudioStream } = this
 
     if (local.value.useAudio && localAudioTrackChange) {
-      localAudioStream.getAudioTracks()[0].enabled = this.audioStatus
+      localAudioStream.getAudioTracks()[0].enabled = local.value.audioStatus
     }
 
     // Log peer connections and all peers
@@ -649,7 +653,7 @@ export class MediaServer {
 
     // Determine the audio track to replace to peers
     const audioTrack
-        = streamHasAudioTrack && (localAudioTrackChange || local.value.useScreen)
+        = streamHasAudioTrack && (localAudioTrackChange || local.value.screenStatus)
           ? stream.getAudioTracks()[0]
           : localStreamHasAudioTrack && localAudioStream.getAudioTracks()[0]
 
@@ -716,7 +720,7 @@ export class MediaServer {
     this.localVideoStream.getVideoTracks()[0].enabled = videoStatus
 
     if (!videoStatus) {
-      if (!local.value.useScreen) {
+      if (!local.value.screenStatus) {
         await this.stopVideoTracks(this.localVideoStream)
       }
     } else {
@@ -786,7 +790,7 @@ export class MediaServer {
     const audioSource = audioInputDeviceId.value
     const videoSource = videoInputDeviceId.value
     let videoConstraints: MediaTrackConstraints = {}
-    if (local.value.useScreen && screenId.value) {
+    if (local.value.screenStatus && screenId.value) {
       videoConstraints = {
         // eslint-disable-next-line ts/ban-ts-comment
         // @ts-expect-error
@@ -795,17 +799,17 @@ export class MediaServer {
           chromeMediaSourceId: screenId.value,
         },
       }
-    } else if (local.value.useVideo) {
+    } else if (local.value.videoStatus) {
       videoConstraints = await this.getVideoConstraints(this.videoQuality || 'default')
       videoConstraints.deviceId = videoSource ? { exact: videoSource } : undefined
     }
     let audioConstraints: MediaTrackConstraints = {}
-    if (local.value.useAudio) {
+    if (local.value.audioStatus) {
       audioConstraints = await this.getAudioConstraints()
       audioConstraints.deviceId = audioSource ? { exact: audioSource } : undefined
     }
     return {
-      audio: local.value.useScreen ? false : audioConstraints,
+      audio: local.value.videoStatus ? false : audioConstraints,
       video: videoConstraints,
     }
   }
@@ -897,7 +901,7 @@ export class MediaServer {
   }
 
   async onScreenSharing() {
-    if (local.value.useScreen && screenId.value) {
+    if (local.value.screenStatus && screenId.value) {
       // 切换到屏幕共享
       await this.setupLocalVideo({
         mandatory: {
@@ -930,8 +934,8 @@ export class MediaServer {
   // 监听
   listen_back() {
     // 屏幕共享、设备切换 - 需重新创建 stream
-    watch([local.value.useScreen, videoInputDeviceId, audioInputDeviceId], async () => {
-      if (local.value.useScreen && screenId.value) {
+    watch([local.value.screenStatus, videoInputDeviceId, audioInputDeviceId], async () => {
+      if (local.value.screenStatus && screenId.value) {
         // 切换到屏幕共享
         await this.setupLocalVideo({
           mandatory: {

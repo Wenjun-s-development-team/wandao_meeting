@@ -54,7 +54,7 @@ export class Client {
 
   start() {
     console.log('02. 连接到信令服务器')
-    this.socket = new WebSocketServer(`ws://192.168.2.5:8687/webrtc`)
+    this.socket = new WebSocketServer(import.meta.env.RENDERER_VITE_WEBRTC_URL)
     this.socket.onOpen(this.handleConnect.bind(this))
     this.socket.onMessage(this.onMessage.bind(this))
     this.socket.onClose(this.handleDisconnect.bind(this))
@@ -152,8 +152,10 @@ export class Client {
 
       useVideo: local.value.useVideo,
       useAudio: local.value.useAudio,
-      useMirror: local.value.useMirror,
-      useScreen: local.value.useScreen,
+
+      audioStatus: local.value.audioStatus,
+      videoStatus: local.value.videoStatus,
+      screenStatus: local.value.screenStatus,
 
       handStatus: local.value.handStatus,
       recordStatus: local.value.recordStatus,
@@ -444,10 +446,10 @@ export class Client {
 
     switch (action) {
       case 'video':
-        this.mediaServer.setPeerStatus('useVideo', userId, status)
+        this.mediaServer.setPeerStatus('videoStatus', userId, status)
         break
       case 'audio':
-        this.mediaServer.setPeerStatus('useAudio', userId, status)
+        this.mediaServer.setPeerStatus('audioStatus', userId, status)
         break
       case 'hand':
         this.mediaServer.setPeerStatus('handStatus', userId, status)

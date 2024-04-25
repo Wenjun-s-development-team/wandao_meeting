@@ -59,7 +59,7 @@ IPCRequest.windows.openDevTools()
           <video
             ref="videoElement"
             class="page-video"
-            :class="{ mirror: local.useMirror }"
+            :class="{ mirror: local.mirrorStatus }"
             autoplay
             playsinline="true"
             poster="../../assets/images/loader.gif"
@@ -68,38 +68,38 @@ IPCRequest.windows.openDevTools()
         </div>
         <div class="page-actions">
           <div class="buttons">
-            <button @click="local.useVideo = !local.useVideo">
-              <i v-if="local.useVideo" class="i-fa6-solid-video" />
+            <button @click="local.videoStatus = !local.videoStatus">
+              <i v-if="local.videoStatus" class="i-fa6-solid-video" />
               <i v-else class="i-fa6-solid-video-slash color-red" />
             </button>
-            <button @click="local.useAudio = !local.useAudio">
-              <i v-if="local.useAudio" class="i-fa6-solid-microphone" />
+            <button @click="local.audioStatus = !local.audioStatus">
+              <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
             <ScreenSources :peer="local" @change="toggleScreenSharing()">
               <button>
-                <i v-if="local.useScreen" class="i-fa6-solid-circle-stop" />
+                <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />
               </button>
             </ScreenSources>
-            <button @click="local.useMirror = !local.useMirror">
-              <i class="i-fa6-solid-arrow-right-arrow-left" :class="{ 'color-green': local.useMirror }" />
+            <button @click="local.mirrorStatus = !local.mirrorStatus">
+              <i class="i-fa6-solid-arrow-right-arrow-left" :class="{ 'color-green': local.mirrorStatus }" />
             </button>
           </div>
           <DeviceSelect
             v-model="videoInputDeviceId"
             :devices="videoInputDevices"
-            :disabled="!local.useVideo"
+            :disabled="!local.videoStatus"
           />
           <DeviceSelect
             v-model="audioInputDeviceId"
             :devices="audioInputDevices"
-            :disabled="!local.useAudio"
+            :disabled="!local.audioStatus"
           />
           <DeviceSelect
             v-model="audioOutputDeviceId"
             :devices="audioOutputDevices"
-            :disabled="!local.useAudio"
+            :disabled="!local.audioStatus"
           />
         </div>
       </div>

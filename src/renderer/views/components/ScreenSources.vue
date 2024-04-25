@@ -19,8 +19,7 @@ const showList = ref(false)
 const loading = ref(false)
 
 async function onClick() {
-  if (peer.value.useScreen) {
-    peer.value.useScreen = false
+  if (peer.value.screenStatus) {
     screenId.value = ''
     return emit('change')
   }
@@ -37,7 +36,6 @@ async function onClick() {
 
 function onSubmit() {
   console.log('共享屏幕ID:', screenId.value)
-  peer.value.useScreen = true
   showList.value = false
   emit('change')
 }
