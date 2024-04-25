@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	MessageCmdMessage    = "message"
-	MessageCmdConnect    = "connect"
-	MessageCmdDisconnect = "disconnect"
+	MessageCmdMessage = "message"
+	MessageCmdConnect = "connect"
+	MessageCmdExit    = "exit"
 )
 
 // Message 消息的定义

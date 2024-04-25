@@ -109,7 +109,7 @@ function onSignout() {
       </TransitionGroup>
       <div class="audio-container">
         <div class="audio-wrap">
-          <audio ref="localAudio" autoplay muted />
+          <audio ref="localAudio" :srcObject="local.stream" autoplay muted />
         </div>
         <template v-for="(peer, index) in remoteAudio" :key="index">
           <div class="audio-wrap">

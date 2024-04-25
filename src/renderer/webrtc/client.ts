@@ -116,7 +116,7 @@ export class Client {
       case 'disconnect':
         this.handleDisconnect(args)
         break
-      case 'removePeer':
+      case 'exit':
         this.handleRemovePeer(args)
         break
       default:
@@ -172,8 +172,6 @@ export class Client {
     for (const userId in this.peerConnections) {
       this.peerConnections[userId].close()
     }
-
-    // adaptAspectRatio()
 
     this.chatServer.cleanDataChannel()
     this.fileSharingServer.cleanDataChannel()
