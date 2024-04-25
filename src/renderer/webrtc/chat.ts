@@ -120,12 +120,12 @@ export class ChatServer {
   }
 
   /**
-   * 音量
+   * 收到对方的音量
    * @param {KeyValue} data peer audio
    */
   onVolume(data: KeyValue) {
     if (remotePeers.value[data.userId]) {
-      console.log('onVolume')
+      remotePeers.value[data.userId].volume = data.volume
     }
   }
 
