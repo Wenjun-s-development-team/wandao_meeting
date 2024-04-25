@@ -496,18 +496,12 @@ export class MediaServer {
 
     console.log('setStatus:', { type, userId, status })
 
-    if (local.value.userId === userId) {
-      local.value[type] = status
-    } else {
-      remotePeers.value[userId][type] = status
-    }
+    remotePeers.value[userId][type] = status
 
     if (['videoStatus', 'audioStatus'].includes(type)) {
       status ? playSound('on') : playSound('off')
-    } else if (type === 'handStatus') {
-      if (status) {
-        playSound('raiseHand')
-      }
+    } else if (type === 'handStatus' && status) {
+      playSound('raiseHand')
     }
   }
 
