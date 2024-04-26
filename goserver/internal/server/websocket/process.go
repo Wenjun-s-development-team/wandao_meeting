@@ -3,8 +3,9 @@ package websocket
 
 import (
 	"encoding/json"
-	"io.wandao.meeting/internal/server/models"
 	"sync"
+
+	"io.wandao.meeting/internal/server/models"
 	log "unknwon.dev/clog/v2"
 
 	"io.wandao.meeting/internal/common"
@@ -23,7 +24,6 @@ func Register(key string, value DisposeFunc) {
 	handlersRWMutex.Lock()
 	defer handlersRWMutex.Unlock()
 	handlers[key] = value
-	return
 }
 
 func getHandlers(key string) (value DisposeFunc, ok bool) {
@@ -69,5 +69,4 @@ func ProcessData(client *Client, message []byte) {
 		log.Error("[ProcessData]处理数据 路由不存在: %s | %s", cmd, client.Addr)
 	}
 	log.Info("[ProcessData]应答: %s | roomId:%d | userId:%d | cmd:%s | code:%d | msg:%s", client.Addr, client.RoomId, client.UserId, cmd, code, msg)
-	return
 }

@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"gopkg.in/ini.v1"
 	log "unknwon.dev/clog/v2"
 )
@@ -165,9 +163,7 @@ func InitLogging(hookMode bool) {
 			log.Fatal("Failed to init %s logger: %v", mode, err)
 			return
 		}
-		log.Trace("Log mode: %s (%s)",
-			cases.Title(language.English).String(mode),
-			cases.Title(language.English).String(strings.ToLower(level.String())))
+		log.Trace("Log mode: %s (%s)", strings.Title(mode), strings.Title(strings.ToLower(level.String())))
 	}
 
 	// ⚠️ WARNING: 只有在初始化其他记录器之前，才可以安全地删除主记录器。否则，应用程序将无处打印错误.

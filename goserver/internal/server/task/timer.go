@@ -23,15 +23,21 @@ func Timer(delay, tick time.Duration, fun TimerFunc, param interface{}, funcDefe
 			return
 		}
 		t := time.NewTimer(delay)
+
 		defer t.Stop()
+
 		for {
+
 			select {
 			case <-t.C:
-				if fun(param) == false {
+
+				if !fun(param) {
 					return
 				}
+
 				t.Reset(tick)
 			}
+
 		}
 	}()
 }

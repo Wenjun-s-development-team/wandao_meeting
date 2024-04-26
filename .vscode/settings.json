@@ -67,5 +67,8 @@
     "json",
     "jsonc",
     "yaml"
+  ],
+  "go.lintFlags": [
+    "-S1000"
   ]
 }

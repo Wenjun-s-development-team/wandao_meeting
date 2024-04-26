@@ -15,7 +15,8 @@
     "src/main/**/*",
     "src/preload/*",
     "src/renderer/**/*.ts",
-    "src/renderer/**/*.d.ts"
+    "src/renderer/**/*.d.ts",
+    "src/renderer/assets/vumeter.js"
   ],
   "exclude": [
     "src/main/test/*"

@@ -3,10 +3,11 @@ package websocket
 
 import (
 	"fmt"
+	"runtime/debug"
+
 	jsoniter "github.com/json-iterator/go"
 	"io.wandao.meeting/internal/helper"
 	"io.wandao.meeting/internal/server/models"
-	"runtime/debug"
 
 	"github.com/gorilla/websocket"
 )
@@ -167,14 +168,20 @@ func (c *Client) SendMessage(cmd string, data interface{}) {
 		}
 	}()
 
-	msg, err := jsoniter.Marshal(models.Message{
+	if c == nil {
+		return
+	}
+
+	data = &models.Message{
 		Seq:  helper.GetOrderIDTime(),
 		Cmd:  cmd,
 		From: c.UserId,
 		Data: data,
-	})
+	}
 
-	if c == nil || err != nil {
+	msg, err := jsoniter.Marshal(data)
+
+	if err != nil {
 		return
 	}
 

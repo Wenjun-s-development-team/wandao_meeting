@@ -41,16 +41,16 @@ func LoginController(client *Client, seq string, message []byte) (code uint64, m
 
 	if request.UserId <= 0 {
 		code = common.InvalidUserId
-		log.Error("[WebSocket]LoginController: 无效的用户ID。%s, %s", seq, request.UserId)
+		log.Error("[WebSocket]LoginController: 无效的用户ID。%s, %d", seq, request.UserId)
 		return
 	}
 	if request.RoomId <= 0 {
 		code = common.InvalidRoomId
-		log.Error("[WebSocket]LoginController: 无效的房间ID。%s, %s", seq, request.RoomId)
+		log.Error("[WebSocket]LoginController: 无效的房间ID。%s, %d", seq, request.RoomId)
 		return
 	}
 	if client.IsLogin() {
-		log.Error("[WebSocket]LoginController: 用户已登录。(seq:%s, userId:%s, roomId: %s)", seq, request.UserId, request.RoomId)
+		log.Error("[WebSocket]LoginController: 用户已登录。(seq:%s, userId:%d, roomId: %d)", seq, request.UserId, request.RoomId)
 		code = common.HasLoggedIn
 		return
 	}
@@ -112,7 +112,7 @@ func LoginController(client *Client, seq string, message []byte) (code uint64, m
 	}
 
 	clientManager.Login <- login
-	log.Info("[WebSocket]LoginController: 用户登录成功(seq: %s, IP: %s, userId: %s)", seq, client.Addr, request.UserId)
+	log.Info("[WebSocket]LoginController: 用户登录成功(seq: %s, IP: %s, userId: %d)", seq, client.Addr, request.UserId)
 	return
 }
 

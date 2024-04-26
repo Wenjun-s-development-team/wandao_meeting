@@ -3,11 +3,12 @@ package websocket
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	jsoniter "github.com/json-iterator/go"
 	"io.wandao.meeting/internal/helper"
 	"io.wandao.meeting/internal/server/models"
-	"sync"
-	"time"
 
 	log "unknwon.dev/clog/v2"
 
@@ -96,7 +97,7 @@ func (manager *ClientManager) AddClients(client *Client) {
 func (manager *ClientManager) DelClients(client *Client) {
 	manager.ClientsLock.Lock()
 	defer manager.ClientsLock.Unlock()
-	if _, ok := manager.Clients[client]; ok {
+	if manager.Clients[client] {
 		delete(manager.Clients, client)
 	}
 }
@@ -234,7 +235,7 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 
 	// 删除用户连接
 	deleteResult := manager.DelUsers(client)
-	if deleteResult == false {
+	if deleteResult {
 		// 不是当前连接的客户端
 		return
 	}
@@ -327,7 +328,7 @@ func ClearTimeoutConnections() {
 	clients := clientManager.GetClients()
 	for client := range clients {
 		if client.IsHeartbeatTimeout(currentTime) {
-			log.Info("心跳时间超时 关闭连接", client.Addr, client.UserId, client.LoginTime, client.HeartbeatTime)
+			log.Info("[websocket]心跳时间超时 关闭连接 %s %d %d %d", client.Addr, client.UserId, client.LoginTime, client.HeartbeatTime)
 			_ = client.Socket.Close()
 		}
 	}
@@ -335,7 +336,7 @@ func ClearTimeoutConnections() {
 
 // GetUserList 获取全部用户
 func GetUserList(roomId uint64) (userList []uint64) {
-	log.Info("获取全部用户", roomId)
+	log.Info("[websocket]获取全部用户 %d", roomId)
 	userList = clientManager.GetUserList(roomId)
 	return
 }
@@ -362,7 +363,7 @@ func (manager *ClientManager) sendRoomIdAll(message []byte, roomId uint64, self 
 
 // AllSendMessages 全员广播
 func AllSendMessages(roomId uint64, userId uint64, data string) {
-	log.Info("全员广播", roomId, userId, data)
+	log.Info("[websocket]全员广播 %d %d %s", roomId, userId, data)
 	ignoreClient := clientManager.GetUserClient(roomId, userId)
 	clientManager.sendRoomIdAll([]byte(data), roomId, ignoreClient)
 }

@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia'
 import type { Client } from './client'
-import { Microphone } from './microphone'
+import { type MicrophoneVolumeIndicator, useVolumeIndicator } from './useVolume'
 import { playSound } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
@@ -24,7 +24,8 @@ const {
  */
 export class MediaServer {
   client: Client | undefined
-  declare microphone: Microphone
+
+  declare volumeIndicator: MicrophoneVolumeIndicator
 
   declare videoElement: HTMLVideoElement
   declare audioElement: HTMLAudioElement
@@ -66,7 +67,8 @@ export class MediaServer {
 
   async start() {
     const { localVideoStream, localAudioStream } = this
-    this.microphone = new Microphone(this.client, this.volumeElement)
+    // 麦克风音量
+    this.volumeIndicator = useVolumeIndicator(this.client, this.volumeElement)
     if (!localVideoStream || !localAudioStream) {
       await this.initEnumerateDevices()
       await this.setupLocalVideo()
@@ -138,7 +140,7 @@ export class MediaServer {
     try {
       this.localAudioStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints })
       await this.loadLocalMedia(this.localAudioStream, 'audio')
-      await this.microphone.getMicrophoneVolumeIndicator(this.localAudioStream)
+      await this.volumeIndicator.start(this.localAudioStream)
       console.log('10. 🎤 授予对音频设备的访问权限')
     } catch (err) {
       console.log('audio', err)
@@ -425,7 +427,7 @@ export class MediaServer {
         tracksToInclude.push(audioTrack)
         localAudioStream = new MediaStream([audioTrack])
         this.attachMediaStream(audioElement, localAudioStream)
-        this.microphone.getMicrophoneVolumeIndicator(localAudioStream)
+        await this.volumeIndicator.start(localAudioStream)
         this.logStreamInfo('refreshLocalStream-localAudioMediaStream', localAudioStream)
       }
     } else {
@@ -433,7 +435,7 @@ export class MediaServer {
       if (local.value.useAudio && audioTrack) {
         tracksToInclude.push(audioTrack)
         localAudioStream = new MediaStream([audioTrack])
-        this.microphone.getMicrophoneVolumeIndicator(localAudioStream)
+        await this.volumeIndicator.start(localAudioStream)
         this.logStreamInfo('refreshLocalStream-localAudioMediaStream', localAudioStream)
       }
     }
