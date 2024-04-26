@@ -207,26 +207,6 @@ func (manager *ClientManager) GetUserClients() (clients []*Client) {
 	return
 }
 
-// sendAll 向全部成员(除了自己)发送数据
-func (manager *ClientManager) sendAll(message []byte, self *Client) {
-	clients := manager.GetUserClients()
-	for _, conn := range clients {
-		if conn != self {
-			conn.SendMsg(message)
-		}
-	}
-}
-
-// sendRoomIdAll 向房间内全部成员(除了自己)发送数据
-func (manager *ClientManager) sendRoomIdAll(message []byte, roomId uint64, self *Client) {
-	clients := manager.GetUserClients()
-	for _, conn := range clients {
-		if conn != self && conn.RoomId == roomId {
-			conn.SendMsg(message)
-		}
-	}
-}
-
 // EventRegister 用户建立连接事件
 func (manager *ClientManager) EventRegister(client *Client) {
 	manager.AddClients(client)
@@ -283,7 +263,6 @@ func (manager *ClientManager) EventUnregister(client *Client) {
 			return
 		}
 		manager.sendRoomIdAll(msg, client.RoomId, client)
-		// _, _ = SendUserMessageAll(models.MessageCmdExit, "用户已经离开", client.RoomId, client.UserId)
 	}
 }
 
@@ -361,9 +340,37 @@ func GetUserList(roomId uint64) (userList []uint64) {
 	return
 }
 
+// sendAll 向全部成员(除了自己)发送数据
+func (manager *ClientManager) sendAll(message []byte, self *Client) {
+	clients := manager.GetUserClients()
+	for _, conn := range clients {
+		if conn != self {
+			conn.SendMsg(message)
+		}
+	}
+}
+
+// sendRoomIdAll 向房间内全部成员(除了自己)发送数据
+func (manager *ClientManager) sendRoomIdAll(message []byte, roomId uint64, self *Client) {
+	clients := manager.GetUserClients()
+	for _, conn := range clients {
+		if conn != self && conn.RoomId == roomId {
+			conn.SendMsg(message)
+		}
+	}
+}
+
 // AllSendMessages 全员广播
 func AllSendMessages(roomId uint64, userId uint64, data string) {
 	log.Info("全员广播", roomId, userId, data)
 	ignoreClient := clientManager.GetUserClient(roomId, userId)
 	clientManager.sendRoomIdAll([]byte(data), roomId, ignoreClient)
+}
+
+// SendUserMessageAll 给全体用户发消息
+func SendUserMessageAll(cmd string, message string, roomId uint64, userId uint64) (sendResults bool, err error) {
+	sendResults = true
+	data := models.GetTextMsgData(cmd, message, userId)
+	AllSendMessages(roomId, userId, data)
+	return
 }

@@ -68,14 +68,6 @@ func ProcessData(client *Client, message []byte) {
 		code = common.RoutingNotExist
 		log.Error("[ProcessData]处理数据 路由不存在: %s | %s", cmd, client.Addr)
 	}
-	//msg = common.GetErrorMessage(code, msg)
-	//responseHead := models.NewResponseHead(seq, cmd, code, msg, data)
-	//headByte, err := json.Marshal(responseHead)
-	//if err != nil {
-	//	log.Error("[ProcessData]解析数据失败: %v", err)
-	//	return
-	//}
-	//client.SendMsg(headByte)
 	log.Info("[ProcessData]应答: %s | roomId:%d | userId:%d | cmd:%s | code:%d | msg:%s", client.Addr, client.RoomId, client.UserId, cmd, code, msg)
 	return
 }

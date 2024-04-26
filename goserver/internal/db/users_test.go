@@ -2,13 +2,12 @@ package db
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"testing"
-
-	"io.wandao.meeting/internal/db/dbtest"
-	"io.wandao.meeting/internal/utils/errutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io.wandao.meeting/internal/db/dbtest"
 )
 
 func TestUsers(t *testing.T) {
@@ -29,8 +28,7 @@ func TestUsers(t *testing.T) {
 		name string
 		test func(t *testing.T, ctx context.Context, db *users)
 	}{
-		{"Authenticate", usersAuthenticate},
-		{"GetByID", usersGetByID},
+		{"useTexts", useTexts},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Cleanup(func() {
@@ -45,48 +43,68 @@ func TestUsers(t *testing.T) {
 	}
 }
 
-func usersAuthenticate(t *testing.T, ctx context.Context, db *users) {
-	passwd := "pa$$word"
-	alice, err := db.CreateAuthUser(ctx, "alice", "alice@example.com",
-		CreateUserOptions{
-			Passwd: passwd,
-		},
-	)
+func useTexts(t *testing.T, ctx context.Context, db *users) {
+	passwd := "123456"
+	alice, err := db.Create(ctx, &User{
+		Name:   "admin",
+		Email:  "337805@qq.com",
+		Passwd: passwd,
+	})
 	require.NoError(t, err)
 
-	t.Run("user not found", func(t *testing.T) {
-		user, _ := db.Authenticate(ctx, "bob", passwd)
+	t.Run("登录-成功", func(t *testing.T) {
+		user, _ := db.Login(ctx, "admin", passwd)
+		assert.Equal(t, "admin", user.Name)
+	})
+
+	t.Run("登录-用户不存在", func(t *testing.T) {
+		user, _ := db.Login(ctx, "bob", passwd)
 		assert.Equal(t, nil, user)
 	})
 
-	t.Run("invalid password", func(t *testing.T) {
-		user, _ := db.Authenticate(ctx, alice.Name, "bad_password")
+	t.Run("登录-密码错误", func(t *testing.T) {
+		user, _ := db.Login(ctx, alice.Name, "bad_password")
 		assert.Equal(t, nil, user)
 	})
 
-	t.Run("via email and password", func(t *testing.T) {
-		user, err := db.Authenticate(ctx, alice.Email, passwd)
+	t.Run("登录-邮箱地址登录", func(t *testing.T) {
+		user, err := db.Login(ctx, alice.Email, passwd)
 		require.NoError(t, err)
 		assert.Equal(t, alice.Name, user.Name)
 	})
 
-	t.Run("via username and password", func(t *testing.T) {
-		user, err := db.Authenticate(ctx, alice.Name, passwd)
+	t.Run("登录-成功", func(t *testing.T) {
+		user, err := db.Login(ctx, alice.Name, passwd)
 		require.NoError(t, err)
 		assert.Equal(t, alice.Name, user.Name)
 	})
 
-}
+	t.Run("Save", func(t *testing.T) {
+		err := db.Save(ctx, &User{
+			Name:   "alice",
+			Passwd: "123456",
+			Email:  "alice@qq.com",
+		})
 
-func usersGetByID(t *testing.T, ctx context.Context, db *users) {
-	alice, err := db.CreateAuthUser(ctx, "alice", "alice@exmaple.com", CreateUserOptions{})
-	require.NoError(t, err)
+		require.NoError(t, err)
 
-	user, err := db.Get(alice.Id)
-	require.NoError(t, err)
-	assert.Equal(t, alice.Name, user.Name)
+		assert.Equal(t, nil, err)
+	})
 
-	_, err = db.Get(404)
-	wantErr := ErrUserNotExist{args: errutil.Args{"userId": int64(404)}}
-	assert.Equal(t, wantErr, err)
+	t.Run("GetByID", func(t *testing.T) {
+		alice, err := db.Create(ctx, &User{
+			Name:   "alice",
+			Passwd: "123456",
+			Email:  "alice@qq.com",
+		})
+		require.NoError(t, err)
+
+		user, err := db.GetByID(ctx, alice.Id)
+		require.NoError(t, err)
+		assert.Equal(t, alice.Id, user.Id)
+
+		_, err = db.GetByID(ctx, 404)
+		wantErr := errors.New("GetByID-用户不存在")
+		assert.Equal(t, wantErr, err)
+	})
 }

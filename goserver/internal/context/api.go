@@ -2,6 +2,7 @@ package context
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"io.wandao.meeting/internal/conf"
 	"io.wandao.meeting/internal/db"
@@ -163,7 +164,7 @@ func AuthMiddleware(ctx *gin.Context) {
 		return
 	}
 
-	user, err := db.Users.Get(uc.Id)
+	user, err := db.Users.GetByID(ctx, uc.Id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(
 			http.StatusOK,
@@ -179,26 +180,4 @@ func AuthMiddleware(ctx *gin.Context) {
 	}
 
 	c.Next()
-}
-
-// JSONResponseMiddleware 用于统一返回 JSON 格式的中间件
-func JSONResponseMiddleware(ctx *gin.Context) {
-	ctx.Next()
-	// 捕获任何 panic 并返回错误
-	if len(ctx.Errors) > 0 {
-		ctx.JSON(
-			http.StatusOK,
-			genResult(ErrorCode, ctx.Errors.String(), nil),
-		)
-		return
-	}
-
-	// 如果没有错误，并且响应状态码在200-399之间，则返回JSON格式的数据
-	if ctx.Writer.Status() >= http.StatusOK && ctx.Writer.Status() < http.StatusInternalServerError {
-		data, _ := ctx.Get("data")
-		ctx.JSON(
-			http.StatusOK,
-			genResult(SuccessCode, "success", data),
-		)
-	}
 }

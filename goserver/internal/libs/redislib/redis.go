@@ -28,5 +28,9 @@ func Init() {
 	})
 
 	pong, err := client.Ping(context.Background()).Result()
-	log.Trace("initialize Redis. PING response: %v | err:", pong, err)
+	if err != nil {
+		log.Trace("Redis: err:%v", err)
+	} else {
+		log.Trace("Redis: PING<-%v", pong)
+	}
 }

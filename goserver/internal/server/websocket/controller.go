@@ -2,14 +2,16 @@
 package websocket
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	jsoniter "github.com/json-iterator/go"
 	"io.wandao.meeting/internal/db"
 	"io.wandao.meeting/internal/helper"
 	"io.wandao.meeting/internal/server/models"
-	"time"
 
 	log "unknwon.dev/clog/v2"
 
@@ -55,13 +57,13 @@ func LoginController(client *Client, seq string, message []byte) (code uint64, m
 
 	// TODO::进行用户权限认证，一般是客户端传入TOKEN，然后检验TOKEN是否合法，通过TOKEN解析出来用户ID
 	log.Info("[WebSocket] login token:  %s, %s", seq, request.Token)
-	user, err := db.Users.Get(request.UserId)
+	user, err := db.Users.GetByID(context.Background(), request.UserId)
 	if err != nil || user == nil {
 		code = common.NotUser
 		log.Error("[WebSocket]LoginController: user does not exist")
 		return
 	}
-	room, err := db.Rooms.Get(request.RoomId)
+	room, err := db.Rooms.GetByID(context.Background(), request.RoomId)
 	if err != nil || room == nil {
 		code = common.NotRoom
 		log.Error("[WebSocket]LoginController: room does not exist")

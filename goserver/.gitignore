@@ -1,21 +1,22 @@
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, build with `go test -c`
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
+.DS_Store
+*.db
+*.log
 
 .idea/
-*.swp
-*.log
-.DS_Store
-config/app.yaml
-main
-main_linux
-meeting
+*.iml
+
+*.exe
+*.exe~
+
+*.pem
+output*
+
+.task
+.envrc
+
+log/
+data/
+conf/user.ini
+public/img
+/release
+/wdmeeting

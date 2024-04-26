@@ -115,7 +115,7 @@ func Ping() error {
 	return x.Ping()
 }
 
-func InitDatabaseEngine() (*gorm.DB, error) {
+func Init() (*gorm.DB, error) {
 	var err error
 	x, err = getEngine()
 	if err != nil {

@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+	"time"
+
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -11,15 +13,23 @@ type Room struct {
 	Id     uint64 `gorm:"primaryKey" json:"id"`
 	UserId uint64 `json:"userId"`
 	Name   string `xorm:"UNIQUE NOT NULL" gorm:"unique;not null" json:"name"`
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
-type CreateRoom struct {
+type RoomInput struct {
 	Name string `xorm:"UNIQUE NOT NULL" json:"name"`
 }
 
 type RoomsStore interface {
-	Get(id uint64) (*Room, error)
-	CreateOrUpdate(user *Room) error
+	Save(ctx context.Context, room *Room) error
+	Create(ctx context.Context, room *Room) (*Room, error)
+	GetByID(ctx context.Context, roomId uint64) (*Room, error)
+	GetByName(ctx context.Context, name string) (*Room, error)
+	DeleteByID(ctx context.Context, roomId uint64) error
+	DeleteByName(ctx context.Context, name string) error
 }
 
 type rooms struct {
@@ -29,48 +39,58 @@ type rooms struct {
 var Rooms RoomsStore
 var _ RoomsStore = (*rooms)(nil)
 
-func (db *rooms) Get(id uint64) (*Room, error) {
-	room := new(Room)
-	err := db.Where("id = ?", id).First(room).Error
+func (db *rooms) Save(ctx context.Context, room *Room) error {
+	if len(room.Name) == 0 {
+		return errors.New("房间名称必须")
+	}
+
+	err := db.WithContext(ctx).FirstOrCreate(&room, "name = ?", room.Name).Error
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (db *rooms) Create(ctx context.Context, room *Room) (*Room, error) {
+	if len(room.Name) == 0 {
+		return nil, errors.New("房间名称必须")
+	}
+
+	return room, db.WithContext(ctx).Create(&room).Error
+}
+
+func (db *rooms) GetByID(ctx context.Context, roomId uint64) (*Room, error) {
+	room := new(Room)
+	err := db.WithContext(ctx).Where("id = ?", roomId).First(&room).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Wrapf(err, "房间不存在(%d)", roomId)
+		}
 		return nil, err
 	}
 	return room, nil
 }
 
-func (db *rooms) CreateOrUpdate(room *Room) error {
-	if len(room.Name) == 0 {
-		return errors.New("名称不能为空")
-	}
-
-	err := db.Create(room).Error
+func (db *rooms) GetByName(ctx context.Context, name string) (*Room, error) {
+	room := new(Room)
+	err := db.WithContext(ctx).Where("name = ?", name).First(&room).Error
 	if err != nil {
-		err = db.Updates(room).Error
-		if err != nil {
-			return err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.Wrapf(err, "用户不存在(%s)", name)
 		}
+		return nil, err
 	}
-	return nil
+	return room, nil
 }
 
-func (db *rooms) List(ctx context.Context, page, limit int) ([]*Room, error) {
-	rooms := make([]*Room, 0, limit)
-	return rooms, db.WithContext(ctx).
-		Limit(limit).Offset((page - 1) * limit).
-		Order("id ASC").
-		Find(&rooms).
-		Error
+func (db *rooms) DeleteByID(ctx context.Context, roomId uint64) error {
+	var room User
+	return db.WithContext(ctx).Unscoped().Where("id=?", roomId).Delete(&room).Error
 }
 
-func (db *rooms) Save(ctx context.Context, data Room) (*Room, error) {
-	room := &Room{}
-	return room, db.WithContext(ctx).Save(data).Error
-}
-
-func (db *rooms) Count(ctx context.Context) int64 {
-	var count int64
-	db.WithContext(ctx).Model(&Room{}).Count(&count)
-	return count
+func (db *rooms) DeleteByName(ctx context.Context, name string) error {
+	var room User
+	return db.WithContext(ctx).Unscoped().Where("name=?", name).Delete(&room).Error
 }
 
 func useRoomsStore(db *gorm.DB) RoomsStore {

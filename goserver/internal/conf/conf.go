@@ -1,16 +1,17 @@
 package conf
 
 import (
-	"github.com/pkg/errors"
-	"gopkg.in/ini.v1"
-	"io.wandao.meeting/conf"
-	"io.wandao.meeting/internal/libs/libravatar"
-	"io.wandao.meeting/internal/utils/osutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"gopkg.in/ini.v1"
+	"io.wandao.meeting/conf"
+	"io.wandao.meeting/internal/libs/libravatar"
+	"io.wandao.meeting/internal/utils/osutil"
 	log "unknwon.dev/clog/v2"
 )
 
@@ -39,19 +40,19 @@ func Init() error {
 
 	File.NameMapper = ini.SnackCase
 
-	ConfigFile = filepath.Join(ConfigDir(), "app.ini")
+	ConfigFile = filepath.Join(ConfigDir(), "user.ini")
 
 	if osutil.IsFile(ConfigFile) {
-		// 合并配置
+		// 合并用户配置文件
 		if err = File.Append(ConfigFile); err != nil {
 			return errors.Wrapf(err, "append %q", ConfigFile)
 		}
 	} else {
-		log.Warn("config %q not found.", ConfigFile)
 		_ = os.MkdirAll(filepath.Dir(ConfigFile), os.ModePerm)
 		if err = File.SaveTo(ConfigFile); err != nil {
 			return errors.Wrapf(err, "save to config error: %q", ConfigFile)
 		}
+		log.Trace("User profile: %q", ConfigFile)
 	}
 
 	if err = File.Section(ini.DefaultSection).MapTo(&App); err != nil {

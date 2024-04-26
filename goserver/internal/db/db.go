@@ -41,6 +41,8 @@ var Tables = []any{
 	new(User),
 }
 
+var Conn *gorm.DB
+
 func InitDatabase(w logger.Writer) (*gorm.DB, error) {
 	level := logger.Info
 	if conf.IsProdMode() {
@@ -102,5 +104,7 @@ func InitDatabase(w logger.Writer) (*gorm.DB, error) {
 	Users = useUsersStore(db)
 	Rooms = useRoomsStore(db)
 
-	return db, nil
+	Conn = db
+
+	return Conn, nil
 }

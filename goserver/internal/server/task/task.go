@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"io.wandao.meeting/internal/server/websocket"
+
+	log "unknwon.dev/clog/v2"
 )
 
 // Init 初始化
@@ -22,7 +24,7 @@ func cleanConnection(param interface{}) (result bool) {
 			fmt.Println("ClearTimeoutConnections stop", r, string(debug.Stack()))
 		}
 	}()
-	fmt.Println("定时任务，清理超时连接", param)
+	log.Trace("[Task]定时任务，清理超时连接 %v", param)
 	websocket.ClearTimeoutConnections()
 	return
 }

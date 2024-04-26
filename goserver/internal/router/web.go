@@ -4,7 +4,6 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"io.wandao.meeting/internal/context"
-	"io.wandao.meeting/internal/controller/admin"
 	"io.wandao.meeting/internal/controller/home"
 	"io.wandao.meeting/internal/controller/systems"
 	"io.wandao.meeting/internal/controller/user"
@@ -32,19 +31,11 @@ func WebInit() *gin.Engine {
 		systemRouter.GET("/state", context.Handle(systems.Status))
 	}
 
-	adminRouter := r.Group("/admin")
-	{
-		adminRouter.GET("/save/user", context.Handle(admin.SaveUser))
-		adminRouter.GET("/save/room", context.Handle(admin.SaveRoom))
-	}
-
 	// 用户组
 	userRouter := r.Group("/user").Use(context.AuthMiddleware)
 	{
 		userRouter.GET("/list", context.Handle(user.List))
 		userRouter.GET("/online", context.Handle(user.Online))
-		userRouter.POST("/sendMessage", context.Handle(user.SendMessage))
-		userRouter.POST("/sendMessageAll", context.Handle(user.SendMessageAll))
 	}
 
 	return r
