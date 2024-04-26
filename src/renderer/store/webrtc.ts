@@ -48,10 +48,12 @@ export const useWebrtcStore = defineStore('webrtcStore', {
         privacyStatus: false, // 是否小视图
 
         hidden: false, // 是否隐藏
-        fullScreen: false, // 是否全屏
-        volume: 0, // 音量
+        fullScreen: false, // 视频是否全屏
+        finalVolume: 0, // 检测的音量
+        volume: 1, // 音量 0 - 1
       },
 
+      fullScreen: false, // 窗口是否全屏
       // 远程媒体
       remotePeers: <KeyValue>{},
     }

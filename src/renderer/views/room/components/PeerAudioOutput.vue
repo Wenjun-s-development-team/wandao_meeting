@@ -1,6 +1,9 @@
 <script setup>
 import { useWebrtcStore } from '@/store'
 
+const props = defineProps(['peer'])
+const { peer } = toRefs(props)
+
 const webrtcStore = useWebrtcStore()
 
 const outputRef = ref()
@@ -9,7 +12,7 @@ onMounted(() => {
   const sinkId = webrtcStore.audioOutputDeviceId
   if (typeof outputRef.value.sinkId !== 'undefined') {
     outputRef.value.setSinkId(sinkId).then(() => {
-      console.log(`成功，已连接音频输出设备: ${sinkId}`)
+      console.log(`%c 成功，已连接音频输出设备: ${sinkId}`, 'color: red;')
     }).catch((err) => {
       let errorMessage = err
       if (err.name === 'SecurityError') {
@@ -30,5 +33,5 @@ onMounted(() => {
 </script>
 
 <template>
-  <audio ref="outputRef" autoplay muted />
+  <audio ref="outputRef" autoplay muted :volume="peer.volume" />
 </template>

@@ -39,10 +39,11 @@ export class MediaServer {
   localVideoStatusBefore: boolean = false
 
   // 视频设置
-  videoMaxFrameRate: number = 30 // 每秒帧数 5, 15, 30, 60
+  videoMaxFrameRate: number = 60 // 每秒帧数 5, 15, 30, 60
   forceCamMaxResolutionAndFps: boolean = false
 
   // 音频设置
+  sinkId = 'sinkId' in HTMLMediaElement.prototype
   autoGainControl: boolean = true // 自动增益
   echoCancellation: boolean = true // 消除回声
   noiseSuppression: boolean = true // 噪声抑制
@@ -207,7 +208,7 @@ export class MediaServer {
     }
 
     if (!remotePeers.value[userId]) {
-      remotePeers.value[userId] = { kind, userId, ...peer }
+      remotePeers.value[userId] = { kind, userId, volume: 1, ...peer }
     } else {
       remotePeers.value[userId] = Object.assign({}, remotePeers.value[userId], { kind, userId, ...peer })
     }
@@ -218,7 +219,6 @@ export class MediaServer {
     } else if (kind === 'audio') {
       console.log('🔈 SETUP REMOTE AUDIO STREAM', stream.id)
       remotePeers.value[userId].audioStream = stream
-      // handleAudioVolume
     }
   }
 
@@ -239,7 +239,7 @@ export class MediaServer {
         const { roomName } = peer
         const { kind } = event.track
 
-        console.log('[ON TRACK] - info', { userId, roomName, kind })
+        console.log('%c[ON TRACK] - info', 'color:red;', { userId, roomName, kind })
 
         if (event.streams && event.streams[0]) {
           console.log('[ON TRACK] - peers', peers)
@@ -579,7 +579,7 @@ export class MediaServer {
       audioConstraints = await this.getAudioConstraints()
     }
     return {
-      audio: local.value.audioStatus ? false : audioConstraints,
+      audio: local.value.screenStatus ? false : audioConstraints,
       video: videoConstraints,
     }
   }
@@ -662,7 +662,7 @@ export class MediaServer {
         break
     }
     if (videoInputDeviceId.value) {
-      video.deviceId = videoInputDeviceId.value
+      video.deviceId = { exact: videoInputDeviceId.value }
     }
     console.log('Video constraints', video)
     return video
@@ -674,7 +674,7 @@ export class MediaServer {
     // @ts-expect-error
     const audio: MediaTrackConstraints = { autoGainControl, echoCancellation, noiseSuppression, sampleRate, sampleSize, channelCount, latency, volume }
     if (audioInputDeviceId.value) {
-      audio.deviceId = audioInputDeviceId.value
+      audio.deviceId = { exact: audioInputDeviceId.value }
     }
     console.log('Audio constraints', audio)
     return audio
@@ -734,7 +734,7 @@ export class MediaServer {
 
       const constraints = await this.getAudioVideoConstraints()
 
-      console.log('Video AND Audio constraints', constraints)
+      console.log('%cVideo AND Audio constraints', 'color:red;', constraints)
 
       // Get screen or webcam media stream based on current state
       const screenMediaPromise = await navigator.mediaDevices.getUserMedia(constraints)

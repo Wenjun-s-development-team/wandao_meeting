@@ -1,8 +1,8 @@
 #!/bin/sh
 
-PKG_PATH="io.wandao.meeting/internal/conf"
-BUILD_TIME=`date -u '+%Y-%m-%d %I:%M:%S %Z'`
-BUILD_COMMIT=`git rev-parse HEAD`
+#PKG_PATH="io.wandao.meeting/internal/conf"
+#BUILD_TIME=`date -u '+%Y-%m-%d %I:%M:%S %Z'`
+#BUILD_COMMIT=`git rev-parse HEAD`
 
 
 export CGO_ENABLED=1

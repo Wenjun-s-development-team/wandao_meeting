@@ -7,6 +7,7 @@ const props = defineProps(['peer'])
 const webrtcStore = useWebrtcStore()
 
 const {
+  userId,
   pinnedId,
 } = storeToRefs(webrtcStore)
 
@@ -79,6 +80,11 @@ function onPinned() {
   }
 }
 
+// 音量
+function onAudioVolume(event) {
+  peer.value.volume = event.target.value / 100
+}
+
 // 时间
 const sessionTime = ref('')
 const callElapsedTime = ref(0)
@@ -111,6 +117,9 @@ onMounted(() => {
       <i v-if="peer.audioStatus" class="i-fa6-solid-microphone" />
       <i v-else class="i-fa6-solid-microphone-slash color-red" />
     </button>
+    <template v-if="peer.userId !== userId && peer.audioStatus">
+      <input type="range" min="0" max="100" class="audioVolume" @input="onAudioVolume">
+    </template>
     <button v-if="peer.handStatus">
       <i class="i-fa6-solid-hand color-green" />
     </button>
@@ -147,6 +156,11 @@ onMounted(() => {
         background: rgba(255, 255, 255, 0.2);
       }
     }
+  }
+
+  .audioVolume {
+    cursor: pointer;
+    max-width: 40px;
   }
 }
 </style>

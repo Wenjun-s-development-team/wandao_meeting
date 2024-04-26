@@ -8,6 +8,7 @@ import { registerPlugins } from '@/plugins'
 import 'element-plus/theme-chalk/dark/css-vars.css'
 import '@unocss/reset/tailwind.css'
 import '@/styles/index.scss'
+import 'animate.css'
 import 'virtual:uno.css'
 
 const app = createApp(App)

@@ -125,7 +125,7 @@ export class ChatServer {
    */
   onVolume(data: KeyValue) {
     if (remotePeers.value[data.userId]) {
-      remotePeers.value[data.userId].volume = data.volume
+      remotePeers.value[data.userId].finalVolume = data.volume
     }
   }
 

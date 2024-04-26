@@ -51,7 +51,7 @@ export class MicrophoneVolumeIndicator {
 
       this.sourceNode.connect(this.node)
     } else {
-      console.warn('Microphone volume indicator not supported for this browser')
+      // console.warn('Microphone volume indicator not supported for this browser')
     }
   }
 
@@ -66,9 +66,9 @@ export class MicrophoneVolumeIndicator {
 
   updateVolume(data: KeyValue) {
     if (local.value.userId === data.userId) {
-      local.value.volume = data.volume
+      local.value.finalVolume = data.volume
     } else if (remotePeers[data.userId]) {
-      remotePeers[data.userId].volume = data.volume
+      remotePeers[data.userId].finalVolume = data.volume
     }
   }
 

@@ -14,6 +14,7 @@ const router = useRouter()
 const {
   local,
   pinnedId,
+  fullScreen,
   remotePeers,
 } = storeToRefs(webrtcStore)
 
@@ -48,7 +49,7 @@ function switchHandStatus() {
   client.mediaServer.switchHandStatus()
 }
 
-// 全屏事件
+// 视频全屏 change
 function onFullscreenchange({ target }, peer) {
   console.log('Esc FS isVideoOnFullScreen', peer.fullScreen)
 
@@ -64,6 +65,26 @@ function onFullscreenchange({ target }, peer) {
   console.log('Esc FS isVideoOnFullScreen', peer.fullScreen)
 }
 
+// 窗口全屏 change
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    fullScreen.value = false
+  }
+})
+
+// 窗口全屏
+function onFullScreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+    fullScreen.value = true
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen()
+      fullScreen.value = false
+    }
+  }
+}
+
 // 退出
 function onSignout() {
   router.push({ path: '/start' })
@@ -75,7 +96,7 @@ function onSignout() {
     <div class="main">
       <TransitionGroup name="cameraIn" tag="div" class="video-container">
         <div
-          key="localVideo" class="camera"
+          key="localCamera" class="camera"
           :class="[{ privacy: local.privacyStatus, hidden: local.hidden, pinned: pinnedId === local.userId }]"
         >
           <video
@@ -162,9 +183,9 @@ function onSignout() {
         <button>
           <i class="i-fa6-solid-record-vinyl" />
         </button>
-        <button>
-          <i class="i-fa6-solid-up-right-and-down-left-from-center" />
-          <!-- i-fa6-solid-down-left-and-up-right-to-center -->
+        <button @click.stop="onFullScreen()">
+          <i v-if="fullScreen" class="i-fa6-solid-down-left-and-up-right-to-center" />
+          <i v-else class="i-fa6-solid-up-right-and-down-left-from-center" />
         </button>
         <button>
           <i class="i-fa6-solid-comment" />
@@ -228,6 +249,7 @@ function onSignout() {
       justify-content: center;
       vertical-align: middle;
       overflow: hidden;
+      position: relative;
       .camera {
         flex: 1 1 140px;
         min-width: 140px;

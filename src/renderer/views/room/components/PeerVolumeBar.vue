@@ -4,13 +4,14 @@ const { peer } = toRefs(props)
 
 const pitchRef = ref()
 
-function useVolume() {
+// 监听音量
+function useFinalVolume() {
   const styles = ref({})
   watchEffect(() => {
-    const volume = peer?.value.volume || 0
+    const finalVolume = peer?.value.finalVolume || 0
     styles.value = {
-      height: `${volume}%`,
-      backgroundColor: volume > 50 ? 'orange' : '#19bb5c',
+      height: `${finalVolume}%`,
+      backgroundColor: finalVolume > 50 ? 'orange' : '#19bb5c',
     }
 
     setTimeout(() => {
@@ -22,7 +23,7 @@ function useVolume() {
   return { styles }
 }
 
-const { styles } = useVolume()
+const { styles } = useFinalVolume()
 </script>
 
 <template>
