@@ -5,6 +5,7 @@ export * from './datetime'
 export * from './lodash'
 export * from './media'
 export * from './system'
+export * from './keyframes'
 
 /**
  * 生成UUID

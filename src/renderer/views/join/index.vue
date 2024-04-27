@@ -1,21 +1,18 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import ScreenSources from '../components/ScreenSources.vue'
-import DeviceSelect from './components/DeviceSelect.vue'
-import { useMediaServer } from '@/webrtc/media'
+import { MediaServer } from '@/webrtc'
 import { IPCRequest, RTCRequest } from '@/api'
 
 import { useWebrtcStore } from '@/store'
-import SwalDialog from '@/components/SwalDialog.vue'
 
 const webrtcStore = useWebrtcStore()
 
 const router = useRouter()
 const query = useUrlSearchParams('hash')
 
-const videoElement = ref(null)
-const audioElement = ref(null)
+const localVideoElement = ref(null)
+const localAudioElement = ref(null)
 
 const {
   local,
@@ -29,10 +26,9 @@ const {
 
 const show = ref(true)
 const isMounted = useMounted()
-const mediaServer = useMediaServer()
 watchOnce(isMounted, async () => {
-  if (videoElement.value && audioElement.value) {
-    await mediaServer.init(videoElement.value, audioElement.value).start()
+  if (localVideoElement.value && localAudioElement.value) {
+    await MediaServer.start(localVideoElement.value, localAudioElement.value)
   }
 })
 
@@ -42,7 +38,7 @@ async function userLogin(name) {
 }
 
 function switchScreenSharing() {
-  mediaServer.switchScreenSharing(true)
+  MediaServer.switchScreenSharing(true)
 }
 
 IPCRequest.windows.openDevTools()
@@ -50,18 +46,18 @@ IPCRequest.windows.openDevTools()
 
 <template>
   <div class="join-page">
-    <SwalDialog v-model="show" width="1024" title="Meeting P2P">
+    <SwalDialog v-model="show" width="1024" title="Meeting P2P" @closed="router.back()">
       <div class="media-container">
         <div class="media-video">
           <video
-            ref="videoElement"
+            ref="localVideoElement"
             class="video"
             :class="{ mirror: local.mirrorStatus }"
             autoplay
             playsinline="true"
             poster="../../assets/images/loader.gif"
           />
-          <audio ref="audioElement" autoplay muted />
+          <audio ref="localAudioElement" autoplay muted />
         </div>
         <div class="media-actions">
           <div class="buttons">
@@ -102,10 +98,8 @@ IPCRequest.windows.openDevTools()
       </div>
       <input class="swal-input" disabled maxlength="32" placeholder="请输入您的名称">
       <template #footer>
-        <div class="media-footer">
-          <button class="swal-confirm swal-styled" @click="userLogin('admin')">进 入 会 议(admin)</button>
-          <button class="swal-confirm swal-styled" @click="userLogin('elkon')">进 入 会 议(elkon)</button>
-        </div>
+        <button class="swal-button primary" @click="userLogin('admin')">进 入 会 议(admin)</button>
+        <button class="swal-button primary" @click="userLogin('elkon')">进 入 会 议(elkon)</button>
       </template>
     </SwalDialog>
   </div>
@@ -178,14 +172,6 @@ IPCRequest.windows.openDevTools()
         }
       }
     }
-  }
-
-  .media-footer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 1.25em 0;
-    position: relative;
   }
 
   @media screen and (max-width: 1024px) {

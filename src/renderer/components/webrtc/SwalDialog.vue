@@ -1,26 +1,54 @@
 <script setup>
-import { size } from 'lodash'
 import { addUnit } from '@/utils'
+
+defineOptions({
+  name: 'SwalDialog',
+})
 
 const props = defineProps({
   title: String,
-  show: Boolean,
   width: {
     type: [Number, String],
     default: 'auto',
   },
-  animate: {
+  position: {
     type: String,
-    default: 'fadeInDown',
+    // 位置 top | center | left
+    default: 'center',
+  },
+  showClose: {
+    type: Boolean,
+    default: true,
   },
 })
 
-const show = defineModel()
+const emit = defineEmits(['opened', 'closed'])
+
+const showModel = defineModel()
+const showDialog = ref(false)
+const swalRef = ref()
+
+watch(showModel, () => {
+  if (showModel.value) {
+    showDialog.value = true
+    // 打开时监听动画是否结束
+    nextTick(() => {
+      const cleanup = useEventListener(swalRef.value, 'animationend', () => {
+        if (showModel.value) {
+          emit('opened')
+        } else {
+          cleanup()
+          emit('closed')
+          // 动画结束后才关闭 dialog
+          showDialog.value = false
+        }
+      })
+    })
+  }
+}, { immediate: true })
 
 const swalClass = computed(() => {
-  return [{
-    animate: true,
-  }, props.animate]
+  return [props.position]
 })
 
 const swalStyle = computed(() => {
@@ -28,21 +56,33 @@ const swalStyle = computed(() => {
   if (props.width) {
     styles.width = addUnit(props.width)
   }
+
+  // 切换动画名称
+  if (['top', 'center'].includes(props.position)) {
+    styles.animationName = showModel.value ? 'fadeInDown' : 'fadeOutUp'
+  }
+
   return styles
 })
+
+function onClosed() {
+  showModel.value = false
+}
 </script>
 
 <template>
-  <div v-if="show" class="swal-container">
-    <section class="swal-dialog" :class="swalClass" :style="swalStyle">
+  <div v-if="showDialog" class="swal-container">
+    <section ref="swalRef" class="swal-dialog" :class="swalClass" :style="swalStyle">
       <header class="swal-header">
         <span>{{ title }}</span>
-        <button class="close" @click="router.back()"><i class="i-fa6-solid-xmark" /></button>
+        <button v-if="showClose" class="close" @click="onClosed()">
+          <i class="i-fa6-solid-xmark" />
+        </button>
       </header>
       <main class="swal-body">
         <slot />
       </main>
-      <footer class="swal-footer">
+      <footer :class="{ 'swal-footer': $slots.footer }">
         <slot name="footer" />
       </footer>
     </section>
@@ -54,23 +94,16 @@ const swalStyle = computed(() => {
   inset: 0;
   top: 32px;
   z-index: 1060;
-  display: grid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: fixed;
-  grid-template-areas:
-    'top-start top top-end'
-    'center-start center center-end'
-    'bottom-start bottom-center bottom-end';
-  grid-template-rows:
-    minmax(min-content, auto)
-    minmax(min-content, auto)
-    minmax(min-content, auto);
+  padding: 10px;
   height: 100%;
   padding: 0.625em;
   overflow-x: hidden;
-  transition: background-color 0.1s;
   background: rgba(0, 0, 0, 0.4);
-  grid-template-columns: auto minmax(0, 1fr) auto;
-
+  transition: background-color 0.1s;
   .swal-header {
     max-width: 100%;
     padding: 0.8em 1em 0;
@@ -103,53 +136,46 @@ const swalStyle = computed(() => {
     border: 0.5px solid rgba(255, 255, 255, 0.32);
     grid-template-columns: minmax(0, 100%);
     background: radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0));
-    .swal-body {
-      display: grid;
+
+    animation-duration: 0.5s;
+    animation-fill-mode: both;
+    animation-direction: normal;
+
+    &.top {
+      align-self: start;
     }
-    &.animate {
-      animation-duration: 1s;
-      animation-fill-mode: both;
-      &.fadeInDown {
-        animation-name: fadeInDown;
-      }
-    }
+  }
+
+  .swal-body {
+    display: grid;
+    padding: 10px;
   }
 
   .swal-footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 1.25em 0;
+    padding: 10px;
     position: relative;
+  }
 
-    .swal-styled {
-      color: #fff;
-      font-size: 1.2em;
-      font-weight: 500;
-      border-radius: 0.25em;
-      margin: 0.3125em;
-      padding: 0.625em 1.1em;
-      transition: box-shadow 0.1s;
-      box-shadow: 0 0 0 3px transparent;
-      &:not([disabled]) {
-        cursor: pointer;
-      }
-      &.swal-confirm {
-        background-color: #7066e0;
-      }
+  .swal-button {
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: 500;
+    border-radius: 0.25em;
+    margin: 0.3125em;
+    padding: 0.625em 1.1em;
+    transition: box-shadow 0.1s;
+    box-shadow: 0 0 0 3px transparent;
+    &:not([disabled]) {
+      cursor: pointer;
     }
-    .page-confirm {
-      color: #fff;
-      font-size: 1.2em;
-      font-weight: 500;
-      border-radius: 0.25em;
+    &.primary {
       background-color: #7066e0;
-      margin: 0.3125em;
-      padding: 0.625em 1.1em;
-      transition: box-shadow 0.1s;
-      box-shadow: 0 0 0 3px transparent;
     }
   }
+
   .swal-file,
   .swal-input,
   .swal2-textarea {

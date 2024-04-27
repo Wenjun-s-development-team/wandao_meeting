@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia'
-import type { Client } from '.'
+import { ChatServer, MediaServer } from '.'
 
 import { useWebrtcStore } from '@/store'
 
@@ -9,21 +9,13 @@ const {
   remotePeers,
 } = storeToRefs(webrtcStore)
 
-export class MicrophoneVolumeIndicator {
-  declare node: AudioWorkletNode
-  declare audioContext: AudioContext
-  declare sourceNode: MediaStreamAudioSourceNode | null
+export class GetMicrophoneVolumeIndicator {
+  static declare node: AudioWorkletNode
+  static declare audioContext: AudioContext
+  static declare sourceNode: MediaStreamAudioSourceNode | null
 
-  client: Client | undefined
-  localVolume: HTMLElement | undefined
-
-  constructor(client?: Client, localVolume?: HTMLElement) {
-    this.client = client
-    this.localVolume = localVolume
-  }
-
-  async start(stream: MediaStream) {
-    if (this.client?.mediaServer.hasAudioTrack(stream)) {
+  static async start(stream: MediaStream) {
+    if (MediaServer.hasAudioTrack(stream)) {
       this.stopMicrophoneProcessing()
       this.audioContext = new AudioContext()
       await this.audioContext.audioWorklet.addModule('../assets/vumeter.js')
@@ -43,7 +35,7 @@ export class MicrophoneVolumeIndicator {
           }
 
           this.updateVolume(config)
-          this.client?.chatServer.sendToDataChannel(config)
+          ChatServer.sendToDataChannel(config)
         }
 
         this.updateVolumeIndicator(finalVolume)
@@ -55,7 +47,7 @@ export class MicrophoneVolumeIndicator {
     }
   }
 
-  stopMicrophoneProcessing() {
+  static stopMicrophoneProcessing() {
     console.log('Stop microphone volume indicator')
     if (this.sourceNode) {
       // 取消 onmessage 监听
@@ -64,7 +56,7 @@ export class MicrophoneVolumeIndicator {
     }
   }
 
-  updateVolume(data: KeyValue) {
+  static updateVolume(data: KeyValue) {
     if (local.value.userId === data.userId) {
       local.value.finalVolume = data.volume
     } else if (remotePeers[data.userId]) {
@@ -72,17 +64,13 @@ export class MicrophoneVolumeIndicator {
     }
   }
 
-  updateVolumeIndicator(volume: number) {
-    if (this.localVolume) {
-      const childElements = this.localVolume.querySelectorAll('.volume-bar')
+  static updateVolumeIndicator(volume: number) {
+    if (MediaServer.volumeElement) {
+      const childElements = MediaServer.volumeElement.querySelectorAll('.volume-bar')
       const activeBars = Math.ceil(volume * childElements.length)
       childElements.forEach((bar, index) => {
         bar.classList.toggle('active', index < activeBars)
       })
     }
   }
-}
-
-export function useVolumeIndicator(client?: Client, localVolume?: HTMLElement) {
-  return new MicrophoneVolumeIndicator(client, localVolume)
 }

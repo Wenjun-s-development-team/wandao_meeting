@@ -7,6 +7,8 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    DeviceOption: typeof import('./components/webrtc/DeviceOption.vue')['default']
+    DeviceSelect: typeof import('./components/webrtc/DeviceSelect.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElConfigProvider: typeof import('element-plus/es')['ElConfigProvider']
     ElDialog: typeof import('element-plus/es')['ElDialog']
@@ -14,9 +16,15 @@ declare module 'vue' {
     ElSelect: typeof import('element-plus/es')['ElSelect']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
+    PeerActions: typeof import('./components/webrtc/PeerActions.vue')['default']
+    PeerAudioOutput: typeof import('./components/webrtc/PeerAudioOutput.vue')['default']
+    PeerStatusBar: typeof import('./components/webrtc/PeerStatusBar.vue')['default']
+    PeerTools: typeof import('./components/webrtc/PeerTools.vue')['default']
+    PeerVolumeBar: typeof import('./components/webrtc/PeerVolumeBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SwalDialog: typeof import('./components/SwalDialog.vue')['default']
+    ScreenSources: typeof import('./components/webrtc/ScreenSources.vue')['default']
+    SwalDialog: typeof import('./components/webrtc/SwalDialog.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

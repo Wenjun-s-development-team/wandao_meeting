@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia'
 import { fabric } from 'fabric'
-import type { Client } from './client'
+import { Client } from './client'
 import { playSound } from '@/utils'
 
 import { useWebrtcStore } from '@/store'
@@ -14,41 +14,36 @@ const {
  * 白板
  */
 export class WhiteboardServer {
-  client: Client
-  wbPop: fabric.Object[] = []
-  isOpened: boolean = false
-  isLocked: boolean = false
-  isRedoing: boolean = false
-  wbCanvas: fabric.Canvas = new fabric.Canvas('wbCanvas')
-
-  constructor(client: Client) {
-    this.client = client
-  }
+  static wbPop: fabric.Object[] = []
+  static isOpened: boolean = false
+  static isLocked: boolean = false
+  static isRedoing: boolean = false
+  static wbCanvas: fabric.Canvas = new fabric.Canvas('wbCanvas')
 
   /**
    * 如果白板打开，则将画布更新到所有P2P连接中
    */
-  async onUpdate() {
-    if (this.isOpened && this.client.peerCount > 0) {
-      this.wbCanvasToJson()
-      this.whiteboardAction(this.getWhiteboardAction(this.isLocked ? 'lock' : 'unlock'))
+  static async onUpdate() {
+    if (WhiteboardServer.isOpened && Client.peerCount() > 0) {
+      WhiteboardServer.wbCanvasToJson()
+      WhiteboardServer.whiteboardAction(WhiteboardServer.getWhiteboardAction(WhiteboardServer.isLocked ? 'lock' : 'unlock'))
     }
   }
 
-  getWhiteboardAction(action: string) {
+  static getWhiteboardAction(action: string) {
     return { action, roomId: local.value.roomId, roomName: local.value.roomName }
   }
 
-  whiteboardAction(config: KeyValue) {
-    if (this.client.peerCount > 0) {
-      this.client.sendToServer('whiteboardAction', config)
+  static whiteboardAction(config: KeyValue) {
+    if (Client.peerCount() > 0) {
+      Client.sendToServer('whiteboardAction', config)
     }
-    this.handleWhiteboardAction(config, false)
+    WhiteboardServer.handleWhiteboardAction(config, false)
   }
 
-  wbCanvasBackgroundColor(color: string) {
-    this.wbCanvas?.setBackgroundColor(color, () => {})
-    this.wbCanvas?.renderAll()
+  static wbCanvasBackgroundColor(color: string) {
+    WhiteboardServer.wbCanvas?.setBackgroundColor(color, () => {})
+    WhiteboardServer.wbCanvas?.renderAll()
   }
 
   /**
@@ -56,7 +51,7 @@ export class WhiteboardServer {
    * @param {object} args data
    * @param {boolean} logMe popup action
    */
-  handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
+  static handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
     const { peer_name, action, color } = args
 
     if (logMe) {
@@ -64,30 +59,30 @@ export class WhiteboardServer {
     }
     switch (action) {
       case 'bgcolor':
-        this.wbCanvasBackgroundColor(color)
+        WhiteboardServer.wbCanvasBackgroundColor(color)
         break
       case 'undo':
-        this.wbCanvasUndo()
+        WhiteboardServer.wbCanvasUndo()
         break
       case 'redo':
-        this.wbCanvasRedo()
+        WhiteboardServer.wbCanvasRedo()
         break
       case 'clear':
-        this.wbCanvas.clear()
+        WhiteboardServer.wbCanvas.clear()
         break
       case 'toggle':
-        this.toggleWhiteboard()
+        WhiteboardServer.toggleWhiteboard()
         break
       case 'lock':
-        if (!this.client.isOwner) {
-          this.wbDrawing(false)
-          this.isLocked = true
+        if (!Client.isOwner) {
+          WhiteboardServer.wbDrawing(false)
+          WhiteboardServer.isLocked = true
         }
         break
       case 'unlock':
-        if (!this.client.isOwner) {
-          this.wbDrawing(true)
-          this.isLocked = false
+        if (!Client.isOwner) {
+          WhiteboardServer.wbDrawing(true)
+          WhiteboardServer.isLocked = false
         }
         break
       // ...
@@ -96,45 +91,45 @@ export class WhiteboardServer {
     }
   }
 
-  wbCanvasRedo() {
-    if (this.wbPop.length > 0) {
-      this.isRedoing = true
-      this.wbCanvas.add(this.wbPop.pop()!)
+  static wbCanvasRedo() {
+    if (WhiteboardServer.wbPop.length > 0) {
+      WhiteboardServer.isRedoing = true
+      WhiteboardServer.wbCanvas.add(WhiteboardServer.wbPop.pop()!)
     }
   }
 
-  toggleWhiteboard() {
-    if (!this.isOpened) {
+  static toggleWhiteboard() {
+    if (!WhiteboardServer.isOpened) {
       playSound('newMessage')
     }
-    this.isOpened = !this.isOpened
+    WhiteboardServer.isOpened = !WhiteboardServer.isOpened
   }
 
-  wbDrawing(status: boolean) {
-    this.wbCanvas.isDrawingMode = status
-    this.wbCanvas.selection = status
-    this.wbCanvas.forEachObject((obj) => {
+  static wbDrawing(status: boolean) {
+    WhiteboardServer.wbCanvas.isDrawingMode = status
+    WhiteboardServer.wbCanvas.selection = status
+    WhiteboardServer.wbCanvas.forEachObject((obj) => {
       obj.selectable = status
     })
   }
 
-  wbCanvasUndo() {
-    if (this.wbCanvas._objects.length > 0) {
-      this.wbPop.push(this.wbCanvas._objects.pop()!)
-      this.wbCanvas.renderAll()
+  static wbCanvasUndo() {
+    if (WhiteboardServer.wbCanvas._objects.length > 0) {
+      WhiteboardServer.wbPop.push(WhiteboardServer.wbCanvas._objects.pop()!)
+      WhiteboardServer.wbCanvas.renderAll()
     }
   }
 
-  wbCanvasToJson() {
-    if (!this.client.isOwner && this.isLocked) {
+  static wbCanvasToJson() {
+    if (!Client.isOwner && WhiteboardServer.isLocked) {
       return
     }
-    if (this.client.peerCount > 0) {
+    if (Client.peerCount() > 0) {
       const config = {
         roomId: local.value.roomId,
-        wbCanvasJson: JSON.stringify(this.wbCanvas?.toJSON()),
+        wbCanvasJson: JSON.stringify(WhiteboardServer.wbCanvas?.toJSON()),
       }
-      this.client.sendToServer('wbCanvasToJson', config)
+      Client.sendToServer('wbCanvasToJson', config)
     }
   }
 }

@@ -1,10 +1,8 @@
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
-import { ChatServer, FileSharingServer, MediaServer, WebSocketServer, WhiteboardServer } from '.'
+import { ChatServer, FileServer, MediaServer, WebSocketServer, WhiteboardServer } from '.'
 import { playSound } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
-const router = useRouter()
 const webrtcStore = useWebrtcStore()
 const {
   local,
@@ -16,24 +14,18 @@ const {
  * Webrtc 客户端
  */
 export class Client {
-  declare chatServer: ChatServer
-  declare mediaServer: MediaServer
-  declare fileSharingServer: FileSharingServer
-  declare whiteboardServer: WhiteboardServer
+  declare static socket: WebSocketServer
+  static allPeers: KeyValue = {}
+  static peerConnections: { [key: string]: RTCPeerConnection } = {}
+  static needToCreateOffer: boolean = false
 
-  declare socket: WebSocketServer
-
-  allPeers: KeyValue = {}
-  peerConnections: { [key: string]: RTCPeerConnection } = {}
-  needToCreateOffer: boolean = false
-
-  isRoomLocked: boolean = false
-  isHostProtected: boolean = false
-  isPeerAuthEnabled: boolean = false
-  isPeerReconnected: boolean = false
-  isOwner: boolean = false // 是否主持人
-  isRulesActive = true // 是否主持人可以做任何事情 false 所有人平等
-  userLimits: KeyValue = {
+  static isRoomLocked: boolean = false
+  static isHostProtected: boolean = false
+  static isPeerAuthEnabled: boolean = false
+  static isPeerReconnected: boolean = false
+  static isOwner: boolean = false // 是否主持人
+  static isRulesActive = true // 是否主持人可以做任何事情 false 所有人平等
+  static userLimits: KeyValue = {
     // 是否限制每个房间的用户数
     active: false,
     // 限制数量
@@ -41,84 +33,76 @@ export class Client {
   }
 
   // peer 连接数
-  get peerCount() {
-    return Object.keys(this.peerConnections).length
+  static peerCount() {
+    return Object.keys(Client.peerConnections).length
   }
 
-  constructor() {
-    console.log('01. 创建服务')
-    this.chatServer = new ChatServer(this)
-    this.mediaServer = new MediaServer(this)
-    this.fileSharingServer = new FileSharingServer(this)
-    this.whiteboardServer = new WhiteboardServer(this)
+  static start() {
+    console.log('01. 连接到信令服务器')
+    Client.socket = new WebSocketServer(import.meta.env.RENDERER_VITE_WEBRTC_URL)
+    Client.socket.onOpen(Client.handleConnect)
+    Client.socket.onMessage(Client.onMessage)
+    Client.socket.onClose(Client.handleDisconnect)
   }
 
-  start() {
-    console.log('02. 连接到信令服务器')
-    this.socket = new WebSocketServer(import.meta.env.RENDERER_VITE_WEBRTC_URL)
-    this.socket.onOpen(this.handleConnect.bind(this))
-    this.socket.onMessage(this.onMessage.bind(this))
-    this.socket.onClose(this.handleDisconnect.bind(this))
-  }
-
-  onMessage(cmd: string, args: KeyValue) {
+  static onMessage(cmd: string, args: KeyValue) {
     switch (cmd) {
       case 'createRTCPeerConnection':
-        this.createRTCPeerConnection(args)
+        Client.createRTCPeerConnection(args)
         break
       case 'unauthorized':
-        this.handleUnauthorized()
+        Client.handleUnauthorized()
         break
       case 'roomIsLocked':
-        this.handleUnlockTheRoom()
+        Client.handleUnlockTheRoom()
         break
       case 'roomAction':
-        this.handleRoomAction(args)
+        Client.handleRoomAction(args)
         break
       case 'serverInfo':
-        this.handleServerInfo(args)
+        Client.handleServerInfo(args)
         break
       case 'sessionDescription':
-        this.handleSessionDescription(args)
+        Client.handleSessionDescription(args)
         break
       case 'iceCandidate':
-        this.handleIceCandidate(args)
+        Client.handleIceCandidate(args)
         break
       case 'userName':
-        this.handleuserName(args)
+        Client.handleuserName(args)
         break
       case 'peerStatus':
-        this.handlePeerStatus(args)
+        Client.handlePeerStatus(args)
         break
       case 'peerAction':
-        this.handlePeerAction(args)
+        Client.handlePeerAction(args)
         break
       case 'message':
-        this.handleMessage(args)
+        Client.handleMessage(args)
         break
       case 'wbCanvasToJson':
-        this.handleJsonToWbCanvas(args)
+        Client.handleJsonToWbCanvas(args)
         break
       case 'whiteboardAction':
-        this.handleWhiteboardAction(args)
+        Client.handleWhiteboardAction(args)
         break
       case 'kickOut':
-        this.handleKickedOut(args)
+        Client.handleKickedOut(args)
         break
       case 'fileInfo':
-        this.handleFileInfo(args)
+        Client.handleFileInfo(args)
         break
       case 'fileAbort':
-        this.handleFileAbort()
+        Client.handleFileAbort()
         break
       case 'videoPlayer':
-        this.handleVideoPlayer(args)
+        Client.handleVideoPlayer(args)
         break
       case 'disconnect':
-        this.handleDisconnect(args)
+        Client.handleDisconnect(args)
         break
       case 'exit':
-        this.handleRemovePeer(args)
+        Client.handleRemovePeer(args)
         break
       default:
         break
@@ -126,20 +110,20 @@ export class Client {
   }
 
   // 连接成功
-  async handleConnect() {
+  static async handleConnect() {
     console.log('03. 信令服务器连接成功')
-    if (this.mediaServer.localVideoStream && this.mediaServer.localAudioStream) {
-      this.login()
+    if (MediaServer.localVideoStream && MediaServer.localAudioStream) {
+      Client.login()
     } else {
-      await this.mediaServer.start()
-      this.login()
+      await MediaServer.start()
+      Client.login()
     }
   }
 
   // 进入房间
-  async login() {
+  static async login() {
     console.log('12. join to room', local.value.roomId)
-    this.sendToServer('login', {
+    Client.sendToServer('login', {
       token: '',
 
       roomId: local.value.roomId,
@@ -164,7 +148,7 @@ export class Client {
     })
   }
 
-  handleDisconnect(args: KeyValue) {
+  static handleDisconnect(args: KeyValue) {
     console.log('Disconnected from signaling server', { args })
 
     // 录音相关的UI
@@ -172,46 +156,46 @@ export class Client {
 
     remotePeers.value = {}
 
-    for (const userId in this.peerConnections) {
-      this.peerConnections[userId].close()
+    for (const userId in Client.peerConnections) {
+      Client.peerConnections[userId].close()
     }
 
-    this.chatServer.cleanDataChannel()
-    this.fileSharingServer.cleanDataChannel()
-    this.peerConnections = {}
+    ChatServer.cleanDataChannel()
+    FileServer.cleanDataChannel()
+    Client.peerConnections = {}
 
-    this.isPeerReconnected = true
+    Client.isPeerReconnected = true
   }
 
-  handleRemovePeer(args: KeyValue) {
+  static handleRemovePeer(args: KeyValue) {
     console.log('Signaling server said to remove peer:', args)
 
     const { userId } = args
 
-    if (userId in this.peerConnections) {
-      this.peerConnections[userId].close()
+    if (userId in Client.peerConnections) {
+      Client.peerConnections[userId].close()
     }
 
-    delete this.allPeers[userId]
-    delete this.peerConnections[userId]
+    delete Client.allPeers[userId]
+    delete Client.peerConnections[userId]
     delete remotePeers.value[userId]
 
-    this.chatServer.removeDataChannel(userId)
-    this.fileSharingServer.removeDataChannel(userId)
+    ChatServer.removeDataChannel(userId)
+    FileServer.removeDataChannel(userId)
 
     playSound('removePeer')
-    console.log('ALL PEERS', this.allPeers)
+    console.log('ALL PEERS', Client.allPeers)
   }
 
   /**
    * 当加入一个房间后，收到信令服务器发送的 createRTCPeerConnection 事件
    * @param {object} args data
    */
-  async createRTCPeerConnection(args: KeyValue) {
+  static async createRTCPeerConnection(args: KeyValue) {
     const { userId, shouldCreateOffer, iceServers, peers } = args
     const { userName, useVideo } = peers[userId]
 
-    if (userId in this.peerConnections) {
+    if (userId in Client.peerConnections) {
       return console.log('Already connected to peer', userId)
     }
 
@@ -219,41 +203,41 @@ export class Client {
 
     // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection
     const peerConnection = new RTCPeerConnection({ iceServers })
-    this.peerConnections[userId] = peerConnection
-    this.allPeers = peers
+    Client.peerConnections[userId] = peerConnection
+    Client.allPeers = peers
 
     console.log('[RTCPeerConnection] - userId', userId)
-    console.log('[RTCPeerConnection] - PEER-CONNECTIONS', this.peerConnections)
+    console.log('[RTCPeerConnection] - PEER-CONNECTIONS', Client.peerConnections)
     console.log('[RTCPeerConnection] - PEERS', peers)
 
     // 谁与我连接
     const connectedPeersName: string[] = []
-    for (const id in this.peerConnections) {
+    for (const id in Client.peerConnections) {
       connectedPeersName.push(peers[id].userName)
     }
     console.log('[RTCPeerConnection] - CONNECTED TO PEERS', JSON.stringify(connectedPeersName))
 
     // TODO 在聊天室列表中添加参与者 peers
-    await this.logConnectionStatus(userId)
-    await this.handleOnIceCandidate(userId)
-    await this.handleRTCDataChannels(userId)
-    await this.mediaServer.handleOnTrack(userId, peers)
-    await this.mediaServer.handleAddTracks(userId)
+    await Client.logConnectionStatus(userId)
+    await Client.handleOnIceCandidate(userId)
+    await Client.handleRTCDataChannels(userId)
+    await MediaServer.handleOnTrack(userId, peers)
+    await MediaServer.handleAddTracks(userId)
 
-    if (!useVideo && !this.needToCreateOffer) {
-      this.needToCreateOffer = true
+    if (!useVideo && !Client.needToCreateOffer) {
+      Client.needToCreateOffer = true
     }
     if (shouldCreateOffer) {
-      await this.handleCreateRTCOffer(userId)
+      await Client.handleCreateRTCOffer(userId)
       console.log('[RTCPeerConnection] - SHOULD CREATE OFFER', { userId, userName })
     }
 
     // 如果对方无视频设备
     if (!useVideo) {
-      await this.mediaServer.loadRemoteMediaStream(new MediaStream(), peers, userId, 'video')
+      await MediaServer.loadRemoteMediaStream(new MediaStream(), peers, userId, 'video')
     }
 
-    await this.whiteboardServer.onUpdate()
+    await WhiteboardServer.onUpdate()
     playSound('createPeer')
   }
 
@@ -261,11 +245,11 @@ export class Client {
    * 打印 RTC 连接状态
    * @param {string} userId socket.id
    */
-  async logConnectionStatus(userId: number) {
-    this.peerConnections[userId].onconnectionstatechange = () => {
-      const connectionStatus = this.peerConnections[userId].connectionState
-      const signalingState = this.peerConnections[userId].signalingState
-      const userName = this.allPeers[userId].userName
+  static async logConnectionStatus(userId: number) {
+    Client.peerConnections[userId].onconnectionstatechange = () => {
+      const connectionStatus = Client.peerConnections[userId].connectionState
+      const signalingState = Client.peerConnections[userId].signalingState
+      const userName = Client.allPeers[userId].userName
       console.log('[RTCPeerConnection] - CONNECTION', {
         userId,
         userName,
@@ -279,8 +263,8 @@ export class Client {
    * onICECandidate 处理 ICE 候选人
    * @param {string} userId socket.id
    */
-  async handleOnIceCandidate(userId: number) {
-    this.peerConnections[userId].onicecandidate = (event) => {
+  static async handleOnIceCandidate(userId: number) {
+    Client.peerConnections[userId].onicecandidate = (event) => {
       if (!event.candidate || !event.candidate.candidate) {
         return
       }
@@ -289,7 +273,7 @@ export class Client {
 
       // console.log('[ICE candidate]', event.candidate)
 
-      this.sendToServer('relayICE', {
+      Client.sendToServer('relayICE', {
         userId,
         iceCandidate: {
           sdpMLineIndex,
@@ -305,7 +289,7 @@ export class Client {
     }
 
     // handle ICE candidate errors
-    this.peerConnections[userId].onicecandidateerror = (event) => {
+    Client.peerConnections[userId].onicecandidateerror = (event) => {
       const { url, errorText } = event
 
       console.warn('[ICE candidate] error', { url, error: errorText })
@@ -326,8 +310,8 @@ export class Client {
    * onDataChannel 创建 RTC 数据通道
    * @param {string} userId socket.id
    */
-  async handleRTCDataChannels(userId: number) {
-    this.peerConnections[userId].ondatachannel = (event) => {
+  static async handleRTCDataChannels(userId: number) {
+    Client.peerConnections[userId].ondatachannel = (event) => {
       console.log(`handleRTCDataChannels ${userId}`, event)
       event.channel.onmessage = (msg) => {
         switch (event.channel.label) {
@@ -336,13 +320,13 @@ export class Client {
               const dataMessage = JSON.parse(msg.data)
               switch (dataMessage.type) {
                 case 'chat':
-                  this.chatServer.onMessage(dataMessage)
+                  ChatServer.onMessage(dataMessage)
                   break
                 case 'speech':
-                  this.chatServer.onSpeech(dataMessage)
+                  ChatServer.onSpeech(dataMessage)
                   break
                 case 'micVolume':
-                  this.chatServer.onVolume(dataMessage)
+                  ChatServer.onVolume(dataMessage)
                   break
                 default:
                   break
@@ -352,15 +336,15 @@ export class Client {
             }
             break
           case 'file_sharing_channel':
-            this.fileSharingServer.onMessage(msg.data)
+            FileServer.onMessage(msg.data)
             break
           default:
             break
         }
       }
     }
-    await this.chatServer.createDataChannel(userId)
-    await this.fileSharingServer.createDataChannel(userId)
+    await ChatServer.createDataChannel(userId)
+    await FileServer.createDataChannel(userId)
   }
 
   /**
@@ -368,13 +352,13 @@ export class Client {
    * 当需要通过信令通道进行连接协商时， 将发送一个 negotiationneeded事件
    * @param {string} userId socket.id
    */
-  async handleCreateRTCOffer(userId: number) {
-    this.peerConnections[userId].onnegotiationneeded = () => {
-      console.log(`Creating RTC offer to ${this.allPeers[userId].userName}`)
-      this.peerConnections[userId].createOffer().then((localDescription) => {
+  static async handleCreateRTCOffer(userId: number) {
+    Client.peerConnections[userId].onnegotiationneeded = () => {
+      console.log(`Creating RTC offer to ${Client.allPeers[userId].userName}`)
+      Client.peerConnections[userId].createOffer().then((localDescription) => {
         console.log('Local offer description is', localDescription)
-        this.peerConnections[userId].setLocalDescription(localDescription).then(() => {
-          this.sendToServer('relaySDP', {
+        Client.peerConnections[userId].setLocalDescription(localDescription).then(() => {
+          Client.sendToServer('relaySDP', {
             userId,
             sessionDescription: localDescription,
           })
@@ -392,22 +376,22 @@ export class Client {
    * 交换 SessionDescription 信息
    * @param {KeyValue} args data
    */
-  handleSessionDescription(args: KeyValue) {
+  static handleSessionDescription(args: KeyValue) {
     console.log('Remote Session Description', args)
     const { userId, sessionDescription } = args
     const remoteDescription = new RTCSessionDescription(sessionDescription)
-    this.peerConnections[userId].setRemoteDescription(remoteDescription).then(() => {
+    Client.peerConnections[userId].setRemoteDescription(remoteDescription).then(() => {
       console.log('setRemoteDescription done!')
       if (sessionDescription.type === 'offer') {
         console.log('Creating answer')
-        this.peerConnections[userId].createAnswer().then((localDescription) => {
+        Client.peerConnections[userId].createAnswer().then((localDescription) => {
           console.log('Answer description is: ', localDescription)
-          this.peerConnections[userId].setLocalDescription(localDescription).then(() => {
-            this.sendToServer('relaySDP', { userId, sessionDescription: localDescription })
+          Client.peerConnections[userId].setLocalDescription(localDescription).then(() => {
+            Client.sendToServer('relaySDP', { userId, sessionDescription: localDescription })
             console.log('Answer setLocalDescription done!')
-            if (this.needToCreateOffer) {
-              this.needToCreateOffer = false
-              this.handleCreateRTCOffer(userId)
+            if (Client.needToCreateOffer) {
+              Client.needToCreateOffer = false
+              Client.handleCreateRTCOffer(userId)
               console.log('[RTCSessionDescription] - NEED TO CREATE OFFER', { userId })
             }
           }).catch((err) => {
@@ -427,9 +411,9 @@ export class Client {
    * offer 与 answer 以此传输 Blob 数据流
    * @param {KeyValue} args data
    */
-  handleIceCandidate(args: KeyValue) {
+  static handleIceCandidate(args: KeyValue) {
     const { userId, iceCandidate } = args
-    this.peerConnections[userId].addIceCandidate(new RTCIceCandidate(iceCandidate)).catch((err) => {
+    Client.peerConnections[userId].addIceCandidate(new RTCIceCandidate(iceCandidate)).catch((err) => {
       console.error('[Error] addIceCandidate', err)
     })
   }
@@ -438,7 +422,7 @@ export class Client {
    * UI 设置用户名 avatar
    * @param {KeyValue} args data
    */
-  handleuserName(args: KeyValue) {
+  static handleuserName(args: KeyValue) {
     const { userId, userName } = args
     console.log(userId, userName)
   }
@@ -447,21 +431,21 @@ export class Client {
    * UI 更新状态
    * @param {KeyValue} args data
    */
-  handlePeerStatus(args: KeyValue) {
+  static handlePeerStatus(args: KeyValue) {
     const { userId, action, status } = args
 
     switch (action) {
       case 'video':
-        this.mediaServer.setPeerStatus('videoStatus', userId, status)
+        MediaServer.setPeerStatus('videoStatus', userId, status)
         break
       case 'audio':
-        this.mediaServer.setPeerStatus('audioStatus', userId, status)
+        MediaServer.setPeerStatus('audioStatus', userId, status)
         break
       case 'hand':
-        this.mediaServer.setPeerStatus('handStatus', userId, status)
+        MediaServer.setPeerStatus('handStatus', userId, status)
         break
       case 'privacy':
-        this.mediaServer.setPeerStatus('privacyStatus', userId, status)
+        MediaServer.setPeerStatus('privacyStatus', userId, status)
         break
       default:
         break
@@ -472,22 +456,22 @@ export class Client {
    * Handle received peer actions
    * @param {KeyValue} args data
    */
-  handlePeerAction(args: KeyValue) {
+  static handlePeerAction(args: KeyValue) {
     console.log('Handle peer action: ', args)
     const { userId, userName, peerVideo, peerAction } = args
     console.log({ userId, userName, peerVideo, peerAction })
     switch (peerAction) {
       case 'muteAudio':
-        this.mediaServer.setLocalAudioOff()
+        MediaServer.setLocalAudioOff()
         break
       case 'hideVideo':
-        this.mediaServer.setLocalVideoOff()
+        MediaServer.setLocalVideoOff()
         break
       case 'recStart':
-        this.notifyRecording(userId, userName, 'Start')
+        Client.notifyRecording(userId, userName, 'Start')
         break
       case 'recStop':
-        this.notifyRecording(userId, userName, 'Stop')
+        Client.notifyRecording(userId, userName, 'Stop')
         break
       case 'screenStart':
         // handleScreenStart(userId)
@@ -508,12 +492,12 @@ export class Client {
    * UI 悬浮信息
    * @param {KeyValue} args data
    */
-  handleMessage(args: KeyValue) {
+  static handleMessage(args: KeyValue) {
     console.log('Got message', args)
 
     switch (args.type) {
       case 'roomEmoji':
-        this.handleEmoji(args)
+        Client.handleEmoji(args)
         break
       default:
         break
@@ -524,17 +508,17 @@ export class Client {
    * UI 悬浮表情信息
    * @param {KeyValue} args data
    */
-  handleEmoji(args: KeyValue, duration: number = 5000) {
+  static handleEmoji(args: KeyValue, duration: number = 5000) {
     console.log({ args, duration })
   }
 
   // 认证失败
-  handleUnauthorized() {
+  static handleUnauthorized() {
     playSound('alert')
-    router.push({ name: 'start' })
+    // Client.router.push({ name: 'start' })
   }
 
-  handleUnlockTheRoom() {
+  static handleUnlockTheRoom() {
     playSound('alert')
     const args = {
       roomId: local.value.roomId,
@@ -542,7 +526,7 @@ export class Client {
       action: 'checkPassword',
       password: '',
     }
-    this.sendToServer('roomAction', args)
+    Client.sendToServer('roomAction', args)
   }
 
   /**
@@ -550,7 +534,7 @@ export class Client {
    * @param {KeyValue} args data
    * @param {boolean} emit 是否通知其它用户
    */
-  handleRoomAction(args: KeyValue, emit: boolean = false) {
+  static handleRoomAction(args: KeyValue, emit: boolean = false) {
     const { action } = args
     if (emit) {
       const data = {
@@ -564,19 +548,19 @@ export class Client {
         case 'lock':
           playSound('newMessage')
           data.password = '' // TODO
-          this.sendToServer('roomAction', data)
-          this.handleRoomStatus(data)
+          Client.sendToServer('roomAction', data)
+          Client.handleRoomStatus(data)
 
           break
         case 'unlock':
-          this.sendToServer('roomAction', data)
-          this.handleRoomStatus(data)
+          Client.sendToServer('roomAction', data)
+          Client.handleRoomStatus(data)
           break
         default:
           break
       }
     } else {
-      this.handleRoomStatus(args)
+      Client.handleRoomStatus(args)
     }
   }
 
@@ -584,21 +568,21 @@ export class Client {
    * 设置房间锁定状态
    * @param {KeyValue} args data
    */
-  handleRoomStatus(args: KeyValue) {
+  static handleRoomStatus(args: KeyValue) {
     const { action, userName, password } = args
     switch (action) {
       case 'lock':
         playSound('locked')
         console.log('toast', `${userName} \n has 🔒 LOCKED the room by password`)
-        this.isRoomLocked = true
+        Client.isRoomLocked = true
         break
       case 'unlock':
         console.log('toast', `${userName} \n has 🔓 UNLOCKED the room`)
-        this.isRoomLocked = false
+        Client.isRoomLocked = false
         break
       case 'checkPassword':
-        this.isRoomLocked = true
-        password === 'OK' ? this.login() : this.handleRoomLocked()
+        Client.isRoomLocked = true
+        password === 'OK' ? Client.login() : Client.handleRoomLocked()
         break
       default:
         break
@@ -608,7 +592,7 @@ export class Client {
   /**
    * 退出房间 跳到开始页
    */
-  handleRoomLocked() {
+  static handleRoomLocked() {
     playSound('eject')
     console.log('Room is Locked, try with another one')
     // TODO 退出房间 跳到开始页
@@ -618,49 +602,49 @@ export class Client {
    * 信令服务器信息
    * @param {KeyValue} args data
    */
-  handleServerInfo(args: KeyValue) {
+  static handleServerInfo(args: KeyValue) {
     console.log('13. Server info', args)
 
     const { peersCount, hostProtected, userAuth, isOwner } = args
 
-    this.isHostProtected = hostProtected
-    this.isPeerAuthEnabled = userAuth
+    Client.isHostProtected = hostProtected
+    Client.isPeerAuthEnabled = userAuth
 
-    if (this.userLimits.active && peersCount > this.userLimits.count) {
-      return this.roomIsBusy()
+    if (Client.userLimits.active && peersCount > Client.userLimits.count) {
+      return Client.roomIsBusy()
     }
 
-    this.isOwner = this.isPeerReconnected ? this.isOwner : isOwner
+    Client.isOwner = Client.isPeerReconnected ? Client.isOwner : isOwner
 
-    if (this.isRulesActive) {
+    if (Client.isRulesActive) {
       // TODO UI 权限
     }
 
-    this.shareRoomMeetingURL()
+    Client.shareRoomMeetingURL()
   }
 
   /**
    * 房间正忙 断开连接并提醒用户
    * 重定向到首页
    */
-  roomIsBusy() {
-    this.socket.close()
+  static roomIsBusy() {
+    Client.socket.close()
     playSound('alert')
     // openURL('/')
   }
 
   // 分享房间
-  shareRoomMeetingURL() {
+  static shareRoomMeetingURL() {
     playSound('newMessage')
     //
   }
 
-  getRoomURL() {
+  static getRoomURL() {
     return ''
   }
 
-  copyRoomURL() {
-    const roomURL = this.getRoomURL()
+  static copyRoomURL() {
+    const roomURL = Client.getRoomURL()
     const tmpInput = document.createElement('input')
     document.body.appendChild(tmpInput)
     tmpInput.value = roomURL
@@ -672,17 +656,17 @@ export class Client {
     console.log('toast', 'Meeting URL copied to clipboard 👍')
   }
 
-  notifyRecording(fromId: string, from: string, action: string) {
+  static notifyRecording(fromId: string, from: string, action: string) {
     const msg = `🔴 ${action} recording.`
     const chatMessage = { from, fromId, to: local.value.userName, msg, privateMsg: false }
-    this.chatServer.onMessage(chatMessage)
+    ChatServer.onMessage(chatMessage)
   }
 
   /**
    * Whiteboard: json to canvas objects
    * @param {KeyValue} args data
    */
-  handleJsonToWbCanvas(args: KeyValue) {
+  static handleJsonToWbCanvas(args: KeyValue) {
     console.log(args)
     // if (!wbIsOpen) {
     //   toggleWhiteboard()
@@ -696,7 +680,7 @@ export class Client {
     // }
   }
 
-  handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
+  static handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
     const { userName, action, color } = args
     console.log({ userName, action, color, logMe })
 
@@ -743,27 +727,27 @@ export class Client {
     // }
   }
 
-  handleKickedOut(args: KeyValue) {
+  static handleKickedOut(args: KeyValue) {
     console.log(args)
   }
 
-  handleFileInfo(args: KeyValue) {
+  static handleFileInfo(args: KeyValue) {
     console.log(args)
   }
 
-  handleFileAbort() {
+  static handleFileAbort() {
   }
 
-  handleVideoPlayer(args: KeyValue) {
+  static handleVideoPlayer(args: KeyValue) {
     console.log(args)
   }
 
-  emitPeerAction(userId: number, action: string) {
-    if (!this.peerCount) {
+  static emitPeerAction(userId: number, action: string) {
+    if (!Client.peerCount()) {
       return
     }
 
-    this.sendToServer('peerAction', {
+    Client.sendToServer('peerAction', {
       action,
       userId,
       roomId: local.value.roomId,
@@ -774,8 +758,8 @@ export class Client {
     })
   }
 
-  sendToServer(type: string, args = {}) {
-    this.socket.send(type, args)
+  static sendToServer(type: string, args = {}) {
+    Client.socket.send(type, args)
   }
 }
 

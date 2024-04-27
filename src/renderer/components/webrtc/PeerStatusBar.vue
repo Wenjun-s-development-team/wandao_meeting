@@ -3,6 +3,10 @@ import { storeToRefs } from 'pinia'
 import { playSound, saveDataToFile, secondsToHms } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
+defineOptions({
+  name: 'PeerStatusBar',
+})
+
 const props = defineProps(['peer'])
 const webrtcStore = useWebrtcStore()
 

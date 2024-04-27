@@ -1,6 +1,10 @@
 <script setup>
 import { useWebrtcStore } from '@/store'
 
+defineOptions({
+  name: 'PeerAudioOutput',
+})
+
 const props = defineProps(['peer'])
 const { peer } = toRefs(props)
 

@@ -1,4 +1,8 @@
 <script setup>
+defineOptions({
+  name: 'PeerVolumeBar',
+})
+
 const props = defineProps(['peer'])
 const { peer } = toRefs(props)
 
