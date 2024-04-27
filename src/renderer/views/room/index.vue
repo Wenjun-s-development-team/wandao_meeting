@@ -104,7 +104,6 @@ function onSignout() {
             class="video"
             :class="{ mirror: local.mirrorStatus }"
             :style="{ display: local.videoStatus ? 'block' : 'none' }"
-            muted
             autoplay
             playsinline="true"
             @fullscreenchange="onFullscreenchange($event, local)"
@@ -120,7 +119,6 @@ function onSignout() {
               :srcObject="peer.videoStream"
               :class="{ mirror: peer.mirrorStatus }"
               :style="{ display: peer.videoStatus ? 'block' : 'none' }"
-              muted
               autoplay
               playsinline="true"
               @fullscreenchange="onFullscreenchange($event, peer)"
@@ -133,7 +131,7 @@ function onSignout() {
       </TransitionGroup>
       <div class="audio-container">
         <div class="audio-wrap">
-          <audio ref="localAudio" autoplay muted />
+          <audio ref="localAudio" autoplay />
         </div>
         <template v-for="(peer, userId) in remotePeers" :key="`remoteAudio${userId}`">
           <div class="audio-wrap">

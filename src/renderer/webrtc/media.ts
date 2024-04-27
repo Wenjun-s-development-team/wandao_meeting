@@ -233,23 +233,25 @@ export class MediaServer {
       console.log('[ON TRACK] - userId', { userId })
 
       this.client.peerConnections[userId].ontrack = (event) => {
-        const { remoteVideoElement } = this
-
         const peer = peers[userId]
         const { roomName } = peer
         const { kind } = event.track
 
-        console.log('%c[ON TRACK] - info', 'color:red;', { userId, roomName, kind })
+        console.log('[ON TRACK] - info', { userId, roomName, kind })
 
         if (event.streams && event.streams[0]) {
           console.log('[ON TRACK] - peers', peers)
 
           switch (kind) {
             case 'video':
-              this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
+              remotePeers.value[userId]
+                ? remotePeers.value[userId].videoStream = event.streams[0]
+                : this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
               break
             case 'audio':
-              this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
+              remotePeers.value[userId]
+                ? remotePeers.value[userId].audioStream = event.streams[0]
+                : this.loadRemoteMediaStream(event.streams[0], peers, userId, kind)
               break
             default:
               break
@@ -257,7 +259,7 @@ export class MediaServer {
         } else {
           console.log('[ON TRACK] - SCREEN SHARING', { userId, roomName, kind })
           const inboundStream = new MediaStream([event.track])
-          this.attachMediaStream(remoteVideoElement, inboundStream)
+          remotePeers[userId].videoStream = inboundStream
         }
       }
     }

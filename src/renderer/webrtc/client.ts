@@ -209,7 +209,7 @@ export class Client {
    */
   async createRTCPeerConnection(args: KeyValue) {
     const { userId, shouldCreateOffer, iceServers, peers } = args
-    const { userName, peerVideo } = peers[userId]
+    const { userName, useVideo } = peers[userId]
 
     if (userId in this.peerConnections) {
       return console.log('Already connected to peer', userId)
@@ -240,12 +240,17 @@ export class Client {
     await this.mediaServer.handleOnTrack(userId, peers)
     await this.mediaServer.handleAddTracks(userId)
 
-    if (!peerVideo && !this.needToCreateOffer) {
+    if (!useVideo && !this.needToCreateOffer) {
       this.needToCreateOffer = true
     }
     if (shouldCreateOffer) {
       await this.handleCreateRTCOffer(userId)
       console.log('[RTCPeerConnection] - SHOULD CREATE OFFER', { userId, userName })
+    }
+
+    // 如果对方无视频设备
+    if (!useVideo) {
+      await this.mediaServer.loadRemoteMediaStream(new MediaStream(), peers, userId, 'video')
     }
 
     await this.whiteboardServer.onUpdate()

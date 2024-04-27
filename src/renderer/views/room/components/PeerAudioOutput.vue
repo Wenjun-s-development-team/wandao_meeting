@@ -33,5 +33,5 @@ onMounted(() => {
 </script>
 
 <template>
-  <audio ref="outputRef" autoplay muted :volume="peer.volume" />
+  <audio ref="outputRef" autoplay :volume="peer.volume" />
 </template>
