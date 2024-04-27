@@ -434,7 +434,7 @@ export class MediaServer {
   }
 
   static async refreshStreamToPeers(stream: MediaStream, localAudioTrackChange = false) {
-    if (!Client?.peerCount()) {
+    if (!Client.peerCount()) {
       return
     }
 

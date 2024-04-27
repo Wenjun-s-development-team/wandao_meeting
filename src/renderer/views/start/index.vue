@@ -8,7 +8,7 @@ const router = useRouter()
 
 const webrtcStore = useWebrtcStore()
 
-const { lastRoomId } = storeToRefs(webrtcStore)
+const { lastRoomId, showWhiteboard } = storeToRefs(webrtcStore)
 
 function genRoom() {
   lastRoomId.value = 101 // getRandomNumber(6)
@@ -58,9 +58,11 @@ function joinRoom(value) {
             <span>您最近的房间: </span>
             <a @click="joinRoom(lastRoomId)">{{ lastRoomId }}</a>
           </div>
+          <button @click="showWhiteboard = !showWhiteboard">白板</button>
         </div>
       </section>
     </section>
+    <PeerActions />
   </section>
 </template>
 

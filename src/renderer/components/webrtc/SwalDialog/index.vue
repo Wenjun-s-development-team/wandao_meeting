@@ -1,5 +1,6 @@
 <script setup>
-import { addUnit } from '@/utils'
+import { useDraggable } from './useDraggable'
+import { addUnit, playSound } from '@/utils'
 
 defineOptions({
   name: 'SwalDialog',
@@ -7,6 +8,10 @@ defineOptions({
 
 const props = defineProps({
   title: String,
+  drag: {
+    type: Boolean,
+    default: false,
+  },
   width: {
     type: [Number, String],
     default: 'auto',
@@ -27,9 +32,13 @@ const emit = defineEmits(['opened', 'closed'])
 const showModel = defineModel()
 const showDialog = ref(false)
 const swalRef = ref()
+const dragRef = ref()
+
+useDraggable(swalRef, dragRef, props.drag, false, 32)
 
 watch(showModel, () => {
   if (showModel.value) {
+    playSound('newMessage')
     showDialog.value = true
     // 打开时 监听动画是否结束
     nextTick(() => {
@@ -45,11 +54,12 @@ watch(showModel, () => {
 }, { immediate: true })
 
 const swalClass = computed(() => {
-  return [props.position]
+  return [{ drag: props.drag }, props.position]
 })
 
 const swalStyle = computed(() => {
   const styles = {}
+
   if (props.width) {
     styles.width = addUnit(props.width)
   }
@@ -70,8 +80,11 @@ function onClosed() {
 <template>
   <div v-if="showDialog" class="swal-container">
     <section ref="swalRef" class="swal-dialog" :class="swalClass" :style="swalStyle">
-      <header class="swal-header">
-        <span>{{ title }}</span>
+      <header ref="dragRef" class="swal-header">
+        <div class="swal-header--wrap">
+          <slot v-if="$slots.header" name="header" />
+          <div v-else-if="title" class="title">{{ title }}</div>
+        </div>
         <button v-if="showClose" class="close" @click="onClosed()">
           <i class="i-fa6-solid-xmark" />
         </button>
@@ -102,17 +115,23 @@ function onClosed() {
   background: rgba(0, 0, 0, 0.4);
   transition: background-color 0.1s;
   .swal-header {
+    display: flex;
+    align-items: center;
     max-width: 100%;
-    padding: 0.8em 1em 0;
+    padding: 0 15px;
     font-size: 1.875em;
     font-weight: 600;
-    text-align: center;
     position: relative;
+    &--wrap {
+      flex: 1;
+    }
+    .title {
+      padding: 10px;
+    }
     .close {
-      color: rgba(255, 255, 255, 0.6);
-      right: 25px;
+      margin-left: 10px;
       font-size: 20px;
-      position: absolute;
+      color: rgba(255, 255, 255, 0.6);
       &:hover {
         color: rgba(255, 255, 255, 0.8);
       }
@@ -121,30 +140,29 @@ function onClosed() {
 
   .swal-dialog {
     color: #fff;
-    display: grid;
-    grid-row: 2;
-    grid-column: 2;
     max-width: 100%;
-    align-self: center;
-    justify-self: center;
     position: relative;
     box-sizing: border-box;
     border-radius: 5px;
     border: 0.5px solid rgba(255, 255, 255, 0.32);
-    grid-template-columns: minmax(0, 100%);
     background: radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0));
 
     animation-duration: 0.5s;
-    animation-fill-mode: both;
+    // animation-fill-mode: both;
     animation-direction: normal;
 
     &.top {
       align-self: start;
     }
+
+    &.drag {
+      .swal-header {
+        cursor: move;
+      }
+    }
   }
 
   .swal-body {
-    display: grid;
     padding: 10px;
   }
 

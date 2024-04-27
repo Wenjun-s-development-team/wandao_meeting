@@ -24,7 +24,7 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ScreenSources: typeof import('./components/webrtc/ScreenSources.vue')['default']
-    SwalDialog: typeof import('./components/webrtc/SwalDialog.vue')['default']
+    SwalDialog: typeof import('./components/webrtc/SwalDialog/index.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

@@ -15,6 +15,7 @@ const {
   local,
   fullScreen,
   showRecord,
+  showWhiteboard,
 } = storeToRefs(webrtcStore)
 
 const isMounted = useMounted()
@@ -101,8 +102,8 @@ function onSignout() {
       <button @click="switchHandStatus()">
         <i class="i-fa6-solid-hand" :class="{ 'color-green': local.handStatus }" />
       </button>
-      <button>
-        <i class="i-fa6-solid-chalkboard-user" />
+      <button @click="showWhiteboard = !showWhiteboard">
+        <i class="i-fa6-solid-chalkboard-user" :class="{ 'color-red': showWhiteboard }" />
       </button>
       <button>
         <i class="i-fa6-solid-folder-open" />
