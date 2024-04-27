@@ -31,17 +31,14 @@ const swalRef = ref()
 watch(showModel, () => {
   if (showModel.value) {
     showDialog.value = true
-    // 打开时监听动画是否结束
+    // 打开时 监听动画是否结束
     nextTick(() => {
       const cleanup = useEventListener(swalRef.value, 'animationend', () => {
-        if (showModel.value) {
-          emit('opened')
-        } else {
-          cleanup()
-          emit('closed')
-          // 动画结束后才关闭 dialog
-          showDialog.value = false
+        if (!showModel.value) {
+          cleanup() // 清除监听
+          showDialog.value = false // 动画结束后才关闭 dialog
         }
+        emit(showModel.value ? 'opened' : 'closed')
       })
     })
   }
@@ -57,7 +54,7 @@ const swalStyle = computed(() => {
     styles.width = addUnit(props.width)
   }
 
-  // 切换动画名称
+  // 切换动画名称 触发动画 yarn add animate.css
   if (['top', 'center'].includes(props.position)) {
     styles.animationName = showModel.value ? 'fadeInDown' : 'fadeOutUp'
   }
@@ -82,7 +79,7 @@ function onClosed() {
       <main class="swal-body">
         <slot />
       </main>
-      <footer :class="{ 'swal-footer': $slots.footer }">
+      <footer v-if="$slots.footer" class="swal-footer">
         <slot name="footer" />
       </footer>
     </section>

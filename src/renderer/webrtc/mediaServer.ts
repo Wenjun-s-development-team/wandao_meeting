@@ -22,14 +22,14 @@ const {
  * 媒体
  */
 export class MediaServer {
-  declare static videoElement: HTMLVideoElement
-  declare static audioElement: HTMLAudioElement
-  declare static volumeElement: HTMLDivElement | undefined
+  static videoElement: HTMLVideoElement
+  static audioElement: HTMLAudioElement
+  static volumeElement: HTMLDivElement | undefined
 
-  declare static localVideoStream: MediaStream
-  declare static localAudioStream: MediaStream
+  static localVideoStream: MediaStream
+  static localAudioStream: MediaStream
 
-  declare static remoteVideoElement: HTMLVideoElement
+  static remoteVideoElement: HTMLVideoElement
 
   static localVideoStatusBefore: boolean = false
 
@@ -84,7 +84,7 @@ export class MediaServer {
 
   static async setupLocalVideo(toPeers?: boolean) {
     if (MediaServer.localVideoStream) {
-      await MediaServer.stopVideoTracks(MediaServer.localVideoStream)
+      // await MediaServer.stopTracks(MediaServer.localVideoStream, 'video')
     }
 
     console.log('📹 请求访问视频输入设备')
@@ -253,7 +253,7 @@ export class MediaServer {
   static async handleAddTracks(userId: string) {
     if (Client) {
       const roomName = Client.allPeers[userId].roomName
-      const { localVideoStream, localAudioStream } = this
+      const { localVideoStream, localAudioStream } = MediaServer
       const videoTrack = localVideoStream && localVideoStream.getVideoTracks()[0]
       const audioTrack = localAudioStream && localAudioStream.getAudioTracks()[0]
 
@@ -287,9 +287,17 @@ export class MediaServer {
     return videoTracks.length > 0
   }
 
-  static async stopTracks(stream: MediaStream) {
+  static async stopTracks(stream: MediaStream, type?: string) {
+    if (!stream) {
+      return
+    }
+
     stream.getTracks().forEach((track) => {
-      track.stop()
+      if (track.kind === type) {
+        track.stop()
+      } else if (!type) {
+        track.stop()
+      }
     })
   }
 
@@ -314,16 +322,25 @@ export class MediaServer {
     playSound('off')
   }
 
-  static sendLocalVideoStatus(status: boolean) {
-    console.log('send local video status', status)
-    MediaServer.emitPeerStatus('video', status)
-    playSound(status ? 'on' : 'off')
+  static async setLocalVideoStatusTrue() {
+    if (local.value.videoStatus || !local.value.useVideo) {
+      return
+    }
+    // Put video status already ON
+    local.value.videoStatus = true
+    MediaServer.localVideoStream.getVideoTracks()[0].enabled = local.value.videoStatus
+
+    MediaServer.emitPeerStatus('video', local.value.videoStatus)
   }
 
-  static sendLocalAudioStatus(status: boolean) {
-    console.log('send local audio status', status)
-    MediaServer.emitPeerStatus('audio', status)
-    status ? playSound('on') : playSound('off')
+  static async stopLocalVideoTrack() {
+    if (local.value.useVideo || !local.value.screenStatus) {
+      const localVideoTrack = MediaServer.localVideoStream.getVideoTracks()[0]
+      if (localVideoTrack) {
+        console.log('stopLocalVideoTrack', localVideoTrack)
+        localVideoTrack.stop()
+      }
+    }
   }
 
   static setPeerStatus(type: string, userId: number, status: boolean) {
@@ -346,40 +363,8 @@ export class MediaServer {
     }
   }
 
-  static async setLocalVideoStatusTrue() {
-    if (local.value.videoStatus || !local.value.useVideo) {
-      return
-    }
-    // Put video status already ON
-    local.value.videoStatus = true
-    MediaServer.localVideoStream.getVideoTracks()[0].enabled = local.value.videoStatus
-
-    MediaServer.emitPeerStatus('video', local.value.videoStatus)
-  }
-
-  static async stopLocalVideoTrack() {
-    if (local.value.useVideo || !local.value.screenStatus) {
-      const localVideoTrack = MediaServer.localVideoStream.getVideoTracks()[0]
-      if (localVideoTrack) {
-        console.log('stopLocalVideoTrack', localVideoTrack)
-        localVideoTrack.stop()
-      }
-    }
-  }
-
-  static async stopVideoTracks(stream: MediaStream) {
-    if (!stream) {
-      return
-    }
-    stream.getTracks().forEach((track) => {
-      if (track.kind === 'video') {
-        track.stop()
-      }
-    })
-  }
-
   static async refreshLocalStream(stream: MediaStream, localAudioTrackChange = false) {
-    let { videoElement, audioElement, localVideoStream, localAudioStream } = this
+    let { videoElement, audioElement, localVideoStream, localAudioStream } = MediaServer
     // enable video
     if (local.value.useVideo || local.value.screenStatus) {
       stream.getVideoTracks()[0].enabled = true
@@ -442,7 +427,7 @@ export class MediaServer {
       return
     }
 
-    const { localVideoStream, localAudioStream } = this
+    const { localVideoStream, localAudioStream } = MediaServer
 
     if (local.value.useAudio && localAudioTrackChange) {
       localAudioStream.getAudioTracks()[0].enabled = local.value.audioStatus
@@ -525,6 +510,18 @@ export class MediaServer {
         }
       }
     }
+  }
+
+  static sendLocalVideoStatus(status: boolean) {
+    console.log('send local video status', status)
+    MediaServer.emitPeerStatus('video', status)
+    playSound(status ? 'on' : 'off')
+  }
+
+  static sendLocalAudioStatus(status: boolean) {
+    console.log('send local audio status', status)
+    MediaServer.emitPeerStatus('audio', status)
+    playSound(status ? 'on' : 'off')
   }
 
   static async emitPeerStatus(action: string, status: boolean) {
@@ -651,7 +648,7 @@ export class MediaServer {
   }
 
   static async getAudioConstraints(): Promise<MediaTrackConstraints> {
-    const { autoGainControl, echoCancellation, noiseSuppression, sampleRate, sampleSize, channelCount, latency, volume } = this
+    const { autoGainControl, echoCancellation, noiseSuppression, sampleRate, sampleSize, channelCount, latency, volume } = MediaServer
 
     const audio: MediaTrackConstraints = {
       autoGainControl,
@@ -681,7 +678,7 @@ export class MediaServer {
     local.value.videoStatus = !local.value.videoStatus
 
     if (!local.value.videoStatus) {
-      await MediaServer.stopVideoTracks(MediaServer.localVideoStream)
+      await MediaServer.stopTracks(MediaServer.localVideoStream, 'video')
     } else {
       await MediaServer.setupLocalVideo(true)
     }
@@ -720,7 +717,7 @@ export class MediaServer {
         console.log(`屏幕共享前的视频状态: ${MediaServer.localVideoStatusBefore}`)
       } else {
         if (!local.value.useAudio && !local.value.useVideo) {
-          return MediaServer.handleToggleScreenException('没有音频和视频设备, 不能共享屏幕', init)
+          return MediaServer.screenSharingException('没有音频和视频设备, 不能共享屏幕', init)
         }
       }
 
@@ -776,14 +773,14 @@ export class MediaServer {
       if ((err as { name: string }).name === 'NotAllowedError') {
         console.error('Screen sharing permission was denied by the user.')
       } else {
-        await MediaServer.handleToggleScreenException(`[Warning] Unable to share the screen: ${err}`, init)
+        await MediaServer.screenSharingException(`[Warning] Unable to share the screen: ${err}`, init)
       }
     }
   }
 
-  static async handleToggleScreenException(reason: string, init: boolean) {
+  static async screenSharingException(reason: string, init: boolean) {
     try {
-      console.warn('handleToggleScreenException', reason)
+      console.warn('screenSharingException', reason)
 
       // Update video privacy status
       local.value.privacyStatus = false
@@ -821,8 +818,4 @@ export class MediaServer {
       console.error('[Error] An unexpected error occurred', error)
     }
   }
-}
-
-export function useMediaServer() {
-  return new MediaServer()
 }

@@ -10,22 +10,22 @@ const {
 } = storeToRefs(webrtcStore)
 
 export class GetMicrophoneVolumeIndicator {
-  static declare node: AudioWorkletNode
-  static declare audioContext: AudioContext
-  static declare sourceNode: MediaStreamAudioSourceNode | null
+  static node: AudioWorkletNode
+  static audioContext: AudioContext
+  static sourceNode: MediaStreamAudioSourceNode | null
 
   static async start(stream: MediaStream) {
     if (MediaServer.hasAudioTrack(stream)) {
-      this.stopMicrophoneProcessing()
-      this.audioContext = new AudioContext()
-      await this.audioContext.audioWorklet.addModule('../assets/vumeter.js')
-      this.node = new AudioWorkletNode(this.audioContext, 'vumeter')
+      GetMicrophoneVolumeIndicator.stopMicrophoneProcessing()
+      GetMicrophoneVolumeIndicator.audioContext = new AudioContext()
+      await GetMicrophoneVolumeIndicator.audioContext.audioWorklet.addModule('../assets/vumeter.js')
+      GetMicrophoneVolumeIndicator.node = new AudioWorkletNode(GetMicrophoneVolumeIndicator.audioContext, 'vumeter')
 
       console.log('Start microphone volume indicator for audio track', stream.getAudioTracks()[0])
 
-      this.sourceNode = this.audioContext.createMediaStreamSource(stream)
+      GetMicrophoneVolumeIndicator.sourceNode = GetMicrophoneVolumeIndicator.audioContext.createMediaStreamSource(stream)
 
-      this.node.port.onmessage = (event) => {
+      GetMicrophoneVolumeIndicator.node.port.onmessage = (event) => {
         const finalVolume = Math.round((event.data.volume || 0) * 200)
         if (local.value.audioStatus && finalVolume > 0) {
           const config = {
@@ -34,14 +34,14 @@ export class GetMicrophoneVolumeIndicator {
             volume: Math.min(100, finalVolume),
           }
 
-          this.updateVolume(config)
+          GetMicrophoneVolumeIndicator.updateVolume(config)
           ChatServer.sendToDataChannel(config)
         }
 
-        this.updateVolumeIndicator(finalVolume)
+        GetMicrophoneVolumeIndicator.updateVolumeIndicator(finalVolume)
       }
 
-      this.sourceNode.connect(this.node)
+      GetMicrophoneVolumeIndicator.sourceNode.connect(GetMicrophoneVolumeIndicator.node)
     } else {
       // console.warn('Microphone volume indicator not supported for this browser')
     }
@@ -49,10 +49,10 @@ export class GetMicrophoneVolumeIndicator {
 
   static stopMicrophoneProcessing() {
     console.log('Stop microphone volume indicator')
-    if (this.sourceNode) {
+    if (GetMicrophoneVolumeIndicator.sourceNode) {
       // 取消 onmessage 监听
-      this.sourceNode?.disconnect()
-      this.sourceNode = null
+      GetMicrophoneVolumeIndicator.sourceNode?.disconnect()
+      GetMicrophoneVolumeIndicator.sourceNode = null
     }
   }
 
