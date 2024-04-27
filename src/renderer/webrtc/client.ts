@@ -112,12 +112,7 @@ export class Client {
   // 连接成功
   static async handleConnect() {
     console.log('03. 信令服务器连接成功')
-    if (MediaServer.localVideoStream && MediaServer.localAudioStream) {
-      Client.login()
-    } else {
-      await MediaServer.start()
-      Client.login()
-    }
+    Client.login()
   }
 
   // 进入房间

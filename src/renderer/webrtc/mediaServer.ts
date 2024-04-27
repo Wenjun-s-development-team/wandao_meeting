@@ -54,6 +54,8 @@ export class MediaServer {
     MediaServer.audioElement = audioElement
     MediaServer.volumeElement = volumeElement
 
+    // local.value.screenStatus = false
+
     await MediaServer.initEnumerateDevices()
     await MediaServer.setupLocalVideo()
     await MediaServer.setupLocalAudio()
@@ -63,7 +65,7 @@ export class MediaServer {
   }
 
   static async initEnumerateDevices() {
-    console.log('05. 获取视频和音频设备', isEnumerateDevices.value)
+    console.log('05. 获取视频和音频设备')
     if (!isEnumerateDevices.value) {
       const devices = await window.navigator.mediaDevices.enumerateDevices()
 
@@ -84,7 +86,7 @@ export class MediaServer {
 
   static async setupLocalVideo(toPeers?: boolean) {
     if (MediaServer.localVideoStream) {
-      // await MediaServer.stopTracks(MediaServer.localVideoStream, 'video')
+      await MediaServer.stopTracks(MediaServer.localVideoStream, 'video')
     }
 
     console.log('📹 请求访问视频输入设备')
@@ -145,6 +147,14 @@ export class MediaServer {
       MediaServer.logStreamInfo('localAudioMediaStream', stream)
       MediaServer.attachMediaStream(MediaServer.audioElement, stream)
     }
+
+    stream.getTracks().forEach((track) => {
+      if (track.kind === 'video') {
+        track.enabled = local.value.videoStatus
+      } else if (track.kind === 'audio') {
+        track.enabled = local.value.audioStatus
+      }
+    })
   }
 
   static logStreamInfo(name: string, stream: MediaStream) {
@@ -317,7 +327,8 @@ export class MediaServer {
     if (!local.value.audioStatus || !local.value.useAudio) {
       return
     }
-    MediaServer.localAudioStream.getAudioTracks()[0].enabled = false
+    local.value.audioStatus = false
+    MediaServer.localAudioStream.getAudioTracks()[0].enabled = local.value.audioStatus
     MediaServer.sendLocalAudioStatus(local.value.audioStatus)
     playSound('off')
   }
