@@ -20,18 +20,6 @@ const {
 
 const isMounted = useMounted()
 
-function switchScreenSharing() {
-  MediaServer.switchScreenSharing()
-}
-
-function setVideoTracks() {
-  MediaServer.handleVideo()
-}
-
-function setAudioTracks() {
-  MediaServer.handleAudio()
-}
-
 // 举手
 function switchHandStatus() {
   MediaServer.switchHandStatus()
@@ -69,15 +57,15 @@ function onSignout() {
       <button>
         <i class="i-fa6-solid-camera-rotate" />
       </button>
-      <button @click.stop="setVideoTracks()">
+      <button @click.stop="MediaServer.handleVideo()">
         <i v-if="local.videoStatus" class="i-fa6-solid-video" />
         <i v-else class="i-fa6-solid-video-slash color-red" />
       </button>
-      <button @click.stop="setAudioTracks()">
+      <button @click.stop="MediaServer.handleAudio()">
         <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
         <i v-else class="i-fa6-solid-microphone-slash color-red" />
       </button>
-      <ScreenSources :peer="local" @change="switchScreenSharing()">
+      <ScreenSources :peer="local" @change="MediaServer.switchScreenSharing()">
         <button>
           <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
           <i v-else class="i-fa6-solid-desktop" />

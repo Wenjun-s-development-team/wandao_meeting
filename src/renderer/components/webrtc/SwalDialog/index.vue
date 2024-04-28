@@ -36,19 +36,18 @@ const dragRef = ref()
 
 useDraggable(swalRef, dragRef, props.drag, false, 32)
 
-watch(showModel, () => {
+watch(showModel, async () => {
   if (showModel.value) {
     playSound('newMessage')
     showDialog.value = true
     // 打开时 监听动画是否结束
-    nextTick(() => {
-      const cleanup = useEventListener(swalRef.value, 'animationend', () => {
-        if (!showModel.value) {
-          cleanup() // 清除监听
-          showDialog.value = false // 动画结束后才关闭 dialog
-        }
-        emit(showModel.value ? 'opened' : 'closed')
-      })
+    await nextTick()
+    const cleanup = useEventListener(swalRef.value, 'animationend', () => {
+      if (!showModel.value) {
+        cleanup() // 清除监听
+        showDialog.value = false // 动画结束后才关闭 dialog
+      }
+      emit(showModel.value ? 'opened' : 'closed')
     })
   }
 }, { immediate: true })
@@ -61,7 +60,7 @@ const swalStyle = computed(() => {
   const styles = {}
 
   if (props.width) {
-    styles.width = addUnit(props.width)
+    styles.minWidth = addUnit(props.width)
   }
 
   // 切换动画名称 触发动画 yarn add animate.css
@@ -145,7 +144,7 @@ function onClosed() {
     box-sizing: border-box;
     border-radius: 5px;
     border: 0.5px solid rgba(255, 255, 255, 0.32);
-    background: radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0));
+    background: var(--swal-background);
 
     animation-duration: 0.5s;
     // animation-fill-mode: both;

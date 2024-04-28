@@ -14,6 +14,7 @@ declare module 'vue' {
     ElDialog: typeof import('element-plus/es')['ElDialog']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElSelect: typeof import('element-plus/es')['ElSelect']
+    ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
     PeerActions: typeof import('./components/webrtc/PeerActions.vue')['default']
@@ -21,10 +22,12 @@ declare module 'vue' {
     PeerStatusBar: typeof import('./components/webrtc/PeerStatusBar.vue')['default']
     PeerTools: typeof import('./components/webrtc/PeerTools.vue')['default']
     PeerVolumeBar: typeof import('./components/webrtc/PeerVolumeBar.vue')['default']
+    PeerWhiteboard: typeof import('./components/webrtc/PeerWhiteboard/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ScreenSources: typeof import('./components/webrtc/ScreenSources.vue')['default']
     SwalDialog: typeof import('./components/webrtc/SwalDialog/index.vue')['default']
+    Whiteboard: typeof import('./components/webrtc/Whiteboard/index.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

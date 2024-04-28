@@ -2,19 +2,9 @@
 @use "./transition.scss";
 
 :root {
-  --ui-color-border-grey: #c9c9c9;
-
-  --ui-color-border-blue: #4a9eff;
-  --ui-color-bg-blue: #dbecff;
-
-  --ui-color-border-cyan: #0affee;
-  --ui-color-bg-cyan: #c7fffc;
-
-  --ui-color-border-red: #ff5732;
-  --ui-color-bg-red: #ffab99;
-
-  --ui-color-border-yellow: #ffe900;
-  --ui-color-bg-yellow: #fff4c7;
+  --wb-width: 998px;
+  --wb-height: 499px;
+  --swal-background: radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0));
 }
 
 html,

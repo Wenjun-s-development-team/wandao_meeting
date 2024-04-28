@@ -754,7 +754,9 @@ export class Client {
   }
 
   static sendToServer(type: string, args = {}) {
-    Client.socket.send(type, args)
+    if (Client.socket) {
+      Client.socket.send(type, args)
+    }
   }
 }
 

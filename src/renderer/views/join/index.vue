@@ -37,10 +37,6 @@ async function userLogin(name) {
   router.push({ path: '/room', query: { roomId: query.roomId } })
 }
 
-function switchScreenSharing() {
-  MediaServer.switchScreenSharing(true)
-}
-
 IPCRequest.windows.openDevTools()
 </script>
 
@@ -61,15 +57,15 @@ IPCRequest.windows.openDevTools()
         </div>
         <div class="media-actions">
           <div class="buttons">
-            <button @click="local.videoStatus = !local.videoStatus">
+            <button @click="MediaServer.handleVideo()">
               <i v-if="local.videoStatus" class="i-fa6-solid-video" />
               <i v-else class="i-fa6-solid-video-slash color-red" />
             </button>
-            <button @click="local.audioStatus = !local.audioStatus">
+            <button @click="MediaServer.handleAudio()">
               <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources :peer="local" @change="switchScreenSharing()">
+            <ScreenSources :peer="local" @change="MediaServer.switchScreenSharing(true)">
               <button>
                 <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />

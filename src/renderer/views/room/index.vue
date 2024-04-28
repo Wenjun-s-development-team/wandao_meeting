@@ -110,8 +110,9 @@ document.addEventListener('fullscreenchange', () => {
       <div class="volume-bar" />
       <div class="volume-bar" />
     </div>
-    <PeerTools />
+    <PeerTools role="工具栏" />
     <PeerActions />
+    <PeerWhiteboard role="白板" />
   </div>
 </template>
 

@@ -4,8 +4,8 @@ export * from './array'
 export * from './datetime'
 export * from './lodash'
 export * from './media'
+export * from './styles'
 export * from './system'
-export * from './keyframes'
 
 /**
  * 生成UUID
@@ -18,15 +18,6 @@ export function getUUID(): string {
     const v = c === 'x' ? r : (r & 0x3 | 0x8)
     return v.toString(16)
   })
-}
-
-// 添加 px 单位
-export function addUnit(value: number | string | null, unit: string = 'px'): string {
-  if (value === null) {
-    return ''
-  }
-  const REGEXP = /^-?\d+(\.\d+)?$/
-  return REGEXP.test(`${value}`) ? `${value}${unit}` : String(value)
 }
 
 /**

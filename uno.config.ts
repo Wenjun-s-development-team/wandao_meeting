@@ -94,9 +94,8 @@ export default defineConfig({
         // https://unocss.dev/presets/icons
         // When using bundlers, you can provide the collections using dynamic imports so they will be bundler as async chunk and loaded on demand.
         svg: loadCustomIconSet(),
-        carbon: () => import('@iconify-json/carbon').then(i => i.icons as any),
-        solar: () => import('@iconify-json/solar').then(i => i.icons as any),
-        ep: () => import('@iconify-json/ep').then(i => i.icons as any),
+        regular: () => import('@iconify-json/fa6-regular').then(i => i.icons as any),
+        solid: () => import('@iconify-json/fa6-solid').then(i => i.icons as any),
       },
     }),
     presetTypography(),

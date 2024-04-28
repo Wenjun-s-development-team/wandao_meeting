@@ -85,7 +85,7 @@ export default defineConfig({
           }),
           // 自动导入图标组件
           IconsResolver({
-            enabledCollections: ['fa6-solid'],
+            enabledCollections: ['fa6-solid', 'fa6-regular'],
           }),
         ],
       }),

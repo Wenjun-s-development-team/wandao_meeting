@@ -1,13 +1,14 @@
 import { storeToRefs } from 'pinia'
 import { fabric } from 'fabric'
 import { Client } from './client'
-import { playSound } from '@/utils'
+import { setProperty } from '@/utils'
 
 import { useWebrtcStore } from '@/store'
 
 const webrtcStore = useWebrtcStore()
 const {
   local,
+  showWhiteboard,
 } = storeToRefs(webrtcStore)
 
 /**
@@ -18,6 +19,9 @@ export class WhiteboardServer {
   static isOpened: boolean = false
   static isLocked: boolean = false
   static isRedoing: boolean = false
+  static wbIsEraser: boolean = false
+  static wbIsDrawing: boolean = false
+  static wbIsRedoing: boolean = false
   static wbCanvas: fabric.Canvas = new fabric.Canvas('wbCanvas')
 
   /**
@@ -27,6 +31,75 @@ export class WhiteboardServer {
     if (WhiteboardServer.isOpened && Client.peerCount() > 0) {
       WhiteboardServer.wbCanvasToJson()
       WhiteboardServer.whiteboardAction(WhiteboardServer.getWhiteboardAction(WhiteboardServer.isLocked ? 'lock' : 'unlock'))
+    }
+  }
+
+  static setupWhiteboard(element: string, width: number = 1200, height: number = 600) {
+    WhiteboardServer.setupWhiteboardCanvas(element)
+    WhiteboardServer.setupWhiteboardCanvasSize(width, height)
+    WhiteboardServer.setupWhiteboardLocalListners()
+  }
+
+  static setupWhiteboardCanvas(element: string) {
+    WhiteboardServer.wbCanvas = new fabric.Canvas(element)
+    WhiteboardServer.wbCanvas.freeDrawingBrush.color = '#FFFFFF'
+    WhiteboardServer.wbCanvas.freeDrawingBrush.width = 3
+    WhiteboardServer.whiteboardIsDrawingMode(true)
+  }
+
+  static setupWhiteboardCanvasSize(width: number = 1200, height: number = 600) {
+    const scaleFactorX = window.innerWidth / width
+    const scaleFactorY = window.innerHeight / height
+    if (scaleFactorX < scaleFactorY && scaleFactorX < 1) {
+      WhiteboardServer.wbCanvas.setWidth(width * scaleFactorX)
+      WhiteboardServer.wbCanvas.setHeight(height * scaleFactorX)
+      WhiteboardServer.wbCanvas.setZoom(scaleFactorX)
+      WhiteboardServer.setWhiteboardSize(width * scaleFactorX, height * scaleFactorX)
+    } else if (scaleFactorX > scaleFactorY && scaleFactorY < 1) {
+      WhiteboardServer.wbCanvas.setWidth(width * scaleFactorY)
+      WhiteboardServer.wbCanvas.setHeight(height * scaleFactorY)
+      WhiteboardServer.wbCanvas.setZoom(scaleFactorY)
+      WhiteboardServer.setWhiteboardSize(width * scaleFactorY, height * scaleFactorY)
+    } else {
+      WhiteboardServer.wbCanvas.setWidth(width)
+      WhiteboardServer.wbCanvas.setHeight(height)
+      WhiteboardServer.wbCanvas.setZoom(1)
+      WhiteboardServer.setWhiteboardSize(width, height)
+    }
+    WhiteboardServer.wbCanvas.calcOffset()
+    WhiteboardServer.wbCanvas.renderAll()
+  }
+
+  static setWhiteboardSize(w, h) {
+    setProperty('--wb-width', w)
+    setProperty('--wb-height', h)
+  }
+
+  static setupWhiteboardLocalListners() {
+    WhiteboardServer.wbCanvas.on('mouse:down', (e) => {
+      WhiteboardServer.mouseDown(e)
+    })
+    WhiteboardServer.wbCanvas.on('mouse:up', () => {
+      WhiteboardServer.mouseUp()
+    })
+    WhiteboardServer.wbCanvas.on('mouse:move', () => {
+      WhiteboardServer.mouseMove()
+    })
+    WhiteboardServer.wbCanvas.on('object:added', () => {
+      WhiteboardServer.objectAdded()
+    })
+  }
+
+  static whiteboardIsDrawingMode(status: boolean) {
+    WhiteboardServer.wbCanvas.isDrawingMode = status
+    if (status) {
+      // setColor(whiteboardPencilBtn, 'green') // 画笔
+      // setColor(whiteboardObjectBtn, 'white') // 鼠标
+      // setColor(whiteboardEraserBtn, 'white') // 橡皮擦
+      WhiteboardServer.wbIsEraser = false
+    } else {
+      // setColor(whiteboardPencilBtn, 'white')
+      // setColor(whiteboardObjectBtn, 'green')
     }
   }
 
@@ -44,6 +117,33 @@ export class WhiteboardServer {
   static wbCanvasBackgroundColor(color: string) {
     WhiteboardServer.wbCanvas?.setBackgroundColor(color, () => {})
     WhiteboardServer.wbCanvas?.renderAll()
+  }
+
+  static mouseDown(e: fabric.IEvent<MouseEvent>) {
+    WhiteboardServer.wbIsDrawing = true
+    if (WhiteboardServer.wbIsEraser && e.target) {
+      WhiteboardServer.wbCanvas.remove(e.target)
+    }
+  }
+
+  static mouseUp() {
+    WhiteboardServer.wbIsDrawing = false
+    WhiteboardServer.wbCanvasToJson()
+  }
+
+  static mouseMove() {
+    if (WhiteboardServer.wbIsEraser) {
+      WhiteboardServer.wbCanvas.hoverCursor = 'not-allowed'
+    } else {
+      WhiteboardServer.wbCanvas.hoverCursor = 'move'
+    }
+  }
+
+  static objectAdded() {
+    if (!WhiteboardServer.wbIsRedoing) {
+      WhiteboardServer.wbPop = []
+    }
+    WhiteboardServer.wbIsRedoing = false
   }
 
   /**
@@ -99,10 +199,7 @@ export class WhiteboardServer {
   }
 
   static toggleWhiteboard() {
-    if (!WhiteboardServer.isOpened) {
-      playSound('newMessage')
-    }
-    WhiteboardServer.isOpened = !WhiteboardServer.isOpened
+    showWhiteboard.value = !showWhiteboard.value
   }
 
   static wbDrawing(status: boolean) {

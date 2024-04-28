@@ -24,6 +24,8 @@ export function useDraggable(
     offsetY: 0,
   }
 
+  const dragKey = `draggable-${Date.now()}`
+
   const onMousedown = (e: MouseEvent) => {
     const downX = e.clientX
     const downY = e.clientY
@@ -73,12 +75,14 @@ export function useDraggable(
 
   const onDraggable = () => {
     if (dragRef.value && targetRef.value) {
+      dragRef.value.classList.add(dragKey)
       dragRef.value.addEventListener('mousedown', onMousedown)
     }
   }
 
   const offDraggable = () => {
     if (dragRef.value && targetRef.value) {
+      dragRef.value.classList.remove(dragKey)
       dragRef.value.removeEventListener('mousedown', onMousedown)
     }
   }
