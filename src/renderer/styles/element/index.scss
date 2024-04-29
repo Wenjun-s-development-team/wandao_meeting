@@ -27,3 +27,14 @@
 .el-dropdown-menu--default {
   padding: 0;
 }
+
+.el-message-box {
+  color: #fff;
+  background: radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0));
+  .el-message-box__title {
+    color: #fff;
+  }
+  .el-message-box__content {
+    color: #fff;
+  }
+}

@@ -1,17 +1,14 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { WhiteboardServer } from '@/webrtc'
-import { setProperty } from '@/utils'
-import { useWebrtcStore } from '@/store'
+import { playSound, setProperty } from '@/utils'
 
 defineOptions({
   name: 'PeerWhiteboard',
 })
 
-const webrtcStore = useWebrtcStore()
-const {
-  showWhiteboard,
-} = storeToRefs(webrtcStore)
+const showModel = defineModel()
+const client = inject('client')
 
 const wb = reactive({
   switch: false,
@@ -19,7 +16,7 @@ const wb = reactive({
 })
 
 function onOpened() {
-  WhiteboardServer.setupWhiteboard('wbCanvas', 1200, 600)
+  client.whiteboardServer.setupWhiteboard('wbCanvas', 1200, 600)
 }
 
 function toggleTransparent() {
@@ -30,10 +27,22 @@ function toggleTransparent() {
     setProperty('--swal-background', 'radial-gradient(rgb(57, 57, 57), rgb(0, 0, 0))')
   }
 }
+
+function confirmCleanBoard() {
+  ElMessageBox.confirm('确定要清空白板吗?', '警告', {
+    type: 'warning',
+    center: true,
+    draggable: true,
+  }).then(() => {
+    client.whiteboardServer.whiteboardAction(client.whiteboardServer.getWhiteboardAction('clear'))
+    playSound('delete')
+  }).catch(() => {})
+}
 </script>
 
 <template>
-  <SwalDialog v-model="showWhiteboard" drag role="白板" width="1200" height="600" @opened="onOpened()">
+  <slot />
+  <SwalDialog v-model="showModel" drag role="白板" width="1200" height="600" @opened="onOpened()">
     <template #header>
       <div class="whiteboard-header">
         <div class="whiteboard-header-title">
@@ -64,14 +73,12 @@ function toggleTransparent() {
           <button><i class="i-fa6-regular-circle" /></button>
           <button><i class="i-fa6-regular-floppy-disk" /></button>
           <button><i class="i-fa6-solid-eraser" /></button>
-          <button><i class="i-fa6-solid-trash" /></button>
+          <button @click="confirmCleanBoard()"><i class="i-fa6-solid-trash" /></button>
         </div>
       </div>
     </template>
     <section class="swal-whiteboard">
-      <main>
-        <canvas id="wbCanvas" />
-      </main>
+      <canvas id="wbCanvas" />
     </section>
   </SwalDialog>
 </template>

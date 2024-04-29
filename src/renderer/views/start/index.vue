@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { getRandomNumber } from '@/utils'
 import { useWebrtcStore } from '@/store'
 
+import { MediaServer } from '@/webrtc'
+
 const router = useRouter()
 
 const webrtcStore = useWebrtcStore()

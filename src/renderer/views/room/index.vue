@@ -1,6 +1,6 @@
 <script setup>
 import { storeToRefs } from 'pinia'
-import { Client, MediaServer } from '@/webrtc'
+import { useWebRTCClient } from '@/webrtc'
 import { useWebrtcStore } from '@/store'
 
 const webrtcStore = useWebrtcStore()
@@ -17,11 +17,13 @@ const localAudioElement = ref(null)
 const localVolumeElement = ref(null)
 
 const isMounted = useMounted()
+const client = useWebRTCClient()
+provide('client', client)
 
 watchOnce(isMounted, () => {
   if (localVideoElement.value && localAudioElement.value) {
-    MediaServer.start(localVideoElement.value, localAudioElement.value, localVolumeElement.value)
-    Client.start()
+    client.mediaServer.init(localVideoElement.value, localAudioElement.value, localVolumeElement.value)
+    client.start()
   }
 })
 
@@ -112,7 +114,6 @@ document.addEventListener('fullscreenchange', () => {
     </div>
     <PeerTools role="工具栏" />
     <PeerActions />
-    <PeerWhiteboard role="白板" />
   </div>
 </template>
 

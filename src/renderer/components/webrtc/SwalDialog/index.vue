@@ -193,11 +193,10 @@ function onClosed() {
   .swal-file,
   .swal-input,
   .swal2-textarea {
-    width: auto;
+    width: 100%;
     box-sizing: border-box;
   }
   .swal-input {
-    width: auto;
     display: flex;
     outline: none;
     height: 3.5em;

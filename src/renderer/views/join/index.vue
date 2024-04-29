@@ -1,7 +1,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
-import { MediaServer } from '@/webrtc'
+import { useMediaServer } from '@/webrtc'
 import { IPCRequest, RTCRequest } from '@/api'
 
 import { useWebrtcStore } from '@/store'
@@ -26,9 +26,11 @@ const {
 
 const show = ref(true)
 const isMounted = useMounted()
+const mediaServer = useMediaServer()
 watchOnce(isMounted, async () => {
   if (localVideoElement.value && localAudioElement.value) {
-    await MediaServer.start(localVideoElement.value, localAudioElement.value)
+    mediaServer.init(localVideoElement.value, localAudioElement.value)
+    mediaServer.start()
   }
 })
 
@@ -57,15 +59,15 @@ IPCRequest.windows.openDevTools()
         </div>
         <div class="media-actions">
           <div class="buttons">
-            <button @click="MediaServer.handleVideo()">
+            <button @click="mediaServer.handleVideo()">
               <i v-if="local.videoStatus" class="i-fa6-solid-video" />
               <i v-else class="i-fa6-solid-video-slash color-red" />
             </button>
-            <button @click="MediaServer.handleAudio()">
+            <button @click="mediaServer.handleAudio()">
               <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
               <i v-else class="i-fa6-solid-microphone-slash color-red" />
             </button>
-            <ScreenSources :peer="local" @change="MediaServer.switchScreenSharing(true)">
+            <ScreenSources :peer="local" @change="mediaServer.switchScreenSharing(true)">
               <button>
                 <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
                 <i v-else class="i-fa6-solid-desktop" />
@@ -92,7 +94,9 @@ IPCRequest.windows.openDevTools()
           />
         </div>
       </div>
-      <input class="swal-input" disabled maxlength="32" placeholder="请输入您的名称">
+      <div class="px-1.6em">
+        <input class="swal-input" disabled maxlength="32" placeholder="请输入您的名称">
+      </div>
       <template #footer>
         <button class="swal-button primary" @click="userLogin('admin')">进 入 会 议(admin)</button>
         <button class="swal-button primary" @click="userLogin('elkon')">进 入 会 议(elkon)</button>
@@ -105,16 +109,7 @@ IPCRequest.windows.openDevTools()
 .join-page {
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  align-content: center;
-  justify-content: center;
   background: radial-gradient(#393939, #000000);
-
-  .swal-input {
-    margin: 1em 2em 3px;
-  }
 
   .media-container {
     display: flex;

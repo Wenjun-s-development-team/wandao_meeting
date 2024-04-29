@@ -1,149 +1,120 @@
 import { storeToRefs } from 'pinia'
 import { fabric } from 'fabric'
-import { Client } from './client'
-import { setProperty } from '@/utils'
+import type { Client } from './client'
+import { playSound, setProperty } from '@/utils'
 
 import { useWebrtcStore } from '@/store'
 
 const webrtcStore = useWebrtcStore()
 const {
   local,
-  showWhiteboard,
 } = storeToRefs(webrtcStore)
 
 /**
  * 白板
  */
 export class WhiteboardServer {
-  static wbPop: fabric.Object[] = []
-  static isOpened: boolean = false
-  static isLocked: boolean = false
-  static isRedoing: boolean = false
-  static wbIsEraser: boolean = false
-  static wbIsDrawing: boolean = false
-  static wbIsRedoing: boolean = false
-  static wbCanvas: fabric.Canvas = new fabric.Canvas('wbCanvas')
+  client: Client
+  wbPop: fabric.Object[] = []
+  isOpened: boolean = false
+  isLocked: boolean = false
+  isRedoing: boolean = false
+  wbIsDrawing: boolean = false
+  wbIsEraser: boolean = false
+  wbIsRedoing: boolean = false
+  wbCanvas: fabric.Canvas = new fabric.Canvas('wbCanvas')
+
+  constructor(client: Client) {
+    this.client = client
+  }
 
   /**
    * 如果白板打开，则将画布更新到所有P2P连接中
    */
-  static async onUpdate() {
-    if (WhiteboardServer.isOpened && Client.peerCount() > 0) {
-      WhiteboardServer.wbCanvasToJson()
-      WhiteboardServer.whiteboardAction(WhiteboardServer.getWhiteboardAction(WhiteboardServer.isLocked ? 'lock' : 'unlock'))
+  async onUpdate() {
+    if (this.isOpened && this.client.peerCount > 0) {
+      this.wbCanvasToJson()
+      this.whiteboardAction(this.getWhiteboardAction(this.isLocked ? 'lock' : 'unlock'))
     }
   }
 
-  static setupWhiteboard(element: string, width: number = 1200, height: number = 600) {
-    WhiteboardServer.setupWhiteboardCanvas(element)
-    WhiteboardServer.setupWhiteboardCanvasSize(width, height)
-    WhiteboardServer.setupWhiteboardLocalListners()
+  setupWhiteboard(element: string, width: number = 1200, height: number = 600) {
+    this.setupWhiteboardCanvas(element)
+    this.setupWhiteboardCanvasSize(width, height)
+    this.setupWhiteboardLocalListners()
   }
 
-  static setupWhiteboardCanvas(element: string) {
-    WhiteboardServer.wbCanvas = new fabric.Canvas(element)
-    WhiteboardServer.wbCanvas.freeDrawingBrush.color = '#FFFFFF'
-    WhiteboardServer.wbCanvas.freeDrawingBrush.width = 3
-    WhiteboardServer.whiteboardIsDrawingMode(true)
+  setupWhiteboardCanvas(element: string) {
+    this.wbCanvas = new fabric.Canvas(element)
+    this.wbCanvas.freeDrawingBrush.color = '#FFFFFF'
+    this.wbCanvas.freeDrawingBrush.width = 3
+    this.whiteboardIsDrawingMode(true)
   }
 
-  static setupWhiteboardCanvasSize(width: number = 1200, height: number = 600) {
+  setupWhiteboardCanvasSize(width: number, height: number) {
     const scaleFactorX = window.innerWidth / width
     const scaleFactorY = window.innerHeight / height
     if (scaleFactorX < scaleFactorY && scaleFactorX < 1) {
-      WhiteboardServer.wbCanvas.setWidth(width * scaleFactorX)
-      WhiteboardServer.wbCanvas.setHeight(height * scaleFactorX)
-      WhiteboardServer.wbCanvas.setZoom(scaleFactorX)
-      WhiteboardServer.setWhiteboardSize(width * scaleFactorX, height * scaleFactorX)
+      this.wbCanvas.setWidth(width * scaleFactorX)
+      this.wbCanvas.setHeight(height * scaleFactorX)
+      this.wbCanvas.setZoom(scaleFactorX)
+      this.setWhiteboardSize(width * scaleFactorX, height * scaleFactorX)
     } else if (scaleFactorX > scaleFactorY && scaleFactorY < 1) {
-      WhiteboardServer.wbCanvas.setWidth(width * scaleFactorY)
-      WhiteboardServer.wbCanvas.setHeight(height * scaleFactorY)
-      WhiteboardServer.wbCanvas.setZoom(scaleFactorY)
-      WhiteboardServer.setWhiteboardSize(width * scaleFactorY, height * scaleFactorY)
+      this.wbCanvas.setWidth(width * scaleFactorY)
+      this.wbCanvas.setHeight(height * scaleFactorY)
+      this.wbCanvas.setZoom(scaleFactorY)
+      this.setWhiteboardSize(width * scaleFactorY, height * scaleFactorY)
     } else {
-      WhiteboardServer.wbCanvas.setWidth(width)
-      WhiteboardServer.wbCanvas.setHeight(height)
-      WhiteboardServer.wbCanvas.setZoom(1)
-      WhiteboardServer.setWhiteboardSize(width, height)
+      this.wbCanvas.setWidth(width)
+      this.wbCanvas.setHeight(height)
+      this.wbCanvas.setZoom(1)
+      this.setWhiteboardSize(width, height)
     }
-    WhiteboardServer.wbCanvas.calcOffset()
-    WhiteboardServer.wbCanvas.renderAll()
+    this.wbCanvas.calcOffset()
+    this.wbCanvas.renderAll()
   }
 
-  static setWhiteboardSize(w, h) {
-    setProperty('--wb-width', w)
-    setProperty('--wb-height', h)
+  setWhiteboardSize(width: number, height: number) {
+    setProperty('--wb-width', width)
+    setProperty('--wb-height', height)
   }
 
-  static setupWhiteboardLocalListners() {
-    WhiteboardServer.wbCanvas.on('mouse:down', (e) => {
-      WhiteboardServer.mouseDown(e)
-    })
-    WhiteboardServer.wbCanvas.on('mouse:up', () => {
-      WhiteboardServer.mouseUp()
-    })
-    WhiteboardServer.wbCanvas.on('mouse:move', () => {
-      WhiteboardServer.mouseMove()
-    })
-    WhiteboardServer.wbCanvas.on('object:added', () => {
-      WhiteboardServer.objectAdded()
-    })
-  }
-
-  static whiteboardIsDrawingMode(status: boolean) {
-    WhiteboardServer.wbCanvas.isDrawingMode = status
+  whiteboardIsDrawingMode(status: boolean) {
+    this.wbCanvas.isDrawingMode = status
     if (status) {
-      // setColor(whiteboardPencilBtn, 'green') // 画笔
-      // setColor(whiteboardObjectBtn, 'white') // 鼠标
-      // setColor(whiteboardEraserBtn, 'white') // 橡皮擦
-      WhiteboardServer.wbIsEraser = false
-    } else {
-      // setColor(whiteboardPencilBtn, 'white')
-      // setColor(whiteboardObjectBtn, 'green')
+      this.wbIsEraser = false
     }
   }
 
-  static getWhiteboardAction(action: string) {
+  setupWhiteboardLocalListners() {
+    this.wbCanvas.on('mouse:down', (event) => {
+      this.mouseDown(event)
+    })
+    this.wbCanvas.on('mouse:up', () => {
+      this.mouseUp()
+    })
+    this.wbCanvas.on('mouse:move', () => {
+      this.mouseMove()
+    })
+    this.wbCanvas.on('object:added', () => {
+      this.objectAdded()
+    })
+  }
+
+  getWhiteboardAction(action: string) {
     return { action, roomId: local.value.roomId, roomName: local.value.roomName }
   }
 
-  static whiteboardAction(config: KeyValue) {
-    if (Client.peerCount() > 0) {
-      Client.sendToServer('whiteboardAction', config)
+  whiteboardAction(config: KeyValue) {
+    if (this.client.peerCount > 0) {
+      this.client.sendToServer('whiteboardAction', config)
     }
-    WhiteboardServer.handleWhiteboardAction(config, false)
+    this.handleWhiteboardAction(config, false)
   }
 
-  static wbCanvasBackgroundColor(color: string) {
-    WhiteboardServer.wbCanvas?.setBackgroundColor(color, () => {})
-    WhiteboardServer.wbCanvas?.renderAll()
-  }
-
-  static mouseDown(e: fabric.IEvent<MouseEvent>) {
-    WhiteboardServer.wbIsDrawing = true
-    if (WhiteboardServer.wbIsEraser && e.target) {
-      WhiteboardServer.wbCanvas.remove(e.target)
-    }
-  }
-
-  static mouseUp() {
-    WhiteboardServer.wbIsDrawing = false
-    WhiteboardServer.wbCanvasToJson()
-  }
-
-  static mouseMove() {
-    if (WhiteboardServer.wbIsEraser) {
-      WhiteboardServer.wbCanvas.hoverCursor = 'not-allowed'
-    } else {
-      WhiteboardServer.wbCanvas.hoverCursor = 'move'
-    }
-  }
-
-  static objectAdded() {
-    if (!WhiteboardServer.wbIsRedoing) {
-      WhiteboardServer.wbPop = []
-    }
-    WhiteboardServer.wbIsRedoing = false
+  wbCanvasBackgroundColor(color: string) {
+    this.wbCanvas?.setBackgroundColor(color, () => {})
+    this.wbCanvas?.renderAll()
   }
 
   /**
@@ -151,7 +122,7 @@ export class WhiteboardServer {
    * @param {object} args data
    * @param {boolean} logMe popup action
    */
-  static handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
+  handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
     const { peer_name, action, color } = args
 
     if (logMe) {
@@ -159,30 +130,30 @@ export class WhiteboardServer {
     }
     switch (action) {
       case 'bgcolor':
-        WhiteboardServer.wbCanvasBackgroundColor(color)
+        this.wbCanvasBackgroundColor(color)
         break
       case 'undo':
-        WhiteboardServer.wbCanvasUndo()
+        this.wbCanvasUndo()
         break
       case 'redo':
-        WhiteboardServer.wbCanvasRedo()
+        this.wbCanvasRedo()
         break
       case 'clear':
-        WhiteboardServer.wbCanvas.clear()
+        this.wbCanvas.clear()
         break
       case 'toggle':
-        WhiteboardServer.toggleWhiteboard()
+        this.toggleWhiteboard()
         break
       case 'lock':
-        if (!Client.isOwner) {
-          WhiteboardServer.wbDrawing(false)
-          WhiteboardServer.isLocked = true
+        if (!this.client.isOwner) {
+          this.wbDrawing(false)
+          this.isLocked = true
         }
         break
       case 'unlock':
-        if (!Client.isOwner) {
-          WhiteboardServer.wbDrawing(true)
-          WhiteboardServer.isLocked = false
+        if (!this.client.isOwner) {
+          this.wbDrawing(true)
+          this.isLocked = false
         }
         break
       // ...
@@ -191,42 +162,72 @@ export class WhiteboardServer {
     }
   }
 
-  static wbCanvasRedo() {
-    if (WhiteboardServer.wbPop.length > 0) {
-      WhiteboardServer.isRedoing = true
-      WhiteboardServer.wbCanvas.add(WhiteboardServer.wbPop.pop()!)
+  wbCanvasRedo() {
+    if (this.wbPop.length > 0) {
+      this.isRedoing = true
+      this.wbCanvas.add(this.wbPop.pop()!)
     }
   }
 
-  static toggleWhiteboard() {
-    showWhiteboard.value = !showWhiteboard.value
+  toggleWhiteboard() {
+    if (!this.isOpened) {
+      playSound('newMessage')
+    }
+    this.isOpened = !this.isOpened
   }
 
-  static wbDrawing(status: boolean) {
-    WhiteboardServer.wbCanvas.isDrawingMode = status
-    WhiteboardServer.wbCanvas.selection = status
-    WhiteboardServer.wbCanvas.forEachObject((obj) => {
+  wbDrawing(status: boolean) {
+    this.wbCanvas.isDrawingMode = status
+    this.wbCanvas.selection = status
+    this.wbCanvas.forEachObject((obj) => {
       obj.selectable = status
     })
   }
 
-  static wbCanvasUndo() {
-    if (WhiteboardServer.wbCanvas._objects.length > 0) {
-      WhiteboardServer.wbPop.push(WhiteboardServer.wbCanvas._objects.pop()!)
-      WhiteboardServer.wbCanvas.renderAll()
+  wbCanvasUndo() {
+    if (this.wbCanvas._objects.length > 0) {
+      this.wbPop.push(this.wbCanvas._objects.pop()!)
+      this.wbCanvas.renderAll()
     }
   }
 
-  static wbCanvasToJson() {
-    if (!Client.isOwner && WhiteboardServer.isLocked) {
+  mouseDown(event: fabric.IEvent<MouseEvent>) {
+    this.wbIsDrawing = true
+    if (this.wbIsEraser && event.target) {
+      this.wbCanvas.remove(event.target)
+    }
+  }
+
+  mouseUp() {
+    this.wbIsDrawing = false
+    this.wbCanvasToJson()
+  }
+
+  mouseMove() {
+    if (this.wbIsEraser) {
+      this.wbCanvas.hoverCursor = 'not-allowed'
+    } else {
+      this.wbCanvas.hoverCursor = 'move'
+    }
+  }
+
+  objectAdded() {
+    if (!this.wbIsRedoing) {
+      this.wbPop = []
+    }
+    this.wbIsRedoing = false
+  }
+
+  wbCanvasToJson() {
+    if (!this.client.isOwner && this.isLocked) {
       return
     }
-    if (Client.peerCount() > 0) {
+    if (this.client.peerCount > 0) {
       const config = {
         roomId: local.value.roomId,
-        wbCanvasJson: JSON.stringify(WhiteboardServer.wbCanvas?.toJSON()),
+        wbCanvasJson: JSON.stringify(this.wbCanvas?.toJSON()),
       }
-      Client.sendToServer('wbCanvasToJson', config)
+      this.client.sendToServer('wbCanvasToJson', config)
     }
   }
 }

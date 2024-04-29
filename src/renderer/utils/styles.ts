@@ -1,5 +1,5 @@
-export function setProperty(key: string, value: string) {
-  return document.documentElement.style.setProperty(key, value)
+export function setProperty(key: string, value: number | string) {
+  return document.documentElement.style.setProperty(key, addUnit(value))
 }
 
 // 添加 px 单位

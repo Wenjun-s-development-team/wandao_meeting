@@ -57,7 +57,6 @@ export const useWebrtcStore = defineStore('webrtcStore', {
       remotePeers: <KeyValue>{},
       fullScreen: false, // 窗口是否全屏
       showRecord: false, // 是否打开录音面板
-      showWhiteboard: false, // 是否打开白板
     }
   },
   actions: {

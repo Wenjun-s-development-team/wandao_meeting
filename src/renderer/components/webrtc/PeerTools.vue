@@ -2,7 +2,6 @@
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useWebrtcStore } from '@/store'
-import { Client, MediaServer } from '@/webrtc'
 
 defineOptions({
   name: 'PeerTools',
@@ -10,19 +9,21 @@ defineOptions({
 
 const webrtcStore = useWebrtcStore()
 const router = useRouter()
+const client = inject('client')
 
 const {
   local,
   fullScreen,
   showRecord,
-  showWhiteboard,
 } = storeToRefs(webrtcStore)
+
+const showWhiteboard = ref(false)
 
 const isMounted = useMounted()
 
 // 举手
 function switchHandStatus() {
-  MediaServer.switchHandStatus()
+  client.mediaServer.switchHandStatus()
 }
 
 // 窗口全屏
@@ -57,15 +58,15 @@ function onSignout() {
       <button>
         <i class="i-fa6-solid-camera-rotate" />
       </button>
-      <button @click.stop="MediaServer.handleVideo()">
+      <button @click.stop="client.mediaServer.handleVideo()">
         <i v-if="local.videoStatus" class="i-fa6-solid-video" />
         <i v-else class="i-fa6-solid-video-slash color-red" />
       </button>
-      <button @click.stop="MediaServer.handleAudio()">
+      <button @click.stop="client.mediaServer.handleAudio()">
         <i v-if="local.audioStatus" class="i-fa6-solid-microphone" />
         <i v-else class="i-fa6-solid-microphone-slash color-red" />
       </button>
-      <ScreenSources :peer="local" @change="MediaServer.switchScreenSharing()">
+      <ScreenSources :peer="local" @change="client.mediaServer.switchScreenSharing()">
         <button>
           <i v-if="local.screenStatus" class="i-fa6-solid-circle-stop" />
           <i v-else class="i-fa6-solid-desktop" />
@@ -90,9 +91,11 @@ function onSignout() {
       <button @click="switchHandStatus()">
         <i class="i-fa6-solid-hand" :class="{ 'color-green': local.handStatus }" />
       </button>
-      <button @click="showWhiteboard = !showWhiteboard">
-        <i class="i-fa6-solid-chalkboard-user" :class="{ 'color-red': showWhiteboard }" />
-      </button>
+      <PeerWhiteboard v-model="showWhiteboard">
+        <button @click="showWhiteboard = !showWhiteboard">
+          <i class="i-fa6-solid-chalkboard-user" :class="{ 'color-red': showWhiteboard }" />
+        </button>
+      </PeerWhiteboard>
       <button>
         <i class="i-fa6-solid-folder-open" />
       </button>
