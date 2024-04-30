@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { bytecodePlugin, defineConfig, externalizeDepsPlugin, swcPlugin } from 'electron-vite'
 import Vue from '@vitejs/plugin-vue'
+import topLevelAwait from 'vite-plugin-top-level-await'
 
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
@@ -92,6 +93,10 @@ export default defineConfig({
       Unocss(),
       Icons({
         autoInstall: true,
+      }),
+      topLevelAwait({
+        promiseExportName: '__tla',
+        promiseImportName: i => `__tla_${i}`,
       }),
     ],
   },

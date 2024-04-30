@@ -59,20 +59,30 @@ function confirmCleanBoard() {
           <span class="button">
             <input class="whiteboardColorPicker" type="color" value="#FFFFFF">
           </span>
-          <button><i class="i-fa6-solid-pencil" /></button>
+          <button @click="client.whiteboardServer.changeAction('draw')"><i class="i-fa6-solid-pencil" /></button>
           <button><i class="i-fa6-solid-arrow-pointer" /></button>
           <button><i class="i-fa6-solid-arrow-rotate-left" /></button>
           <button><i class="i-fa6-solid-arrow-rotate-right" /></button>
-          <button><i class="i-fa6-solid-file-pdf" /></button>
-          <button><i class="i-fa6-solid-image" /></button>
-          <button><i class="i-fa6-solid-link" /></button>
-          <button><i class="i-fa6-solid-spell-check" /></button>
-          <button><i class="i-fa6-solid-slash" /></button>
-          <button><i class="i-fa6-regular-square" /></button>
-          <button><i class="i-svg-triangle" /></button>
-          <button><i class="i-fa6-regular-circle" /></button>
+          <button>
+            <i class="i-fa6-solid-file-pdf" />
+            <label class="select-file">
+              <input type="file" @change="client.whiteboardServer.addObject('pdfFile', $event)">
+            </label>
+          </button>
+          <button>
+            <i class="i-fa6-solid-image" />
+            <label class="select-file">
+              <input type="file" @change="client.whiteboardServer.addObject('imgFile', $event)">
+            </label>
+          </button>
+          <button @click="client.whiteboardServer.addObject('imgUrl')"><i class="i-fa6-solid-link" /></button>
+          <button @click="client.whiteboardServer.addObject('text')"><i class="i-fa6-solid-spell-check" /></button>
+          <button @click="client.whiteboardServer.addObject('line')"><i class="i-fa6-solid-slash" /></button>
+          <button @click="client.whiteboardServer.addObject('rect')"><i class="i-fa6-regular-square" /></button>
+          <button @click="client.whiteboardServer.addObject('triangle')"><i class="i-svg-triangle" /></button>
+          <button @click="client.whiteboardServer.addObject('circle')"><i class="i-fa6-regular-circle" /></button>
           <button><i class="i-fa6-regular-floppy-disk" /></button>
-          <button><i class="i-fa6-solid-eraser" /></button>
+          <button @click="client.whiteboardServer.changeAction('erase')"><i class="i-fa6-solid-eraser" /></button>
           <button @click="confirmCleanBoard()"><i class="i-fa6-solid-trash" /></button>
         </div>
       </div>
@@ -114,6 +124,16 @@ function confirmCleanBoard() {
   gap: 3px;
   display: flex;
   align-items: center;
+  button {
+    position: relative;
+    .select-file {
+      inset: 0;
+      position: absolute;
+      input {
+        display: none;
+      }
+    }
+  }
 }
 
 .whiteboard-header-title button,

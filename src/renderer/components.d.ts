@@ -17,6 +17,7 @@ declare module 'vue' {
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
+    FileButton: typeof import('./components/webrtc/PeerWhiteboard/FileButton.vue')['default']
     PeerActions: typeof import('./components/webrtc/PeerActions.vue')['default']
     PeerAudioOutput: typeof import('./components/webrtc/PeerAudioOutput.vue')['default']
     PeerStatusBar: typeof import('./components/webrtc/PeerStatusBar.vue')['default']

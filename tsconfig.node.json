@@ -16,7 +16,8 @@
     "src/preload/*",
     "src/renderer/**/*.ts",
     "src/renderer/**/*.d.ts",
-    "src/renderer/assets/vumeter.js"
+    "src/renderer/assets/vumeter.js",
+    "src/renderer/webrtc/eraserBrush.js"
   ],
   "exclude": [
     "src/main/test/*"
