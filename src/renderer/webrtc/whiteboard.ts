@@ -34,13 +34,67 @@ export class WhiteboardServer {
     this.client = client
   }
 
+  // 收到对方白板操作
+  handleWhiteboardAction(args: KeyValue) {
+    const { action, color } = args
+    switch (action) {
+      case 'bgcolor':
+        this.canvasBackgroundColor(color)
+        break
+      case 'undo':
+        this.canvasUndo()
+        break
+      case 'redo':
+        this.canvasRedo()
+        break
+      case 'clear':
+        this.canvas.clear()
+        break
+      case 'toggle':
+        this.toggleWhiteboard()
+        break
+      case 'lock':
+        if (!this.client.isOwner) {
+          this.wbDrawing(false)
+          this.isLocked = true
+        }
+        break
+      case 'unlock':
+        if (!this.client.isOwner) {
+          this.wbDrawing(true)
+          this.isLocked = false
+        }
+        break
+      default:
+        break
+    }
+  }
+
   /**
    * 如果白板打开，则将画布更新到所有P2P连接中
    */
   async onUpdate() {
     if (this.isOpened && this.client.peerCount > 0) {
       this.canvasToJson()
-      this.whiteboardAction(this.getWhiteboardAction(this.isLocked ? 'lock' : 'unlock'))
+      this.sendWhiteboardAction(this.isLocked ? 'lock' : 'unlock')
+    }
+  }
+
+  // 撤销
+  canvasUndo() {
+    if (this.canvas._objects.length > 0) {
+      this.wbPop.push(this.canvas._objects.pop()!)
+      this.canvas.renderAll()
+      this.sendWhiteboardAction('undo')
+    }
+  }
+
+  // 重做
+  canvasRedo() {
+    if (this.wbPop.length > 0) {
+      this.isRedoing = true
+      this.canvas.add(this.wbPop.pop()!)
+      this.sendWhiteboardAction('redo')
     }
   }
 
@@ -53,7 +107,7 @@ export class WhiteboardServer {
         // eslint-disable-next-line ts/ban-ts-comment
         // @ts-expect-error
         this.canvas.freeDrawingBrush = new fabric.EraserBrush(this.canvas)
-        this.canvas.freeDrawingBrush.width = 3
+        this.canvas.freeDrawingBrush.width = 10
         this.canvas.isDrawingMode = true
         break
       case 'undo':
@@ -77,16 +131,11 @@ export class WhiteboardServer {
   }
 
   setupWhiteboard(element: string, width: number = 1200, height: number = 600) {
-    this.setupWhiteboardCanvas(element)
-    this.setupWhiteboardCanvasSize(width, height)
-    // this.setupWhiteboardLocalListners()
-  }
-
-  setupWhiteboardCanvas(element: string) {
     this.canvas = new fabric.Canvas(element)
     this.canvas.freeDrawingBrush.color = '#FFFFFF'
     this.canvas.freeDrawingBrush.width = 3
     this.whiteboardIsDrawingMode(true)
+    this.setupWhiteboardCanvasSize(width, height)
   }
 
   setupWhiteboardCanvasSize(width: number, height: number) {
@@ -124,87 +173,19 @@ export class WhiteboardServer {
     }
   }
 
-  setupWhiteboardLocalListners() {
-    this.canvas.on('mouse:down', (event) => {
-      this.mouseDown(event)
-    })
-    this.canvas.on('mouse:up', () => {
-      this.mouseUp()
-    })
-    this.canvas.on('mouse:move', () => {
-      this.mouseMove()
-    })
-    this.canvas.on('object:added', () => {
-      this.objectAdded()
-    })
-  }
-
-  getWhiteboardAction(action: string) {
-    return { action, roomId: local.value.roomId, roomName: local.value.roomName }
-  }
-
-  whiteboardAction(config: KeyValue) {
+  sendWhiteboardAction(action: string) {
     if (this.client.peerCount > 0) {
-      this.client.sendToServer('whiteboardAction', config)
+      this.client.sendToServer('whiteboardAction', {
+        action,
+        roomId: local.value.roomId,
+        roomName: local.value.roomName,
+      })
     }
-    this.handleWhiteboardAction(config, false)
   }
 
   canvasBackgroundColor(color: string) {
     this.canvas?.setBackgroundColor(color, () => {})
     this.canvas?.renderAll()
-  }
-
-  /**
-   * Whiteboard: handle actions
-   * @param {object} args data
-   * @param {boolean} logMe popup action
-   */
-  handleWhiteboardAction(args: KeyValue, logMe: boolean = true) {
-    const { peer_name, action, color } = args
-
-    if (logMe) {
-      console.log('toast', `${peer_name} \n whiteboard action: ${action}`)
-    }
-    switch (action) {
-      case 'bgcolor':
-        this.canvasBackgroundColor(color)
-        break
-      case 'undo':
-        this.canvasUndo()
-        break
-      case 'redo':
-        this.canvasRedo()
-        break
-      case 'clear':
-        this.canvas.clear()
-        break
-      case 'toggle':
-        this.toggleWhiteboard()
-        break
-      case 'lock':
-        if (!this.client.isOwner) {
-          this.wbDrawing(false)
-          this.isLocked = true
-        }
-        break
-      case 'unlock':
-        if (!this.client.isOwner) {
-          this.wbDrawing(true)
-          this.isLocked = false
-        }
-        break
-      // ...
-      default:
-        break
-    }
-  }
-
-  canvasRedo() {
-    if (this.wbPop.length > 0) {
-      this.isRedoing = true
-      this.canvas.add(this.wbPop.pop()!)
-    }
   }
 
   toggleWhiteboard() {
@@ -217,16 +198,9 @@ export class WhiteboardServer {
   wbDrawing(status: boolean) {
     this.canvas.isDrawingMode = status
     this.canvas.selection = status
-    this.canvas.forEachObject((obj) => {
-      obj.selectable = status
+    this.canvas.forEachObject((objcet) => {
+      objcet.selectable = status
     })
-  }
-
-  canvasUndo() {
-    if (this.canvas._objects.length > 0) {
-      this.wbPop.push(this.canvas._objects.pop()!)
-      this.canvas.renderAll()
-    }
   }
 
   mouseDown(event: fabric.IEvent<MouseEvent>) {
@@ -234,26 +208,6 @@ export class WhiteboardServer {
     if (this.wbIsEraser && event.target) {
       this.canvas.remove(event.target)
     }
-  }
-
-  mouseUp() {
-    this.wbIsDrawing = false
-    this.canvasToJson()
-  }
-
-  mouseMove() {
-    if (this.wbIsEraser) {
-      this.canvas.hoverCursor = 'not-allowed'
-    } else {
-      this.canvas.hoverCursor = 'move'
-    }
-  }
-
-  objectAdded() {
-    if (!this.wbIsRedoing) {
-      this.wbPop = []
-    }
-    this.wbIsRedoing = false
   }
 
   addCanvasObject(object: fabric.Object) {

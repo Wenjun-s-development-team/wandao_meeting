@@ -61,8 +61,8 @@ function confirmCleanBoard() {
           </span>
           <button @click="client.whiteboardServer.changeAction('draw')"><i class="i-fa6-solid-pencil" /></button>
           <button><i class="i-fa6-solid-arrow-pointer" /></button>
-          <button><i class="i-fa6-solid-arrow-rotate-left" /></button>
-          <button><i class="i-fa6-solid-arrow-rotate-right" /></button>
+          <button @click="client.whiteboardServer.canvasUndo()"><i class="i-fa6-solid-arrow-rotate-left" /></button>
+          <button @click="client.whiteboardServer.canvasRedo()"><i class="i-fa6-solid-arrow-rotate-right" /></button>
           <button>
             <i class="i-fa6-solid-file-pdf" />
             <label class="select-file">
