@@ -5,15 +5,15 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 export default defineComponent({
   components: {
-    ElConfigProvider
+    ElConfigProvider,
   },
   setup() {
     return {
       size: 'default',
       zIndex: 2000,
-      locale: zhCn
+      locale: zhCn,
     }
-  }
+  },
 })
 </script>
 

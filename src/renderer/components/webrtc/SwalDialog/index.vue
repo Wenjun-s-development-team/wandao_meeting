@@ -188,6 +188,9 @@ function onClosed() {
     &.primary {
       background-color: #7066e0;
     }
+    &.block {
+      width: 100%;
+    }
   }
 
   .swal-file,

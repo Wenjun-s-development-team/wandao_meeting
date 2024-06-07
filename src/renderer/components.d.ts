@@ -17,7 +17,6 @@ declare module 'vue' {
     ElSwitch: typeof import('element-plus/es')['ElSwitch']
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
-    FileButton: typeof import('./components/webrtc/PeerWhiteboard/FileButton.vue')['default']
     PeerActions: typeof import('./components/webrtc/PeerActions.vue')['default']
     PeerAudioOutput: typeof import('./components/webrtc/PeerAudioOutput.vue')['default']
     PeerStatusBar: typeof import('./components/webrtc/PeerStatusBar.vue')['default']
@@ -28,7 +27,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     ScreenSources: typeof import('./components/webrtc/ScreenSources.vue')['default']
     SwalDialog: typeof import('./components/webrtc/SwalDialog/index.vue')['default']
-    Whiteboard: typeof import('./components/webrtc/Whiteboard/index.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']
